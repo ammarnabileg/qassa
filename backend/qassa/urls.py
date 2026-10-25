@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.http import JsonResponse
 from django.contrib import admin
 from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
@@ -8,7 +10,14 @@ from apps.platform.api import views as plat
 from apps.tenancy.api import views as org
 
 api = "api/v1/"
+
+
+def version(_request):
+    return JsonResponse({"version": settings.QASSA_VERSION, "channel": settings.QASSA_CHANNEL})
+
+
 urlpatterns = [
+    path("api/v1/version", version),
     path("admin/", admin.site.urls),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularRedocView.as_view(url_name="schema")),

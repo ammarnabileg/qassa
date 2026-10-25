@@ -8,6 +8,8 @@ import { AuthProvider } from './auth'
 import './i18n'
 import './styles/tokens.css'
 
+console.info(`Qassa ${__APP_VERSION__} (${__APP_CHANNEL__})`)
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: (n, e) => !(e instanceof ApiError && e.status >= 400 && e.status < 500) && n < 2, refetchOnWindowFocus: false },

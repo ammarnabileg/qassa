@@ -152,3 +152,19 @@ LOGGING = {
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["console"], "level": env("LOG_LEVEL", "INFO")},
 }
+
+
+def _version():
+    """QASSA_VERSION is stamped by the build; otherwise computed from VERSION + git (debug builds)."""
+    if os.environ.get("QASSA_VERSION"):
+        return os.environ["QASSA_VERSION"], os.environ.get("QASSA_CHANNEL", "release")
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("qassa_version", BASE_DIR.parent / "scripts" / "version.py")
+    if spec is None or not (BASE_DIR.parent / "scripts" / "version.py").exists():
+        return "unknown", "debug"
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.compute()
+
+
+QASSA_VERSION, QASSA_CHANNEL = _version()
