@@ -1,0 +1,15 @@
+/* platform persistence + config */
+/* ---------- platform persistence + config ---------- */
+PL.cfg={product:'قصّة POS',domain:'app.qassa.io',email:'support@qassa.io',wa:'55813801',headline:'سيستم كاشير وحجوزات للصالونات — أطفال، رجالي، ونسائي',sub:'كاشير سريع، حجز أونلاين للأهالي، نقاط وولاء، وتقارير لكل فروعك — كله من شاشة واحدة.',trial:14,yearFree:2,autoSuspend:true,selfSignup:true,knet:true,myf:true,bank:false};
+PL.plans.forEach((p,i)=>{p.hl=i===1;p.desc=['لصالون واحد بيبدأ','لصالون شغال وعايز يكبر','لسلاسل الصالونات'][i]});
+try{const x=JSON.parse(localStorage.getItem(KEY+'.pl'));if(x&&x.plans)Object.assign(PL,x)}catch(e){}
+function plSave(){try{localStorage.setItem(KEY+'.pl',JSON.stringify(PL))}catch(e){}}
+const yearPrice=p=>p.price*(12-(+PL.cfg.yearFree||0));
+function renderPSet(){const C=PL.cfg;const f=(id,l,v,ltr)=>`<label class="field">${l}<input class="input" id="${id}" value="${esc(v)}" ${ltr?'dir="ltr"':''}></label>`;
+  $('psetBody').innerHTML=`<div class="grid g2">
+  <div class="card"><h2 style="margin-bottom:10px">الهوية</h2><div class="grid">${f('cP','اسم المنتج',C.product)}${f('cD','الدومين',C.domain,1)}${f('cE','إيميل الدعم',C.email,1)}${f('cW','واتساب المبيعات والدعم',C.wa,1)}</div></div>
+  <div class="card"><h2 style="margin-bottom:10px">صفحة الأسعار</h2><div class="grid">${f('cH','العنوان الرئيسي',C.headline)}<label class="field">الوصف<textarea class="input" id="cS">${esc(C.sub)}</textarea></label><a class="btn" href="#/pricing" target="_self">${ic('eye')} معاينة صفحة الأسعار</a></div></div>
+  <div class="card"><h2 style="margin-bottom:6px">الاشتراكات</h2><div class="chk"><div>الفترة التجريبية (أيام)<small>بتظهر في صفحة الأسعار وفي التسجيل</small></div><input class="input" id="cT" type="number" min="0" value="${C.trial}" style="width:90px"></div><div class="chk"><div>شهور مجانية في الدفع السنوي<small>السعر السنوي = الشهري × (12 − الرقم ده)</small></div><input class="input" id="cY" type="number" min="0" max="11" value="${C.yearFree}" style="width:90px"></div>${sw('cA','إيقاف تلقائي عند التأخير','بعد 7 أيام من الاستحقاق',C.autoSuspend)}${sw('cSelf','السماح بالتسجيل الذاتي','لو مقفول، صفحة الأسعار بتعرض "تواصل معانا" بدل فورم التسجيل',C.selfSignup)}</div>
+  <div class="card"><h2 style="margin-bottom:6px">بوابات الدفع</h2>${sw('gK','KNET','بطاقات كي نت',C.knet)}${sw('gM','MyFatoorah','فيزا، ماستركارد، Apple Pay',C.myf)}${sw('gB','تحويل بنكي','تأكيد يدوي',C.bank)}</div></div>
+  <h2 style="margin:18px 0 10px">الباقات اللي بتظهر في صفحة الأسعار</h2><div class="cards">${PL.plans.map(p=>`<div class="plan ${p.hl?'hl':''}"><div class="row sb"><b>${esc(p.n)}</b><button class="btn sm" onclick="openPlan(${p.id})">تعديل</button></div><div>${money(p.price)} / شهر · ${money(yearPrice(p))} / سنة</div></div>`).join('')}</div>`}
+function savePSet(){const C=PL.cfg,v=id=>$(id).value,c=id=>$(id).checked;Object.assign(C,{product:v('cP'),domain:v('cD'),email:v('cE'),wa:v('cW'),headline:v('cH'),sub:v('cS'),trial:+v('cT')||0,yearFree:Math.min(11,+v('cY')||0),autoSuspend:c('cA'),selfSignup:c('cSelf'),knet:c('gK'),myf:c('gM'),bank:c('gB')});plSave();toast('تم الحفظ — صفحة الأسعار اتحدّثت')}

@@ -1,0 +1,38 @@
+{
+  "app": { "name": "قصّة POS", "tagline": "سيستم الصالونات — أطفال، رجالي، نسائي" },
+  "common": { "loading": "جارٍ التحميل…", "retry": "إعادة المحاولة", "save": "حفظ", "cancel": "إلغاء", "language": "English", "logout": "تسجيل الخروج", "empty": "لا توجد بيانات", "error": "حدث خطأ" },
+  "auth": {
+    "title": "تسجيل الدخول", "email": "البريد الإلكتروني", "password": "كلمة المرور", "submit": "دخول",
+    "mfaSetupTitle": "إعداد التحقق بخطوتين", "mfaSetupHelp": "أضف هذا الحساب في تطبيق المصادقة (Google Authenticator أو Microsoft Authenticator) ثم أدخل الرمز.",
+    "mfaVerifyTitle": "التحقق بخطوتين", "mfaCode": "رمز من 6 أرقام", "verify": "تحقق"
+  },
+  "tenant": { "choose": "اختر الشركة", "none": "لا توجد شركة مرتبطة بحسابك" },
+  "nav": { "org": "الشركة والفروع", "journal": "قيد يومية", "trialBalance": "ميزان المراجعة" },
+  "org": { "entities": "الكيانات القانونية", "branches": "الفروع", "cr": "السجل التجاري", "code": "الرمز", "type": "النشاط", "active": "نشط" },
+  "biz": { "kids": "أطفال", "men": "رجالي", "women": "نسائي" },
+  "acc": {
+    "entity": "الكيان", "from": "من", "to": "إلى", "branch": "الفرع", "allBranches": "كل الفروع", "show": "عرض",
+    "code": "الرمز", "account": "الحساب", "opening": "رصيد أول المدة", "debit": "مدين", "credit": "دائن", "closing": "رصيد آخر المدة",
+    "totals": "الإجمالي", "balanced": "متوازن", "unbalanced": "غير متوازن",
+    "newEntry": "قيد يومية يدوي", "date": "التاريخ", "memo": "البيان", "addLine": "إضافة سطر", "post": "ترحيل القيد",
+    "difference": "الفرق", "posted": "تم ترحيل القيد {{number}}", "lineDesc": "وصف السطر"
+  },
+  "errors": {
+    "invalid_credentials": "البريد أو كلمة المرور غير صحيحة",
+    "invalid_mfa_token": "الرمز غير صحيح",
+    "mfa_throttled": "محاولات كثيرة — انتظر قليلًا ثم حاول",
+    "throttled": "محاولات كثيرة — حاول بعد دقيقة",
+    "permission_denied": "ليس لديك صلاحية لهذا الإجراء",
+    "not_authenticated": "انتهت الجلسة، سجّل الدخول مجددًا",
+    "je_unbalanced": "المدين لا يساوي الدائن",
+    "je_control_account": "هذا حساب رقابي لا يقبل قيودًا يدوية",
+    "je_account_not_postable": "الحساب رئيسي ولا يقبل الترحيل",
+    "period_closed": "الفترة المحاسبية مغلقة",
+    "no_fiscal_period": "لا توجد فترة محاسبية تغطي هذا التاريخ",
+    "je_bad_line": "كل سطر يجب أن يكون مدينًا أو دائنًا فقط",
+    "branch_required": "اختر أحد فروعك",
+    "branch_forbidden": "ليس لديك صلاحية على هذا الفرع",
+    "network": "تعذّر الاتصال بالخادم",
+    "unknown": "حدث خطأ غير متوقع"
+  }
+}

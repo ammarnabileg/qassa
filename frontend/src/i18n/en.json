@@ -1,0 +1,38 @@
+{
+  "app": { "name": "Qassa POS", "tagline": "Salon system — kids, men, women" },
+  "common": { "loading": "Loading…", "retry": "Retry", "save": "Save", "cancel": "Cancel", "language": "عربي", "logout": "Sign out", "empty": "No data", "error": "Something went wrong" },
+  "auth": {
+    "title": "Sign in", "email": "Email", "password": "Password", "submit": "Sign in",
+    "mfaSetupTitle": "Set up two-step verification", "mfaSetupHelp": "Add this account in an authenticator app (Google Authenticator or Microsoft Authenticator), then enter the code.",
+    "mfaVerifyTitle": "Two-step verification", "mfaCode": "6-digit code", "verify": "Verify"
+  },
+  "tenant": { "choose": "Choose a company", "none": "Your account isn't linked to any company" },
+  "nav": { "org": "Company & branches", "journal": "Journal entry", "trialBalance": "Trial balance" },
+  "org": { "entities": "Legal entities", "branches": "Branches", "cr": "Commercial reg.", "code": "Code", "type": "Type", "active": "Active" },
+  "biz": { "kids": "Kids", "men": "Men", "women": "Women" },
+  "acc": {
+    "entity": "Entity", "from": "From", "to": "To", "branch": "Branch", "allBranches": "All branches", "show": "Show",
+    "code": "Code", "account": "Account", "opening": "Opening", "debit": "Debit", "credit": "Credit", "closing": "Closing",
+    "totals": "Totals", "balanced": "Balanced", "unbalanced": "Unbalanced",
+    "newEntry": "Manual journal entry", "date": "Date", "memo": "Memo", "addLine": "Add line", "post": "Post entry",
+    "difference": "Difference", "posted": "Entry {{number}} posted", "lineDesc": "Line description"
+  },
+  "errors": {
+    "invalid_credentials": "Wrong email or password",
+    "invalid_mfa_token": "Invalid code",
+    "mfa_throttled": "Too many attempts — wait a moment and try again",
+    "throttled": "Too many attempts — try again in a minute",
+    "permission_denied": "You don't have permission for this action",
+    "not_authenticated": "Session expired, please sign in again",
+    "je_unbalanced": "Debits don't equal credits",
+    "je_control_account": "This control account doesn't accept manual entries",
+    "je_account_not_postable": "Header account — not postable",
+    "period_closed": "The fiscal period is closed",
+    "no_fiscal_period": "No fiscal period covers this date",
+    "je_bad_line": "Each line must be either a debit or a credit",
+    "branch_required": "Choose one of your branches",
+    "branch_forbidden": "No access to this branch",
+    "network": "Couldn't reach the server",
+    "unknown": "Unexpected error"
+  }
+}

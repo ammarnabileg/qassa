@@ -1,0 +1,9 @@
+/* Business-type themes: kids (default green), men (gold), women (pink) */
+:root[data-biz="men"]{--brand:#C9A24B;--brand-700:#7A5A12;--brand-900:#4E3A0C;--brand-soft:#F7F0E1}
+:root[data-biz="women"]{--brand:#EC6F9A;--brand-700:#B02A5B;--brand-900:#7E1A40;--brand-soft:#FDECF2}
+@media (prefers-color-scheme:dark){:root[data-biz="men"]:not([data-theme="light"]){--brand-700:#E3C27A;--brand-soft:#2A2312}:root[data-biz="women"]:not([data-theme="light"]){--brand-700:#F59BBB;--brand-soft:#3A1626}}
+:root[data-theme="dark"][data-biz="men"]{--brand-700:#E3C27A;--brand-soft:#2A2312}:root[data-theme="dark"][data-biz="women"]{--brand-700:#F59BBB;--brand-soft:#3A1626}
+:root:not([data-biz="kids"]) .kidonly{display:none}
+.bizcards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.bizcard{border-radius:var(--r-lg);padding:20px;color:#081510;display:flex;flex-direction:column;gap:8px}
+@media (max-width:820px){.bizcards{grid-template-columns:1fr}}

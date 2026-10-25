@@ -1,0 +1,36 @@
+# Local development / CI. Production uses the same images with secrets from the platform's secret manager.
+services:
+  db:
+    image: postgres:16
+    environment: { POSTGRES_DB: qassa, POSTGRES_USER: qassa, POSTGRES_PASSWORD: qassa_dev }
+    volumes: [pgdata:/var/lib/postgresql/data]
+    ports: ["5432:5432"]
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+  backend:
+    build: { context: ./backend, args: { DEV: "1" } }
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    environment: &benv
+      QASSA_ENV: development
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/1
+    volumes: ["./backend:/app"]
+    ports: ["8000:8000"]
+    depends_on: [db, redis]
+  worker:
+    build: { context: ./backend, args: { DEV: "1" } }
+    command: celery -A qassa worker -B -l info
+    environment: *benv
+    volumes: ["./backend:/app"]
+    depends_on: [db, redis]
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci && npx vite --host 0.0.0.0"
+    environment: { API_URL: "http://backend:8000" }
+    volumes: ["./frontend:/app", "/app/node_modules"]
+    ports: ["5173:5173"]
+    depends_on: [backend]
+volumes:
+  pgdata:

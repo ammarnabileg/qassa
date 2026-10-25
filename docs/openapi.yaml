@@ -1,0 +1,910 @@
+openapi: 3.0.3
+info:
+  title: Qassa POS API
+  version: 0.1.0
+  description: Multi-tenant salon POS & accounting API. Tenant-scoped endpoints require
+    the X-Tenant header.
+paths:
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - ar
+          - en
+      tags:
+      - schema
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/accounting/accounts:
+    get:
+      operationId: v1_accounting_accounts_list
+      parameters:
+      - in: query
+        name: legal_entity_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+          description: ''
+  /api/v1/accounting/journal-entries:
+    get:
+      operationId: v1_accounting_journal_entries_list
+      parameters:
+      - in: query
+        name: legal_entity_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryOut'
+          description: ''
+    post:
+      operationId: v1_accounting_journal_entries_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntryIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EntryIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EntryIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryOut'
+          description: ''
+  /api/v1/accounting/journal-entries/{id}/reverse:
+    post:
+      operationId: v1_accounting_journal_entries_reverse_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReverseIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReverseIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReverseIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryOut'
+          description: ''
+  /api/v1/accounting/periods/{id}/{action}:
+    post:
+      operationId: v1_accounting_periods_create
+      parameters:
+      - in: path
+        name: action
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PeriodActionIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PeriodActionIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PeriodActionIn'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PeriodStatus'
+          description: ''
+  /api/v1/accounting/trial-balance:
+    get:
+      operationId: v1_accounting_trial_balance_retrieve
+      parameters:
+      - in: query
+        name: branch_id
+        schema:
+          type: integer
+      - in: query
+        name: from
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: legal_entity_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: to
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrialBalance'
+          description: ''
+  /api/v1/auth/csrf:
+    get:
+      operationId: v1_auth_csrf_retrieve
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Csrf'
+          description: ''
+  /api/v1/auth/login:
+    post:
+      operationId: v1_auth_login_create
+      description: Returns MeOut, or MfaStep when MFA is required.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Login'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeOut'
+          description: ''
+        '401':
+          description: No response body
+  /api/v1/auth/logout:
+    post:
+      operationId: v1_auth_logout_create
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/me:
+    get:
+      operationId: v1_auth_me_retrieve
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeOut'
+          description: ''
+  /api/v1/auth/mfa/setup:
+    post:
+      operationId: v1_auth_mfa_setup_create
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaSetup'
+          description: ''
+  /api/v1/auth/mfa/verify:
+    post:
+      operationId: v1_auth_mfa_verify_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Mfa'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Mfa'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Mfa'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeOut'
+          description: ''
+        '401':
+          description: No response body
+        '429':
+          description: No response body
+  /api/v1/org:
+    get:
+      operationId: v1_org_retrieve
+      description: Legal entities and the branches this membership may see.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Org'
+          description: ''
+  /api/v1/platform/tenants:
+    post:
+      operationId: v1_platform_tenants_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TenantIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TenantIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantCreated'
+          description: ''
+components:
+  schemas:
+    Account:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        legal_entity:
+          type: integer
+        code:
+          type: string
+          maxLength: 20
+        name_ar:
+          type: string
+          maxLength: 150
+        name_en:
+          type: string
+          maxLength: 150
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        parent:
+          type: integer
+          nullable: true
+        is_postable:
+          type: boolean
+        is_control:
+          type: boolean
+        is_active:
+          type: boolean
+      required:
+      - code
+      - id
+      - legal_entity
+      - name_ar
+      - name_en
+      - type
+    Branch:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        legal_entity:
+          type: integer
+        name_ar:
+          type: string
+          maxLength: 120
+        name_en:
+          type: string
+          maxLength: 120
+        code:
+          type: string
+          maxLength: 20
+        business_type:
+          $ref: '#/components/schemas/BusinessTypeEnum'
+        timezone:
+          type: string
+          maxLength: 40
+        is_active:
+          type: boolean
+      required:
+      - business_type
+      - code
+      - id
+      - legal_entity
+      - name_ar
+    BranchIn:
+      type: object
+      properties:
+        name_ar:
+          type: string
+          maxLength: 120
+        name_en:
+          type: string
+          default: ''
+          maxLength: 120
+        code:
+          type: string
+          maxLength: 20
+          pattern: ^[-a-zA-Z0-9_]+$
+        business_type:
+          $ref: '#/components/schemas/BusinessTypeEnum'
+      required:
+      - business_type
+      - code
+      - name_ar
+    BusinessTypeEnum:
+      enum:
+      - kids
+      - men
+      - women
+      type: string
+      description: |-
+        * `kids` - Kids
+        * `men` - Men
+        * `women` - Women
+    Csrf:
+      type: object
+      properties:
+        csrfToken:
+          type: string
+      required:
+      - csrfToken
+    EntryIn:
+      type: object
+      properties:
+        legal_entity_id:
+          type: integer
+        entry_date:
+          type: string
+          format: date
+        memo:
+          type: string
+          default: ''
+        branch_id:
+          type: integer
+          nullable: true
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineIn'
+      required:
+      - entry_date
+      - legal_entity_id
+      - lines
+    EntryOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: string
+          default: ''
+          maxLength: 30
+        legal_entity:
+          type: integer
+        branch:
+          type: integer
+          nullable: true
+        entry_date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        kind:
+          type: string
+          maxLength: 10
+        memo:
+          type: string
+        source_type:
+          type: string
+          maxLength: 60
+        source_id:
+          type: string
+          maxLength: 64
+        event_type:
+          type: string
+          maxLength: 60
+        reversal_of:
+          type: integer
+          nullable: true
+        reversed_by_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        posted_at:
+          type: string
+          format: date-time
+          nullable: true
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineOut'
+      required:
+      - entry_date
+      - id
+      - legal_entity
+      - lines
+      - reversed_by_id
+    LegalEntity:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name_ar:
+          type: string
+          maxLength: 200
+        name_en:
+          type: string
+          maxLength: 200
+        commercial_registration:
+          type: string
+          maxLength: 50
+        legal_form:
+          type: string
+          maxLength: 60
+        base_currency:
+          type: string
+          maxLength: 3
+        fiscal_year_start_month:
+          type: integer
+          maximum: 32767
+          minimum: 0
+      required:
+      - id
+      - name_ar
+    LineIn:
+      type: object
+      properties:
+        account_id:
+          type: integer
+        debit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+          default: '0.000'
+        credit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+          default: '0.000'
+        description:
+          type: string
+          default: ''
+          maxLength: 255
+        branch_id:
+          type: integer
+          nullable: true
+      required:
+      - account_id
+    LineOut:
+      type: object
+      properties:
+        line_no:
+          type: integer
+        account_id:
+          type: integer
+        account_code:
+          type: string
+        debit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        credit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        description:
+          type: string
+        branch_id:
+          type: integer
+          nullable: true
+      required:
+      - account_code
+      - account_id
+      - branch_id
+      - credit
+      - debit
+      - description
+      - line_no
+    Login:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+      - email
+      - password
+    MeOut:
+      type: object
+      properties:
+        memberships:
+          $ref: '#/components/schemas/MembershipOut'
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        full_name:
+          type: string
+        language:
+          type: string
+        is_platform_staff:
+          type: boolean
+        mfa_required:
+          type: boolean
+      required:
+      - email
+      - full_name
+      - id
+      - is_platform_staff
+      - language
+      - memberships
+      - mfa_required
+    MembershipOut:
+      type: object
+      properties:
+        tenant_id:
+          type: integer
+        tenant_name:
+          type: string
+        tenant_status:
+          type: string
+        role:
+          type: string
+        role_name:
+          type: object
+          additionalProperties: {}
+        permissions:
+          type: array
+          items:
+            type: string
+        all_branches:
+          type: boolean
+        branch_ids:
+          type: array
+          items:
+            type: integer
+      required:
+      - all_branches
+      - branch_ids
+      - permissions
+      - role
+      - role_name
+      - tenant_id
+      - tenant_name
+      - tenant_status
+    Mfa:
+      type: object
+      properties:
+        token:
+          type: string
+          pattern: ^\d{6}$
+      required:
+      - token
+    MfaSetup:
+      type: object
+      properties:
+        otpauth_url:
+          type: string
+      required:
+      - otpauth_url
+    Org:
+      type: object
+      properties:
+        legal_entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/LegalEntity'
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/Branch'
+      required:
+      - branches
+      - legal_entities
+    PeriodActionIn:
+      type: object
+      properties:
+        reason:
+          type: string
+          default: ''
+    PeriodStatus:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+      required:
+      - id
+      - status
+    ReverseIn:
+      type: object
+      properties:
+        'on':
+          type: string
+          format: date
+        reason:
+          type: string
+          minLength: 3
+      required:
+      - reason
+    StatusEnum:
+      enum:
+      - draft
+      - posted
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `posted` - Posted
+    TBRow:
+      type: object
+      properties:
+        account_id:
+          type: integer
+        code:
+          type: string
+        name_ar:
+          type: string
+        name_en:
+          type: string
+        type:
+          type: string
+        opening:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        debit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        credit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        closing:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        normal_side:
+          type: string
+      required:
+      - account_id
+      - closing
+      - code
+      - credit
+      - debit
+      - name_ar
+      - name_en
+      - normal_side
+      - opening
+      - type
+    TenantCreated:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        status:
+          type: string
+      required:
+      - id
+      - slug
+      - status
+    TenantIn:
+      type: object
+      properties:
+        tenant_name:
+          type: string
+          maxLength: 200
+        owner_email:
+          type: string
+          format: email
+        owner_name:
+          type: string
+          maxLength: 150
+        legal_name_ar:
+          type: string
+          maxLength: 200
+        legal_name_en:
+          type: string
+          default: ''
+          maxLength: 200
+        commercial_registration:
+          type: string
+          default: ''
+          maxLength: 50
+        business_type:
+          $ref: '#/components/schemas/BusinessTypeEnum'
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/BranchIn'
+      required:
+      - business_type
+      - legal_name_ar
+      - owner_email
+      - owner_name
+      - tenant_name
+    TrialBalance:
+      type: object
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/TBRow'
+        total_debit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        total_credit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        balanced:
+          type: boolean
+      required:
+      - balanced
+      - rows
+      - total_credit
+      - total_debit
+    TypeEnum:
+      enum:
+      - asset
+      - liability
+      - equity
+      - revenue
+      - expense
+      type: string
+      description: |-
+        * `asset` - Asset
+        * `liability` - Liability
+        * `equity` - Equity
+        * `revenue` - Revenue
+        * `expense` - Expense
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

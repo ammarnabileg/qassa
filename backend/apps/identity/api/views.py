@@ -1,0 +1,158 @@
+"""Session authentication for the web apps, with TOTP for roles that require it.
+
+Login is two-step when MFA is required: password → session marked `mfa_pending` → /auth/mfa/verify.
+Until verified, the session is not authenticated as far as the API is concerned.
+"""
+from django.contrib.auth import authenticate, login, logout
+from django.middleware.csrf import get_token
+from django_otp import login as otp_login
+from django_otp.plugins.otp_totp.models import TOTPDevice
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.audit.services.log import record as audit
+from apps.tenancy.models import Membership
+
+PENDING = "mfa_pending_user_id"
+
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(trim_whitespace=False)
+
+
+class MfaSerializer(serializers.Serializer):
+    token = serializers.RegexField(r"^\d{6}$")
+
+
+def me_payload(user):
+    ms = Membership.objects.select_related("tenant", "role").filter(user=user, is_active=True)
+    return {
+        "id": user.id, "email": user.email, "full_name": user.full_name, "language": user.preferred_language,
+        "is_platform_staff": user.is_platform_staff, "mfa_required": user.mfa_required,
+        "memberships": [{"tenant_id": m.tenant_id, "tenant_name": m.tenant.name, "tenant_status": m.tenant.status,
+                         "role": m.role.key, "role_name": {"ar": m.role.name_ar, "en": m.role.name_en},
+                         "permissions": sorted(m.role.permissions), "all_branches": m.all_branches,
+                         "branch_ids": sorted(m.branch_ids() or [])} for m in ms],
+    }
+
+
+MembershipOut = inline_serializer("MembershipOut", {
+    "tenant_id": serializers.IntegerField(), "tenant_name": serializers.CharField(), "tenant_status": serializers.CharField(),
+    "role": serializers.CharField(), "role_name": serializers.DictField(), "permissions": serializers.ListField(child=serializers.CharField()),
+    "all_branches": serializers.BooleanField(), "branch_ids": serializers.ListField(child=serializers.IntegerField())})
+MeOut = inline_serializer("MeOut", {
+    "id": serializers.IntegerField(), "email": serializers.EmailField(), "full_name": serializers.CharField(),
+    "language": serializers.CharField(), "is_platform_staff": serializers.BooleanField(), "mfa_required": serializers.BooleanField(),
+    "memberships": MembershipOut})
+MfaStep = inline_serializer("MfaStep", {"mfa": serializers.ChoiceField(choices=["setup", "verify"])})
+
+
+class CsrfView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(responses=inline_serializer("Csrf", {"csrfToken": serializers.CharField()}))
+    def get(self, request):
+        return Response({"csrfToken": get_token(request)})
+
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+    throttle_scope = "login"
+    from rest_framework.throttling import ScopedRateThrottle
+    throttle_classes = [ScopedRateThrottle]
+
+    @extend_schema(request=LoginSerializer, responses={200: MeOut, 401: None}, description="Returns MeOut, or MfaStep when MFA is required.")
+    def post(self, request):
+        s = LoginSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        user = authenticate(request, email=s.validated_data["email"].lower(), password=s.validated_data["password"])
+        if user is None or not user.is_active:
+            audit("auth.login_failed", data={"email": s.validated_data["email"].lower()}, ip=request.META.get("REMOTE_ADDR"))
+            return Response({"error": {"code": "invalid_credentials", "message": "", "details": {}}},
+                            status=status.HTTP_401_UNAUTHORIZED)
+        if user.mfa_required:
+            request.session.flush()
+            request.session[PENDING] = user.id
+            has_device = TOTPDevice.objects.filter(user=user, confirmed=True).exists()
+            return Response({"mfa": "verify" if has_device else "setup"}, status=status.HTTP_200_OK)
+        login(request, user)
+        audit("auth.login", actor=user, ip=request.META.get("REMOTE_ADDR"))
+        return Response(me_payload(user))
+
+
+def _pending_user(request):
+    from apps.identity.models import User
+    uid = request.session.get(PENDING)
+    return User.objects.filter(pk=uid, is_active=True).first() if uid else None
+
+
+class MfaSetupView(APIView):
+    serializer_class = None
+    """Returns an otpauth:// URL for an authenticator app. Only during a pending login without a device."""
+    permission_classes = [AllowAny]
+    throttle_scope = "mfa"
+    from rest_framework.throttling import ScopedRateThrottle
+    throttle_classes = [ScopedRateThrottle]
+
+    @extend_schema(request=None, responses=inline_serializer("MfaSetup", {"otpauth_url": serializers.CharField()}))
+    def post(self, request):
+        user = _pending_user(request)
+        if user is None:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        if TOTPDevice.objects.filter(user=user, confirmed=True).exists():
+            return Response({"error": {"code": "mfa_already_configured", "message": "", "details": {}}}, status=409)
+        TOTPDevice.objects.filter(user=user, confirmed=False).delete()  # noqa
+        device = TOTPDevice.objects.create(user=user, name="authenticator", confirmed=False)
+        return Response({"otpauth_url": device.config_url})
+
+
+class MfaVerifyView(APIView):
+    permission_classes = [AllowAny]
+    throttle_scope = "mfa"
+    from rest_framework.throttling import ScopedRateThrottle
+    throttle_classes = [ScopedRateThrottle]
+
+    @extend_schema(request=MfaSerializer, responses={200: MeOut, 401: None, 429: None})
+    def post(self, request):
+        user = _pending_user(request)
+        if user is None:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        s = MfaSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        devices = list(TOTPDevice.objects.filter(user=user))
+        for device in devices:
+            allowed, info = device.verify_is_allowed()
+            if not allowed:
+                return Response({"error": {"code": "mfa_throttled", "message": "", "details": {
+                    "retry_after": str((info or {}).get("locked_until", ""))}}}, status=429)
+        for device in devices:
+            if device.verify_token(s.validated_data["token"]):
+                if not device.confirmed:
+                    device.confirmed = True
+                    device.save(update_fields=["confirmed"])
+                del request.session[PENDING]
+                login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+                otp_login(request, device)
+                audit("auth.login", actor=user, data={"mfa": True}, ip=request.META.get("REMOTE_ADDR"))
+                return Response(me_payload(user))
+        audit("auth.mfa_failed", actor=user, ip=request.META.get("REMOTE_ADDR"))
+        return Response({"error": {"code": "invalid_mfa_token", "message": "", "details": {}}}, status=401)
+
+
+class LogoutView(APIView):
+    @extend_schema(request=None, responses={204: None})
+    def post(self, request):
+        logout(request)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=MeOut)
+    def get(self, request):
+        return Response(me_payload(request.user))

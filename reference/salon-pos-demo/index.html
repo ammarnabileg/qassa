@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#0CD273">
+<title>قصّة POS</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230CD273'/%3E%3Cg fill='none' stroke='%23081510' stroke-width='4' stroke-linecap='round'%3E%3Ccircle cx='22' cy='44' r='6'/%3E%3Ccircle cx='42' cy='44' r='6'/%3E%3Cpath d='M26 39 42 16M38 39 22 16'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="stylesheet" href="assets/css/customer-app.css">
+<link rel="stylesheet" href="assets/css/themes.css">
+<link rel="stylesheet" href="assets/css/responsive.css">
+<link rel="stylesheet" href="assets/css/tablet.css">
+
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></symbol>
+<symbol id="i-cart" viewBox="0 0 24 24"><path d="M4 5h2l1.6 9.2a2 2 0 0 0 2 1.7h7.8a2 2 0 0 0 1.9-1.4L21 8H7"/><circle cx="10" cy="20" r="1.25"/><circle cx="18" cy="20" r="1.25"/></symbol>
+<symbol id="i-cart-plus" viewBox="0 0 24 24"><path d="M4 5h2l1.6 9.2a2 2 0 0 0 2 1.7h7.8a2 2 0 0 0 1.9-1.4L21 8H7"/><path d="M14.5 3.5v6M11.5 6.5h6"/><circle cx="10" cy="20" r="1.25"/><circle cx="18" cy="20" r="1.25"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.8 5.7a5.4 5.4 0 0 0-7.6 0L12 6.9l-1.2-1.2a5.4 5.4 0 1 0-7.6 7.6L12 22l8.8-8.7a5.4 5.4 0 0 0 0-7.6Z"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="m3.5 10.5 8.5-7 8.5 7"/><path d="M5.5 9.5V21h13V9.5M9.5 21v-7h5v7"/></symbol>
+<symbol id="i-box" viewBox="0 0 24 24"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7M12 11v10"/></symbol>
+<symbol id="i-orders" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></symbol>
+<symbol id="i-wallet" viewBox="0 0 24 24"><path d="M4 6h15a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3h12"/><path d="M15 11h6v5h-6a2.5 2.5 0 0 1 0-5Z"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+<symbol id="i-user-plus" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M18 7v6M15 10h6"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="3"/><path d="M15.5 14.5A5.5 5.5 0 0 1 22 20"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 5h16M7 12h10M10 19h4"/><circle cx="8" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></symbol>
+<symbol id="i-sort" viewBox="0 0 24 24"><path d="M8 5v14M5 8l3-3 3 3M16 19V5M13 16l3 3 3-3"/></symbol>
+<symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+<symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m5 9 7 7 7-7"/></symbol>
+<symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M20 12H5M11 6l-6 6 6 6"/></symbol>
+<symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.5"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 11v6M15 11v6M7 7l1-3h8l1 3M6 7l1 14h10l1-14"/></symbol>
+<symbol id="i-truck" viewBox="0 0 24 24"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2-8-8-2Z"/><path d="m11 13 10-10"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><path d="M6 3h4l2 5-3 2a15 15 0 0 0 5 5l2-3 5 2v4c0 1.7-1.3 3-3 3C9.7 21 3 14.3 3 6a3 3 0 0 1 3-3Z"/></symbol>
+<symbol id="i-message" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4V5Z"/><path d="M8 9h8M8 12h5"/></symbol>
+<symbol id="i-whatsapp" viewBox="0 0 24 24"><path d="M4 20l1.3-3.8A8 8 0 1 1 8 19.2L4 20Z"/><path d="M9.5 9.5c0 3 2 5 5 5l1-1.5-2-1-.8.8a4 4 0 0 1-1.6-1.6l.8-.8-1-2-1.4.1Z"/></symbol>
+<symbol id="i-facebook" viewBox="0 0 24 24"><path d="M14 21v-8h3l.5-3.5H14V7.5c0-1 .4-1.7 1.8-1.7H18V2.7A20 20 0 0 0 15.3 2.5C12.6 2.5 11 4.1 11 7v2.5H8V13h3v8"/></symbol>
+<symbol id="i-linkedin" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 10v7M8 7v.01M12 17v-7M12 13a3 3 0 0 1 6 0v4"/></symbol>
+<symbol id="i-print" viewBox="0 0 24 24"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7z"/></symbol>
+<symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><path d="m8.5 13-1.5 8 5-3 5 3-1.5-8"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></symbol>
+<symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0 0 18h1.5a2 2 0 0 0 0-4H12a2 2 0 0 1 0-4h4a5 5 0 0 0 0-10h-4Z"/><circle cx="7" cy="10" r="1"/><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/></symbol>
+<symbol id="i-type" viewBox="0 0 24 24"><path d="M4 5h16M12 5v14M8 19h8"/></symbol>
+<symbol id="i-components" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></symbol>
+<symbol id="i-motion" viewBox="0 0 24 24"><path d="M3 12h5l3-7 3 14 3-7h4"/></symbol>
+<symbol id="i-screens" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></symbol>
+<symbol id="i-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></symbol>
+<symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M7 3h10M7 21h10M8 3c0 4 2 5 4 7-2 2-4 3-4 7M16 3c0 4-2 5-4 7 2 2 4 3 4 7"/></symbol>
+<symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6"/></symbol>
+<symbol id="i-printer" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M6 18H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1"/><path d="M6 14h12v7H6z"/></symbol>
+<symbol id="i-bank" viewBox="0 0 24 24"><path d="m3 9 9-5 9 5M5 10h14M6 10v7M10 10v7M14 10v7M18 10v7M4 19h16"/></symbol>
+<symbol id="i-trend" viewBox="0 0 24 24"><path d="m4 17 5-5 4 3 7-8"/><path d="M15 7h5v5"/></symbol>
+<symbol id="i-trend-down" viewBox="0 0 24 24"><path d="m4 7 5 5 4-3 7 8"/><path d="M15 17h5v-5"/></symbol>
+<symbol id="i-support" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12a4 4 0 0 1 8 0v3M8 15H6a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2h2M16 15h2a2 2 0 0 0 2-2v-1a2 2 0 0 0-2-2h-2"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2V6Z"/><path d="M9 4v14M15 6v14"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8L3 12Z"/><circle cx="8" cy="9" r="1.5"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4l2-2Z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m21 16-5-5-8 8"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+<symbol id="i-maximize" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l5-5-5-5M15 12H3"/></symbol>
+<symbol id="i-store" viewBox="0 0 24 24"><path d="M4 9 5.5 4h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></symbol>
+<symbol id="i-login" viewBox="0 0 24 24"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M14 17l-5-5 5-5M9 12h12"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="3.5"/><path d="M10 13l9-9"/><path d="M16 7l2 2"/><path d="M14 9l2 2"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+<symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m5 15 7-7 7 7"/></symbol>
+<symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 4v16M5 13l7 7 7-7"/></symbol>
+<symbol id="i-percent" viewBox="0 0 24 24"><path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+<symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
+<symbol id="i-corner-down-left" viewBox="0 0 24 24"><path d="M9 10 4 15l5 5"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3c.5 3 3.5 4.5 3.5 8.5a3.5 3.5 0 0 1-7 0c0-1.5.7-2.6 1.5-3.5"/><path d="M12 21a7 7 0 0 0 7-7c0-3.5-2-6-4-8M12 21a7 7 0 0 1-7-7c0-2 .8-3.6 2-5"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M9 17h6"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6.5C10.3 5 7.8 4.5 4 4.5v13c3.8 0 6.3.5 8 2 1.7-1.5 4.2-2 8-2v-13c-3.8 0-6.3.5-8 2z"/><path d="M12 6.5v13"/></symbol>
+<symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.5 6.5l2 2M15.5 15.5l2 2M6.5 17.5l2-2M15.5 8.5l2-2"/></symbol>
+<symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></symbol>
+<symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8a2 2 0 0 1 2-2h1.5l1.5-2h6l1.5 2H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"/><circle cx="12" cy="12.5" r="3.5"/></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3 5 14h6l-1 7 8-11h-6l1-7Z"/></symbol>
+</svg>
+<div id="loginScreen" class="login" hidden></div>
+<div id="site" class="site" hidden></div>
+<div id="capp" class="capp" hidden></div>
+
+<div class="app" id="app" hidden>
+  <aside class="nav" id="nav"></aside>
+  <div>
+  <div id="impBar"></div>
+  <div class="topbar"><div class="logo" id="tbLogo"></div><span id="tbLang" style="margin-inline-start:auto;margin-inline-end:8px"></span><button class="btn sm" onclick="$('nav').classList.toggle('open')" aria-label="القائمة"><svg class="icon"><use href="#i-menu"/></svg></button></div>
+  <main>
+    <section class="view" id="v-home">
+      <div class="head"><div><h1 id="hello"></h1><div class="muted small" id="homeDate"></div></div><div class="row"><button class="btn" onclick="go('book')">+ حجز</button><button class="btn brand" onclick="go('pos')">بيع جديد</button></div></div>
+      <div id="homeNotice"></div>
+      <div class="grid stats" id="homeStats"></div>
+      <div class="grid g3" style="margin-top:14px">
+        <div class="card"><div class="row sb" style="margin-bottom:6px"><h2>الطابور دلوقتي</h2><button class="btn sm ghost" onclick="go('book')">كل الحجوزات</button></div><div class="list" id="homeQueue"></div></div>
+        <div class="card"><div class="row sb" style="margin-bottom:6px"><h2>آخر الفواتير</h2><button class="btn sm ghost" onclick="go('sales')">الكل</button></div><div class="list" id="homeSales"></div></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-pos">
+      <div class="tbar tonly" id="tBar"></div>
+      <div class="head"><div><h1>الكاشير</h1><div class="muted small" id="posDate"></div></div>
+        <div class="row"><button class="btn" onclick="setTablet(true)">📱 وضع التابلت</button><input class="input" id="q" placeholder="ابحث عن خدمة أو منتج…" style="width:240px"></div></div>
+      <div class="pos">
+        <div class="tleft"><div class="tsearch tonly"><input class="input" placeholder="ابحث عن خدمة أو منتج…" oninput="$('q').value=this.value;renderPOS()"></div><div class="tqueue tonly" id="tQueue"></div><div class="seg cats" id="cats"></div><div class="grid items" id="items"></div></div>
+        <div class="card cart">
+          <div class="row sb"><h2>الفاتورة</h2><div class="row" style="gap:4px"><button class="btn ghost sm danger" onclick="clearCart()">تفريغ</button><button class="btn ghost sm tonly tclose" onclick="document.body.classList.remove('sheet')" aria-label="إغلاق">✕</button></div></div>
+          <div class="two">
+            <label class="field">اسم الطفل<input class="input" id="kid" list="kidsList" placeholder="مثلاً: يوسف" onchange="fillPhone()"></label>
+            <label class="field">موبايل ولي الأمر<input class="input" id="phone" inputmode="tel" placeholder="5xxxxxxx"></label>
+          </div>
+          <datalist id="kidsList"></datalist>
+          <div id="loyalHint"></div>
+          <label class="field tsel">الحلاق<select class="input" id="barber"></select></label><div class="tonly"><div class="small muted" style="margin-bottom:4px">الحلاق</div><div class="tbarbers" id="tBarbers"></div></div>
+          <div class="lines" id="lines"></div>
+          <button class="btn tonly tdtoggle" onclick="document.querySelector('.tdisc').classList.toggle('open')">🏷️ خصم / كوبون</button>
+          <div class="tdisc">
+          <div class="two">
+            <label class="field">خصم<input class="input" id="disc" type="number" step="any" min="0" value="0" oninput="renderCart()"></label>
+            <label class="field">نوع الخصم<select class="input" id="discType" onchange="renderCart()"><option value="v">مبلغ</option><option value="p">نسبة %</option></select></label>
+          </div>
+          <div class="two"><label class="field">كوبون خصم<input class="input" id="cpIn" placeholder="مثلاً EID20" dir="ltr" style="text-transform:uppercase"></label><div class="field">&nbsp;<button class="btn" type="button" onclick="applyCoupon()">تطبيق</button></div></div>
+          </div>
+          <div id="cpMsg"></div>
+          <div class="tot"><span class="muted">الإجمالي قبل الخصم</span><span id="sub"></span></div>
+          <div class="tot"><span class="muted">الخصم</span><span id="discV"></span></div>
+          <div class="tot big"><span>المطلوب</span><span id="total"></span></div>
+          <div class="pay" id="pay"></div>
+          <label class="field" id="paidWrap">المدفوع نقداً<input class="input" id="paid" type="number" step="any" min="0" oninput="renderCart()"></label>
+          <div class="tkeys tonly" id="tKeys"></div>
+          <div class="tot" id="changeRow"><span class="muted">الباقي للعميل</span><b id="change"></b></div>
+          <button class="btn brand lg" id="checkout" onclick="checkout()">تحصيل وطباعة الإيصال</button>
+        </div>
+      </div>
+      <button class="tsum tonly" id="tSum" onclick="document.body.classList.add('sheet')"></button>
+    </section>
+
+    <section class="view" id="v-book">
+      <div class="head"><div><h1>الحجوزات والانتظار</h1><div class="muted small">احجز للطفل، دخّله الكرسي، ولما يخلص يتحوّل للكاشير بالخدمة جاهزة</div></div>
+        <div class="row"><input type="date" class="input" id="bookDate" style="width:auto" onchange="renderBook()"><button class="btn primary" onclick="openBooking()">+ حجز / انتظار</button></div></div>
+      <div class="board" id="board"></div>
+    </section>
+
+    <section class="view" id="v-sales">
+      <div class="head"><div><h1>الفواتير</h1><div class="muted small">إعادة الطباعة متاحة للكل، والإلغاء للمدير بس</div></div>
+        <input type="date" class="input" id="salesDate" style="width:auto" onchange="renderSales()"></div>
+      <div class="tw"><table><thead><tr><th>رقم</th><th>الوقت</th><th>الطفل</th><th>الحلاق</th><th>البنود</th><th>الدفع</th><th>الإجمالي</th><th>الكاشير</th><th>الحالة</th><th></th></tr></thead><tbody id="salesBody"></tbody></table></div>
+    </section>
+
+    <section class="view" id="v-kids">
+      <div class="head"><div><h1>العملاء الصغار</h1><div class="muted small">اضغط على أي طفل تشوف ملفه وزياراته</div></div>
+        <div class="row"><input class="input" id="kq" placeholder="ابحث بالاسم أو الموبايل" style="width:220px" oninput="renderKids()"><button class="btn primary" onclick="openKid()">+ طفل</button></div></div>
+      <div class="tw"><table><thead><tr><th>الطفل</th><th>السن</th><th>ولي الأمر</th><th>الزيارات</th><th>إجمالي الصرف</th><th>آخر زيارة</th><th>الحالة</th><th></th></tr></thead><tbody id="kidsBody"></tbody></table></div>
+    </section>
+
+    <section class="view" id="v-svc">
+      <div class="head"><div><h1>الخدمات</h1><div class="muted small">الخدمات والأسعار اللي بتظهر في الكاشير</div></div><button class="btn primary" onclick="openItem(0,'svc')">+ خدمة</button></div>
+      <div class="tw"><table><thead><tr><th>الخدمة</th><th>القسم</th><th>المدة</th><th>السعر</th><th>مرات البيع (الشهر)</th><th></th></tr></thead><tbody id="svcBody"></tbody></table></div>
+    </section>
+
+    <section class="view" id="v-stock">
+      <div class="head"><div><h1>المنتجات والمخزون</h1><div class="muted small">المخزون بينقص تلقائياً مع كل بيع</div></div><button class="btn primary" onclick="openItem(0,'prd')">+ منتج</button></div>
+      <div class="tw"><table><thead><tr><th>المنتج</th><th>سعر البيع</th><th>التكلفة</th><th>الكمية</th><th>حد الطلب</th><th>الحالة</th><th></th></tr></thead><tbody id="stockBody"></tbody></table></div>
+    </section>
+
+    <section class="view" id="v-staff">
+      <div class="head"><div><h1>الموظفين</h1><div class="muted small">الحلاقين والكاشير والمدير — وأداء كل واحد الشهر ده</div></div><button class="btn primary" onclick="openStaff()">+ موظف</button></div>
+      <div class="tw"><table><thead><tr><th>الاسم</th><th>الوظيفة</th><th>الفرع</th><th>الموبايل</th><th>العمولة</th><th>أطفال الشهر</th><th>مبيعات الشهر</th><th>العمولة المستحقة</th><th></th></tr></thead><tbody id="staffBody"></tbody></table></div>
+    </section>
+
+    <section class="view" id="v-exp">
+      <div class="head"><div><h1>المصروفات</h1><div class="muted small" id="expSum"></div></div><div class="row"><input type="month" class="input" id="expMonth" style="width:auto" onchange="renderExp()"><button class="btn primary" onclick="openExpense()">+ مصروف</button></div></div>
+      <div class="grid g3"><div class="tw"><table><thead><tr><th>التاريخ</th><th>البند</th><th>ملاحظة</th><th>من</th><th>المبلغ</th><th></th></tr></thead><tbody id="expBody"></tbody></table></div>
+      <div class="card"><h2 style="margin-bottom:12px">حسب البند</h2><div class="bars" id="expBars"></div></div></div>
+    </section>
+
+    <section class="view" id="v-cash">
+      <div class="head"><div><h1>الخزينة والورديات</h1><div class="muted small">عدّ الدرج وقفّل الوردية عشان تعرف لو فيه عجز</div></div><div class="row"><button class="btn" onclick="waOwner(dayText(),'تقرير اليوم')">واتساب: تقرير اليوم للمدير</button><button class="btn primary" onclick="openShift()">تقفيل الوردية</button></div></div>
+      <div class="grid stats" id="cashStats"></div>
+      <h2 style="margin:18px 0 10px">سجل التقفيلات</h2>
+      <div class="tw"><table><thead><tr><th>التاريخ</th><th>بواسطة</th><th>فواتير</th><th>نقدي</th><th>فيزا</th><th>محفظة</th><th>المتوقع في الدرج</th><th>الفعلي</th><th>الفرق</th></tr></thead><tbody id="shiftBody"></tbody></table></div>
+    </section>
+
+    <section class="view" id="v-rep">
+      <div class="head"><div><h1>التقارير</h1><div class="muted small" id="repRange"></div></div>
+        <div class="row"><div class="seg" id="repSeg"></div><button class="btn sm" onclick="waOwner(dayText(),'تقرير اليوم')">واتساب للمدير</button><button class="btn sm" onclick="exportCSV()">تصدير CSV</button></div></div>
+      <div class="grid stats" id="repStats"></div>
+      <div class="grid g2" style="margin-top:14px">
+        <div class="card"><h2>المبيعات اليومية</h2><div class="days" id="repDays"></div></div>
+        <div class="card"><h2 style="margin-bottom:12px">الأكثر طلباً</h2><div class="bars" id="repItems"></div></div>
+        <div class="card"><h2 style="margin-bottom:12px">حسب الحلاق</h2><div class="bars" id="repBarbers"></div></div>
+        <div class="card"><h2 style="margin-bottom:12px">طرق الدفع</h2><div class="bars" id="repPay"></div></div>
+        <div class="card"><h2 style="margin-bottom:12px">ساعات الذروة</h2><div class="bars" id="repHours"></div></div>
+        <div class="card"><h2 style="margin-bottom:12px">ملخص الأرباح</h2><div id="repPL"></div></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-offers">
+      <div class="head"><div><h1>العروض والكوبونات</h1><div class="muted small">باقات بسعر خاص بتظهر في الكاشير، وأكواد خصم بتتكتب وقت الدفع</div></div>
+        <div class="row"><button class="btn" onclick="openOffer()">+ عرض / باقة</button><button class="btn primary" onclick="openCoupon()">+ كوبون</button></div></div>
+      <div class="grid stats" id="offStats"></div>
+      <div class="tabs" id="offTabs" style="margin-top:18px"></div>
+      <div id="offBody"></div>
+    </section>
+
+    <section class="view" id="v-loyal">
+      <div class="head"><div><h1>النقاط والولاء</h1><div class="muted small">الطفل بيجمع نقاط مع كل زيارة ويستبدلها بخصم في الكاشير</div></div>
+        <div class="row" id="loyActs"><button class="btn" onclick="openAdjust()">إضافة / خصم نقاط</button><button class="btn primary" onclick="openLoyalRules()">قواعد البرنامج</button></div></div>
+      <div class="grid stats" id="loyStats"></div>
+      <h2 style="margin:18px 0 10px">المستويات</h2>
+      <div class="cards" id="loyTiers"></div>
+      <div class="grid g3" style="margin-top:18px">
+        <div><h2 style="margin-bottom:10px">أرصدة الأطفال</h2><div class="tw"><table><thead><tr><th>الطفل</th><th>المستوى</th><th>الرصيد</th><th>اكتسب</th><th>استبدل</th><th>يساوي</th><th></th></tr></thead><tbody id="loyKids"></tbody></table></div></div>
+        <div><h2 style="margin-bottom:10px">آخر الحركات</h2><div class="card"><div class="list" id="loyLog"></div></div></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-set">
+      <div class="head"><div><h1>الإعدادات</h1><div class="muted small">إعدادات المحل والإيصال والضرائب والإشعارات والاشتراك</div></div><button class="btn primary" onclick="saveSet()">حفظ التغييرات</button></div>
+      <div class="tabs" id="setTabs"></div>
+      <div id="setBody"></div>
+    </section>
+
+    <!-- COMPANY -->
+    <section class="view" id="v-c-home">
+      <div class="head"><div><h1 id="coHello"></h1><div class="muted small">كل فروعك في شاشة واحدة</div></div><div class="row"><button class="btn" onclick="waOwner(coDayText(),'تقرير الشركة')">واتساب: تقرير اليوم</button><button class="btn" onclick="location.hash='#/app/'+BIZ">📱 تطبيق الحجز</button><button class="btn primary" onclick="go('c-branches')">إدارة الفروع</button></div></div>
+      <div class="grid stats" id="chStats"></div>
+      <h2 style="margin:18px 0 10px">الفروع النهارده</h2>
+      <div class="tw"><table><thead><tr><th>الفرع</th><th>المدير</th><th>مبيعات النهارده</th><th>أطفال</th><th>في الانتظار</th><th>مبيعات الشهر</th><th>الحالة</th><th></th></tr></thead><tbody id="chBranches"></tbody></table></div>
+      <div class="grid g2" style="margin-top:14px">
+        <div class="card"><h2 style="margin-bottom:12px">مبيعات الشهر حسب الفرع</h2><div class="bars" id="chBars"></div></div>
+        <div class="card"><h2 style="margin-bottom:12px">أفضل الحلاقين (الشهر)</h2><div class="bars" id="chBarbers"></div></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-c-branches">
+      <div class="head"><div><h1>الفروع</h1><div class="muted small" id="brLimit"></div></div><button class="btn primary" onclick="openBranch()">+ فرع جديد</button></div>
+      <div class="cards" id="brCards"></div>
+    </section>
+
+    <section class="view" id="v-c-rep">
+      <div class="head"><div><h1>تقارير الفروع</h1><div class="muted small" id="crRange"></div></div><div class="seg" id="crSeg"></div></div>
+      <div class="grid stats" id="crStats"></div>
+      <h2 style="margin:18px 0 10px">مقارنة الفروع</h2>
+      <div class="tw"><table><thead><tr><th>الفرع</th><th>المبيعات</th><th>الفواتير</th><th>متوسط الفاتورة</th><th>الخصومات</th><th>العمولات</th><th>المصروفات</th><th>الصافي</th></tr></thead><tbody id="crTable"></tbody></table></div>
+      <div class="grid g2" style="margin-top:14px">
+        <div class="card"><h2 style="margin-bottom:12px">الأكثر طلباً في كل الفروع</h2><div class="bars" id="crItems"></div></div>
+        <div class="card"><h2 style="margin-bottom:12px">طرق الدفع</h2><div class="bars" id="crPay"></div></div>
+      </div>
+    </section>
+
+    <!-- PLATFORM -->
+    <section class="view" id="v-p-home">
+      <div class="head"><div><h1>لوحة المنصة</h1><div class="muted small">كل المحلات المشتركة في السيستم</div></div><button class="btn primary" onclick="openTenant()">+ شركة جديدة</button></div>
+      <div class="grid stats" id="phStats"></div>
+      <div class="grid g2" style="margin-top:14px">
+        <div class="card"><h2>الإيراد الشهري المتكرر (MRR)</h2><div class="days" id="phMrr"></div></div>
+        <div class="card"><h2 style="margin-bottom:12px">توزيع الباقات</h2><div class="bars" id="phPlans"></div></div>
+        <div class="card"><div class="row sb" style="margin-bottom:6px"><h2>تجديدات قريبة</h2><button class="btn sm ghost" onclick="go('p-bill')">الفواتير</button></div><div class="list" id="phRenew"></div></div>
+        <div class="card"><div class="row sb" style="margin-bottom:6px"><h2>تذاكر مفتوحة</h2><button class="btn sm ghost" onclick="go('p-sup')">الدعم</button></div><div class="list" id="phTickets"></div></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-p-ten">
+      <div class="head"><div><h1>الشركات العملاء</h1><div class="muted small">كل شركة ليها فروعها وموظفينها وبياناتها المنفصلة</div></div>
+        <div class="row"><input class="input" id="tq" placeholder="ابحث باسم المحل أو المالك" style="width:220px" oninput="renderTen()"><button class="btn primary" onclick="openTenant()">+ شركة جديدة</button></div></div>
+      <div class="seg" id="tenSeg" style="margin-bottom:14px"></div>
+      <div class="tw"><table><thead><tr><th>الشركة</th><th>النشاط</th><th>المالك</th><th>المدينة</th><th>الباقة</th><th>الفروع</th><th>مبيعات الشهر</th><th>التجديد</th><th>الحالة</th><th></th></tr></thead><tbody id="tenBody"></tbody></table></div>
+    </section>
+
+    <section class="view" id="v-p-plans">
+      <div class="head"><div><h1>الباقات</h1><div class="muted small">الأسعار والحدود والمميزات اللي بتتفتح لكل باقة</div></div><div class="row"><a class="btn" href="#/pricing">معاينة صفحة الأسعار</a><button class="btn primary" onclick="openPlan()">+ باقة</button></div></div>
+      <div class="cards" id="plansBody"></div>
+    </section>
+
+    <section class="view" id="v-p-bill">
+      <div class="head"><div><h1>الاشتراكات والفواتير</h1><div class="muted small">فواتير اشتراك المحلات في السيستم</div></div><div class="seg" id="billSeg"></div></div>
+      <div class="grid stats" id="billStats"></div>
+      <div class="tw" style="margin-top:14px"><table><thead><tr><th>رقم</th><th>المحل</th><th>الباقة</th><th>الفترة</th><th>المبلغ</th><th>الاستحقاق</th><th>الحالة</th><th></th></tr></thead><tbody id="billBody"></tbody></table></div>
+    </section>
+
+    <section class="view" id="v-p-sup">
+      <div class="head"><div><h1>الدعم الفني</h1><div class="muted small">طلبات المحلات ومشاكلهم</div></div><div class="seg" id="supSeg"></div></div>
+      <div class="tw"><table><thead><tr><th>#</th><th>الموضوع</th><th>المحل</th><th>الأولوية</th><th>آخر تحديث</th><th>الحالة</th><th></th></tr></thead><tbody id="supBody"></tbody></table></div>
+    </section>
+
+    <section class="view" id="v-p-set">
+      <div class="head"><div><h1>إعدادات المنصة</h1><div class="muted small">الهوية والأسعار والفترة التجريبية — كل ده بيظهر في صفحة الأسعار العامة</div></div><div class="row"><a class="btn" href="#/pricing">معاينة صفحة الأسعار</a><button class="btn primary" onclick="savePSet()">حفظ</button></div></div>
+      <div id="psetBody"></div>
+    </section>
+  </main>
+  </div>
+</div>
+
+<dialog id="dlg"><form method="dialog"><div class="mh"><h2 id="dlgT"></h2><button class="btn ghost sm" value="x" aria-label="إغلاق"><svg class="icon"><use href="#i-close"/></svg></button></div><div class="mb" id="dlgB"></div><div class="mf" id="dlgF"></div></form></dialog>
+<div id="printArea" hidden></div>
+<div class="toast" id="toast"></div>
+
+<script src="js/core/config.js"></script>
+<script src="js/data/seeds.js"></script>
+<script src="js/i18n/en.js"></script>
+<script src="js/core/i18n.js"></script>
+<script src="js/core/business-types.js"></script>
+<script src="js/core/helpers.js"></script>
+<script src="js/core/auth-nav.js"></script>
+<script src="js/modules/company.js"></script>
+<script src="js/modules/home.js"></script>
+<script src="js/modules/pos.js"></script>
+<script src="js/modules/bookings.js"></script>
+<script src="js/modules/invoices.js"></script>
+<script src="js/modules/customers.js"></script>
+<script src="js/modules/services-stock.js"></script>
+<script src="js/modules/staff.js"></script>
+<script src="js/modules/expenses.js"></script>
+<script src="js/modules/cash.js"></script>
+<script src="js/modules/reports.js"></script>
+<script src="js/modules/offers.js"></script>
+<script src="js/modules/loyalty.js"></script>
+<script src="js/integrations/whatsapp.js"></script>
+<script src="js/ui/service-art.js"></script>
+<script src="js/apps/customer-app.js"></script>
+<script src="js/modules/settings.js"></script>
+<script src="js/platform/platform.js"></script>
+<script src="js/platform/platform-config.js"></script>
+<script src="js/apps/pricing-site.js"></script>
+<script src="js/data/demo.js"></script>
+<script src="js/apps/tablet-pos.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+/* Customer booking app (phone frame) */
+/* ---------- customer app ---------- */
+.capp{min-height:100vh;display:grid;grid-template-columns:1fr auto 1fr;gap:32px;align-items:center;padding:20px;background:radial-gradient(circle at 80% 10%,var(--brand-soft),transparent 50%),var(--bg)}
+.capp .side{max-width:320px;justify-self:end}
+.phone{width:390px;height:min(820px,calc(100vh - 40px));border-radius:44px;border:10px solid #081510;overflow:hidden;display:flex;flex-direction:column;background:var(--bg);box-shadow:var(--shadow-md);position:relative}
+.ph-head{background:var(--brand);color:#081510;padding:18px 18px 22px}
+.ph-head .logo span{color:#055C38}
+.ph-body{flex:1;overflow:auto;padding:14px 14px 20px}
+.ph-tabs{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);background:var(--surface)}
+.ph-tabs button{border:0;background:none;padding:8px 0 10px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted);cursor:pointer}
+.ph-tabs button.on{color:var(--brand-700);font-weight:700}
+.ptcard{background:var(--ink);color:#fff;border-radius:20px;padding:16px;margin-top:-34px;position:relative}
+.ptcard .n{font-size:30px;font-weight:700;color:var(--brand)}
+.hs{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory}
+.hs>*{scroll-snap-align:start;flex:none}
+.ocard{width:220px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px}
+.scard{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px;margin-bottom:8px}
+.scard svg{flex:none}
+.scard .grow{flex:1;min-width:0}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.chip{border:1px solid var(--line-strong);background:var(--surface);border-radius:99px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.chip:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.slots .chip{text-align:center;padding:8px 4px}
+.steps{display:flex;gap:4px;margin-bottom:12px}.steps i{flex:1;height:4px;border-radius:99px;background:var(--line)}.steps i.f{background:var(--brand)}
+.ph-title{font-size:18px;font-weight:700;margin:4px 0 10px}
+.okbig{text-align:center;padding:30px 10px}.okbig .c{width:72px;height:72px;border-radius:50%;background:var(--brand);display:grid;place-items:center;margin:0 auto 12px;font-size:34px}
+@media (max-width:1000px){.hero{grid-template-columns:1fr}.feats{grid-template-columns:1fr 1fr}.capp{grid-template-columns:1fr}.capp .side{display:none}}
+@media (max-width:640px){.hero h1{font-size:32px}.feats{grid-template-columns:1fr}.sh nav a.hide{display:none}.capp{padding:0}.phone{width:100%;height:100vh;border:0;border-radius:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
