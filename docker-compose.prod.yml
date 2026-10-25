@@ -17,7 +17,7 @@ services:
     environment: &env
       QASSA_ENV: ${QASSA_ENV:-staging}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?}
-      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?},localhost  # localhost: container healthcheck
       DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:?}
       DJANGO_BEHIND_TLS_PROXY: "1"
       POSTGRES_HOST: db
@@ -25,7 +25,7 @@ services:
       REDIS_URL: redis://redis:6379/1
       SEED_PASSWORD: ${SEED_PASSWORD:-}
     depends_on: { db: { condition: service_healthy }, redis: { condition: service_healthy } }
-    healthcheck: { test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/api/v1/version')"], interval: 10s, retries: 10 }
+    healthcheck: { test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/api/v1/version')"], interval: 10s, retries: 10, start_period: 90s }
   worker:
     build: { context: ., dockerfile: deploy/backend.Dockerfile }
     command: celery -A qassa worker -B -l info
