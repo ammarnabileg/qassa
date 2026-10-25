@@ -13,7 +13,7 @@ services:
     healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, retries: 20 }
   backend:
     build: { context: ., dockerfile: deploy/backend.Dockerfile }
-    command: sh -c "python manage.py migrate --noinput && exec gunicorn qassa.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
+    command: sh -c "python manage.py migrate --noinput && if [ -n \"$$SEED_PASSWORD\" ]; then python manage.py seed_dev; fi && exec gunicorn qassa.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
     environment: &env
       QASSA_ENV: ${QASSA_ENV:-staging}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?}
