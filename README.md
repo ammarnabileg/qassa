@@ -6,7 +6,7 @@ Multi-tenant POS, booking and accounting system for kids', men's and women's sal
 |---|---|---|
 | Backend API | Python 3.13, Django 5.2 LTS, DRF 3.18, PostgreSQL 16, Redis, Celery | `backend/` |
 | Web (back-office, POS, finance) | React 19 + TypeScript + Vite (Node 22) | `frontend/` |
-| Customer app | Flutter (phase 6) | `mobile/` (not started) |
+| Customer app + PWA | Flutter 3.47 (Android / iOS / Web-PWA) — `tool/build.sh <apk\|ipa\|web> <debug\|release> [API_URL]` | `mobile/` |
 | Design & decisions | | `docs/ARCHITECTURE.md` |
 | API spec (OpenAPI 3) | generated | `docs/openapi.yaml` |
 | UI reference (old static demo — **not** production code) | HTML/JS | `reference/salon-pos-demo/` |
@@ -37,6 +37,7 @@ Dev users after `seed_dev` (password printed by the command, default `Dev-Only-P
 ```bash
 cd backend && pytest            # needs PostgreSQL (creates test_qassa)
 cd frontend && npm test && npx tsc -b
+cd mobile && flutter analyze && flutter test
 ```
 
 ## Ground rules

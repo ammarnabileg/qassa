@@ -129,7 +129,7 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 50,
     "EXCEPTION_HANDLER": "apps.core.errors.exception_handler",
     "COERCE_DECIMAL_TO_STRING": True,
-    "DEFAULT_THROTTLE_RATES": {"login": env("THROTTLE_LOGIN", "10/min"), "mfa": "10/min"},
+    "DEFAULT_THROTTLE_RATES": {"login": env("THROTTLE_LOGIN", "10/min"), "mfa": "10/min", "public": env("THROTTLE_PUBLIC", "60/min")},
 }
 
 SPECTACULAR_SETTINGS = {

@@ -380,6 +380,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/TenantCreated'
           description: ''
+  /api/v1/public/salons/{slug}:
+    get:
+      operationId: v1_public_salons_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicSalon'
+          description: ''
 components:
   schemas:
     Account:
@@ -758,6 +778,47 @@ components:
       required:
       - id
       - status
+    PublicBranch:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name_ar:
+          type: string
+          maxLength: 120
+        name_en:
+          type: string
+          maxLength: 120
+        business_type:
+          $ref: '#/components/schemas/BusinessTypeEnum'
+        address:
+          type: string
+        phone:
+          type: string
+          maxLength: 20
+      required:
+      - business_type
+      - id
+      - name_ar
+    PublicSalon:
+      type: object
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        business_type:
+          type: string
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicBranch'
+      required:
+      - branches
+      - business_type
+      - name
+      - slug
     ReverseIn:
       type: object
       properties:

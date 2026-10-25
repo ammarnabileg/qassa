@@ -3,6 +3,12 @@
 Release versions follow `MAJOR.MINOR.PATCH` and are tagged `vX.Y.Z` on `main`.
 Builds between releases are **debug** builds: `X.(Y+1).0-dev.N+sha` (see `scripts/version.py`).
 
+## [Unreleased]
+### Added
+- Flutter customer app (`mobile/`), one app for all salons (D-001 picker): salon code / `?salon=` link → salon name, theme by business type (kids/men/women), active branches with call and WhatsApp; Arabic RTL / English LTR; same build serves as the per-salon PWA.
+- `GET /api/v1/public/salons/<slug>`: public read-only salon profile (suspended salons hidden, throttled 60/min).
+- `mobile/tool/build.sh`: debug/release builds stamped from `VERSION`; release refuses to build from an untagged commit.
+
 ## [0.1.0] — 2026-10-25 — Phase 1: foundation
 ### Added
 - Django 5.2 LTS backend: identity (Argon2, sessions, CSRF, login rate limit), TOTP MFA for sensitive roles.

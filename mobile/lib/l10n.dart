@@ -1,0 +1,37 @@
+/// UI strings by key. A test fails if Arabic and English diverge.
+const strings = <String, Map<String, String>>{
+  'ar': {
+    'app_name': 'قصّة',
+    'pick_title': 'اختر صالونك',
+    'pick_hint': 'رمز الصالون (من الرابط أو الـQR)',
+    'pick_go': 'متابعة',
+    'branches': 'الفروع',
+    'call': 'اتصال',
+    'whatsapp': 'واتساب',
+    'change_salon': 'تغيير الصالون',
+    'language': 'English',
+    'booking_soon': 'الحجز من التطبيق غير متاح بعد. تواصل مع الفرع مباشرة.',
+    'err_salon_not_found': 'لا يوجد صالون بهذا الرمز.',
+    'err_network': 'تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مرة أخرى.',
+    'err_unknown': 'حدث خطأ غير متوقع.',
+    'version': 'الإصدار',
+  },
+  'en': {
+    'app_name': 'Qassa',
+    'pick_title': 'Choose your salon',
+    'pick_hint': 'Salon code (from the link or QR)',
+    'pick_go': 'Continue',
+    'branches': 'Branches',
+    'call': 'Call',
+    'whatsapp': 'WhatsApp',
+    'change_salon': 'Change salon',
+    'language': 'العربية',
+    'booking_soon': 'In-app booking is not available yet. Please contact the branch directly.',
+    'err_salon_not_found': 'No salon with this code.',
+    'err_network': 'Cannot reach the server. Check your connection and try again.',
+    'err_unknown': 'Something went wrong.',
+    'version': 'Version',
+  },
+};
+
+String tr(String lang, String key) => strings[lang]?[key] ?? key;

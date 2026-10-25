@@ -8,6 +8,7 @@ from apps.accounting.api import views as acc
 from apps.identity.api import views as auth
 from apps.platform.api import views as plat
 from apps.tenancy.api import views as org
+from apps.tenancy.api.public import PublicSalonView
 
 api = "api/v1/"
 
@@ -18,6 +19,7 @@ def version(_request):
 
 urlpatterns = [
     path("api/v1/version", version),
+    path(api + "public/salons/<slug:slug>", PublicSalonView.as_view()),
     path("admin/", admin.site.urls),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularRedocView.as_view(url_name="schema")),
