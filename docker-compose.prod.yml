@@ -1,0 +1,38 @@
+# Staging/production stack (Coolify). Secrets come from the platform's environment, never from this file.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: qassa
+      POSTGRES_USER: qassa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U qassa"], interval: 5s, retries: 20 }
+  redis:
+    image: redis:7
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, retries: 20 }
+  backend:
+    build: { context: ., dockerfile: deploy/backend.Dockerfile }
+    command: sh -c "python manage.py migrate --noinput && exec gunicorn qassa.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
+    environment: &env
+      QASSA_ENV: ${QASSA_ENV:-staging}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:?}
+      DJANGO_BEHIND_TLS_PROXY: "1"
+      POSTGRES_HOST: db
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      REDIS_URL: redis://redis:6379/1
+      SEED_PASSWORD: ${SEED_PASSWORD:-}
+    depends_on: { db: { condition: service_healthy }, redis: { condition: service_healthy } }
+    healthcheck: { test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/api/v1/version')"], interval: 10s, retries: 10 }
+  worker:
+    build: { context: ., dockerfile: deploy/backend.Dockerfile }
+    command: celery -A qassa worker -B -l info
+    environment: *env
+    depends_on: { backend: { condition: service_healthy } }
+  web:
+    build: { context: ., dockerfile: deploy/web.Dockerfile }
+    depends_on: { backend: { condition: service_healthy } }
+volumes:
+  pgdata:

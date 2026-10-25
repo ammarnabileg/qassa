@@ -7,6 +7,7 @@
 Usage: version.py            → prints the version for the current checkout
        version.py --channel  → prints "release" or "debug"
 """
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -26,7 +27,7 @@ def compute():
     if git("tag", "--points-at", "HEAD", "--list", f"v{base}"):
         return base, "release"
     major, minor, _ = (int(x) for x in base.split("."))
-    sha = git("rev-parse", "--short", "HEAD") or "nogit"
+    sha = git("rev-parse", "--short", "HEAD") or os.environ.get("SOURCE_COMMIT", "")[:7] or "nogit"
     last_tag = git("describe", "--tags", "--abbrev=0", "--match", "v*")
     count = git("rev-list", "--count", f"{last_tag}..HEAD") if last_tag else git("rev-list", "--count", "HEAD")
     return f"{major}.{minor + 1}.0-dev.{count or 0}+{sha}", "debug"
