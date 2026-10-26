@@ -200,7 +200,8 @@
     "category_name_exists": "A category with this name already exists",
     "whatsapp_unavailable": "WhatsApp unavailable — connect the salon number or contact the Qassa team",
     "whatsapp_gateway_error": "The WhatsApp gateway did not respond — try again",
-    "mfa_no_phone": "No WhatsApp number on your account — contact the administrator"
+    "mfa_no_phone": "No WhatsApp number on your account — contact the administrator",
+    "whatsapp_gateway_key": "The WhatsApp gateway key is not the global key — contact the Qassa team (AUTHENTICATION_API_KEY needed)"
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",

@@ -118,3 +118,13 @@ def test_without_gateway_connect_is_a_clear_error(company_a, settings):
     t, _, _ = company_a
     r = client_for(owner(t), t).post("/api/v1/whatsapp/connect")
     assert r.status_code == 503 and r.json()["error"]["code"] == "whatsapp_unavailable"
+
+
+def test_instance_token_instead_of_global_key_is_explained(gw, company_a, monkeypatch):
+    t, _, _ = company_a
+
+    def forbidden(method, path, body=None):
+        raise whatsapp.GatewayForbidden(message="x", details={"status": 401})
+    monkeypatch.setattr(whatsapp, "_call", forbidden)
+    r = client_for(owner(t), t).post("/api/v1/whatsapp/connect")
+    assert r.status_code == 502 and r.json()["error"]["code"] == "whatsapp_gateway_key"

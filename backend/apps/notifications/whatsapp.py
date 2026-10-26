@@ -31,6 +31,11 @@ class GatewayError(DomainError):
     code = "whatsapp_gateway_error"
 
 
+class GatewayForbidden(GatewayError):
+    """The configured key is valid for one instance only (an instance token), not the gateway's global key."""
+    code = "whatsapp_gateway_key"
+
+
 def adapter() -> str:
     return settings.QASSA.get("WHATSAPP_ADAPTER", "disabled")
 
@@ -49,6 +54,9 @@ def _call(method: str, path: str, body: dict | None = None) -> dict:
     except urllib.error.HTTPError as e:
         detail = e.read()[:300].decode(errors="replace")
         log.error("Evolution %s %s → %s %s", method, path, e.code, detail)
+        if e.code in (401, 403):
+            raise GatewayForbidden(message="The WhatsApp gateway key is not allowed to do this (global key needed)",
+                                   details={"status": e.code})
         raise GatewayError(message=f"gateway {e.code}", details={"status": e.code})
     except OSError as e:
         log.error("Evolution unreachable: %s", e)
