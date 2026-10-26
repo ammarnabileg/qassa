@@ -68,20 +68,3 @@ def test_only_owner_adds_owner_and_cashier_cannot_manage_users(company_a):
     assert r.status_code == 422 and r.json()["error"]["code"] == "owner_only"
     cashier = add_member(t, "c@k.test", "cashier", branch=b["HAW"])
     assert client_for(cashier, t).get("/api/v1/users").status_code == 403
-
-
-def test_front_desk_login_link_is_one_time(company_a, settings):
-    t, _, b = company_a
-    settings.PLATFORM_HOSTS = ["testserver"]
-    TenantDomain.objects.filter(tenant=t).update(host="kids.test", is_active=True)
-    cashier = add_member(t, "c@k.test", "cashier", branch=b["HAW"])
-    c = client_for(cashier, t)
-    cust = c.post("/api/v1/customers", {"full_name": "أم علي", "phone": "55554444"}, format="json").json()
-    link = c.post(f"/api/v1/customers/{cust['id']}/login-link").json()
-    assert link["url"].startswith("https://kids.test/?login=")
-    app = APIClient(HTTP_HOST="kids.test")
-    r = app.post("/api/v1/app/login-link", {"token": link["token"]}, format="json")
-    assert r.status_code == 200
-    me = APIClient(HTTP_HOST="kids.test", HTTP_AUTHORIZATION=f"Customer {r.json()['token']}").get("/api/v1/app/me").json()
-    assert me["phone"] == "96555554444"
-    assert app.post("/api/v1/app/login-link", {"token": link["token"]}, format="json").json()["error"]["code"] == "link_invalid"

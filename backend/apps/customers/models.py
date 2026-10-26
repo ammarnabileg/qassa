@@ -57,14 +57,3 @@ class OtpChallenge(TenantScopedModel):
 
     class Meta(TenantScopedModel.Meta):
         indexes = [models.Index(fields=["tenant", "phone", "created_at"])]
-
-
-class CustomerLoginLink(TenantScopedModel):
-    """Front-desk fallback when WhatsApp codes cannot be delivered (D-003): staff who verified the customer in
-    person issue a one-time link valid 15 minutes. Only the hash is stored."""
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="+")
-    token_hash = models.CharField(max_length=64, unique=True)
-    issued_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="+")
-    expires_at = models.DateTimeField()
-    used_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
