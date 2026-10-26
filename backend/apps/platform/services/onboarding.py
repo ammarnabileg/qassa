@@ -1,12 +1,18 @@
 """Create a tenant with its first legal entity, branches, default roles, owner, chart of accounts and fiscal year."""
 from dataclasses import dataclass, field
 
+import datetime
+
 from django.db import transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
 from apps.accounting.services.ledger import create_fiscal_year, install_chart
 from apps.audit.services.log import record as audit
+from apps.core.errors import DomainError
+from django.conf import settings
+
+from apps.platform.models import Plan, Subscription, TenantDomain
 from apps.identity.models import User
 from apps.tenancy.context import tenant_context
 from apps.tenancy.models import Branch, LegalEntity, Membership, Role, Tenant
@@ -31,10 +37,16 @@ class OnboardingSpec:
     branches: list[BranchSpec] = field(default_factory=list)
     legal_name_en: str = ""
     commercial_registration: str = ""
+    plan_code: str = "basic"
     owner_password: str | None = None  # None → unusable password + invitation (email delivery is phase 2)
 
 
 def onboard_tenant(spec: OnboardingSpec, actor=None) -> Tenant:
+    plan = Plan.objects.filter(code=spec.plan_code, is_active=True).first()
+    if plan is None:
+        raise DomainError(code="plan_unknown", message=f"Unknown plan {spec.plan_code}")
+    if len(spec.branches) > plan.max_branches:
+        raise DomainError(code="plan_limit_branches", details={"limit": plan.max_branches, "plan": plan.code})
     with transaction.atomic():
         base = slugify(spec.legal_name_en or spec.tenant_name, allow_unicode=False) or "tenant"
         slug, n = base, 1
@@ -42,6 +54,11 @@ def onboard_tenant(spec: OnboardingSpec, actor=None) -> Tenant:
             n += 1
             slug = f"{base}-{n}"
         tenant = Tenant.objects.create(name=spec.tenant_name, slug=slug, default_business_type=spec.business_type)
+        TenantDomain.objects.create(tenant=tenant, host=f"{slug}.{settings.TENANT_BASE_DOMAIN}",
+                                    kind=TenantDomain.Kind.SUBDOMAIN, is_active=True, activated_at=timezone.now())
+        today = timezone.localdate()
+        Subscription.objects.create(tenant=tenant, plan=plan, started_on=today,
+                                    current_period_end=today + datetime.timedelta(days=30))
         with tenant_context(tenant.id):
             entity = LegalEntity.objects.create(name_ar=spec.legal_name_ar, name_en=spec.legal_name_en,
                                                 commercial_registration=spec.commercial_registration)
@@ -60,5 +77,5 @@ def onboard_tenant(spec: OnboardingSpec, actor=None) -> Tenant:
             install_chart(entity)
             create_fiscal_year(entity, timezone.localdate().year)
             audit("tenant.onboarded", tenant_id=tenant.id, actor=actor, obj=tenant,
-                  data={"entity": entity.id, "branches": [b.code for b in spec.branches]})
+                  data={"entity": entity.id, "branches": [b.code for b in spec.branches], "plan": plan.code})
         return tenant

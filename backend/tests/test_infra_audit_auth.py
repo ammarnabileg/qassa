@@ -103,7 +103,7 @@ def test_login_without_mfa_for_cashier(company_a):
     add_member(t, "cashier2@mykids.test", "cashier", branch=b["HAW"])
     r = APIClient().post("/api/v1/auth/login", {"email": "cashier2@mykids.test", "password": "Staff-Pass-2026!"},
                          format="json")
-    assert r.status_code == 200 and r.json()["memberships"][0]["permissions"] == ["cash.session.open", "pos.discount.line", "pos.sell"]
+    assert r.status_code == 200 and r.json()["memberships"][0]["permissions"] == ["cash.session.open", "catalog.view", "customers.manage", "customers.view", "pos.discount.line", "pos.sell", "staff.view"]
 
 
 def test_platform_onboarding_api_requires_platform_staff(db):
@@ -116,6 +116,7 @@ def test_platform_onboarding_api_requires_platform_staff(db):
     c.force_login(normal)
     assert c.post("/api/v1/platform/tenants", body, format="json", HTTP_IDEMPOTENCY_KEY="t1").status_code == 403
     c.force_login(staff)
+    from tests.conftest import ensure_plans; ensure_plans()
     r1 = c.post("/api/v1/platform/tenants", body, format="json", HTTP_IDEMPOTENCY_KEY="t2")
     r2 = c.post("/api/v1/platform/tenants", body, format="json", HTTP_IDEMPOTENCY_KEY="t2")
     assert r1.status_code == 201 and r1.json() == r2.json()

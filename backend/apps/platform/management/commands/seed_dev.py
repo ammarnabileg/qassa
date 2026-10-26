@@ -26,7 +26,7 @@ class Command(BaseCommand):
                  ("Lamsa", "Lamsa Salon", "صالون لمسة", "women", "lamsa")]
         for name, en, ar, btype, dom in specs:
             t = onboard_tenant(OnboardingSpec(tenant_name=name, owner_email=f"owner@{dom}.dev", owner_name="Owner",
-                                              legal_name_ar=ar, legal_name_en=en, business_type=btype, owner_password=password,
+                                              legal_name_ar=ar, legal_name_en=en, business_type=btype, owner_password=password, plan_code="pro",
                                               branches=[BranchSpec("حولي", "HAW", btype, "Hawally"), BranchSpec("السالمية", "SAL", btype, "Salmiya"),
                                                         BranchSpec("الجهراء", "JAH", btype, "Jahra")]))
             with tenant_context(t.id):

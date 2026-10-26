@@ -339,6 +339,340 @@ paths:
           description: No response body
         '429':
           description: No response body
+  /api/v1/beneficiaries/{id}:
+    patch:
+      operationId: v1_beneficiaries_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBeneficiary'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Beneficiary'
+          description: ''
+  /api/v1/catalog/categories:
+    get:
+      operationId: v1_catalog_categories_list
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: ''
+    post:
+      operationId: v1_catalog_categories_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/v1/catalog/services:
+    get:
+      operationId: v1_catalog_services_list
+      parameters:
+      - in: query
+        name: business_type
+        schema:
+          type: string
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
+          description: ''
+    post:
+      operationId: v1_catalog_services_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+          description: ''
+  /api/v1/catalog/services/{id}:
+    patch:
+      operationId: v1_catalog_services_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedService'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedService'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedService'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+          description: ''
+  /api/v1/catalog/services/{id}/prices:
+    get:
+      operationId: v1_catalog_services_prices_list
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Price'
+          description: ''
+    post:
+      operationId: v1_catalog_services_prices_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PriceIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PriceIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Price'
+          description: ''
+  /api/v1/customers:
+    get:
+      operationId: v1_customers_list
+      parameters:
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Customer'
+          description: ''
+    post:
+      operationId: v1_customers_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Customer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Customer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Customer'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/v1/customers/{id}:
+    get:
+      operationId: v1_customers_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+    patch:
+      operationId: v1_customers_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomer'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/v1/customers/{id}/beneficiaries:
+    post:
+      operationId: v1_customers_beneficiaries_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Beneficiary'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Beneficiary'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Beneficiary'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Beneficiary'
+          description: ''
   /api/v1/org:
     get:
       operationId: v1_org_retrieve
@@ -354,9 +688,163 @@ paths:
               schema:
                 $ref: '#/components/schemas/Org'
           description: ''
+  /api/v1/org/branches:
+    post:
+      operationId: v1_org_branches_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BranchWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BranchWrite'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchWrite'
+          description: ''
+  /api/v1/org/branches/{id}:
+    patch:
+      operationId: v1_org_branches_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBranchWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBranchWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBranchWrite'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchWrite'
+          description: ''
+  /api/v1/platform/domains/{id}:
+    patch:
+      operationId: v1_platform_domains_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDomainActivationIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDomainActivationIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDomainActivationIn'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+          description: ''
+  /api/v1/platform/plans:
+    get:
+      operationId: v1_platform_plans_list
+      description: Public (pricing page) read; platform staff edit.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Plan'
+          description: ''
+  /api/v1/platform/plans/{id}:
+    patch:
+      operationId: v1_platform_plans_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlan'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlan'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlan'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+          description: ''
   /api/v1/platform/tenants:
+    get:
+      operationId: v1_platform_tenants_list
+      description: 'GET: list tenants · POST: onboard a tenant (platform staff only).'
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TenantOut'
+          description: ''
     post:
       operationId: v1_platform_tenants_create
+      description: 'GET: list tenants · POST: onboard a tenant (platform staff only).'
       tags:
       - v1
       requestBody:
@@ -380,6 +868,110 @@ paths:
               schema:
                 $ref: '#/components/schemas/TenantCreated'
           description: ''
+  /api/v1/platform/tenants/{id}:
+    patch:
+      operationId: v1_platform_tenants_partial_update
+      description: Platform staff change a tenant's status or plan. Always audited
+        with a reason.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTenantAdminIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTenantAdminIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTenantAdminIn'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantOut'
+          description: ''
+  /api/v1/platform/tenants/{id}/domains:
+    get:
+      operationId: v1_platform_tenants_domains_list
+      description: 'Platform staff list/add a company''s custom domains. Adding does
+        not activate: DNS must point to us first.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Domain'
+          description: ''
+    post:
+      operationId: v1_platform_tenants_domains_create
+      description: 'Platform staff list/add a company''s custom domains. Adding does
+        not activate: DNS must point to us first.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Domain'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Domain'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Domain'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+          description: ''
+  /api/v1/public/salon:
+    get:
+      operationId: v1_public_salon_retrieve
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicSalon'
+          description: ''
   /api/v1/public/salons/{slug}:
     get:
       operationId: v1_public_salons_retrieve
@@ -399,6 +991,93 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PublicSalon'
+          description: ''
+  /api/v1/staff:
+    get:
+      operationId: v1_staff_list
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Staff'
+          description: ''
+    post:
+      operationId: v1_staff_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Staff'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Staff'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Staff'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Staff'
+          description: ''
+  /api/v1/staff/{id}:
+    patch:
+      operationId: v1_staff_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStaff'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStaff'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStaff'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Staff'
+          description: ''
+  /api/v1/subscription:
+    get:
+      operationId: v1_subscription_retrieve
+      description: The tenant's own plan and how much of it is used.
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionOut'
           description: ''
 components:
   schemas:
@@ -437,6 +1116,36 @@ components:
       - name_ar
       - name_en
       - type
+    Beneficiary:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_name:
+          type: string
+          maxLength: 120
+        relation:
+          $ref: '#/components/schemas/RelationEnum'
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+        gender:
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        notes:
+          type: string
+        is_active:
+          type: boolean
+      required:
+      - full_name
+      - id
+      - relation
+    BlankEnum:
+      enum:
+      - ''
     Branch:
       type: object
       properties:
@@ -459,6 +1168,11 @@ components:
         timezone:
           type: string
           maxLength: 40
+        address:
+          type: string
+        phone:
+          type: string
+          maxLength: 20
         is_active:
           type: boolean
       required:
@@ -487,6 +1201,38 @@ components:
       - business_type
       - code
       - name_ar
+    BranchWrite:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        legal_entity:
+          type: integer
+        name_ar:
+          type: string
+          maxLength: 120
+        name_en:
+          type: string
+          maxLength: 120
+        code:
+          type: string
+          maxLength: 20
+        business_type:
+          $ref: '#/components/schemas/BusinessTypeEnum'
+        address:
+          type: string
+        phone:
+          type: string
+          maxLength: 20
+        is_active:
+          type: boolean
+      required:
+      - business_type
+      - code
+      - id
+      - legal_entity
+      - name_ar
     BusinessTypeEnum:
       enum:
       - kids
@@ -497,6 +1243,28 @@ components:
         * `kids` - Kids
         * `men` - Men
         * `women` - Women
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name_ar:
+          type: string
+          maxLength: 80
+        name_en:
+          type: string
+          maxLength: 80
+        business_type:
+          $ref: '#/components/schemas/BusinessTypeEnum'
+        sort:
+          type: integer
+          maximum: 32767
+          minimum: 0
+      required:
+      - business_type
+      - id
+      - name_ar
     Csrf:
       type: object
       properties:
@@ -504,6 +1272,86 @@ components:
           type: string
       required:
       - csrfToken
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_name:
+          type: string
+          maxLength: 120
+        phone:
+          type: string
+          maxLength: 16
+        email:
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        preferred_language:
+          $ref: '#/components/schemas/PreferredLanguageEnum'
+        whatsapp_opt_in:
+          type: boolean
+        marketing_opt_in:
+          type: boolean
+        notes:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        beneficiaries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Beneficiary'
+          readOnly: true
+        add_self:
+          type: boolean
+          writeOnly: true
+          default: true
+      required:
+      - beneficiaries
+      - created_at
+      - full_name
+      - id
+      - phone
+    Domain:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        host:
+          type: string
+          maxLength: 253
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/KindEnum'
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        activated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - activated_at
+      - created_at
+      - host
+      - id
+      - is_active
+      - kind
     EntryIn:
       type: object
       properties:
@@ -545,7 +1393,7 @@ components:
           type: string
           format: date
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/EntryOutStatusEnum'
         kind:
           type: string
           maxLength: 10
@@ -581,6 +1429,30 @@ components:
       - legal_entity
       - lines
       - reversed_by_id
+    EntryOutStatusEnum:
+      enum:
+      - draft
+      - posted
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `posted` - Posted
+    GenderEnum:
+      enum:
+      - m
+      - f
+      type: string
+      description: |-
+        * `m` - m
+        * `f` - f
+    KindEnum:
+      enum:
+      - subdomain
+      - custom
+      type: string
+      description: |-
+        * `subdomain` - Subdomain
+        * `custom` - Custom
     LegalEntity:
       type: object
       properties:
@@ -762,6 +1634,208 @@ components:
       required:
       - branches
       - legal_entities
+    PatchedBeneficiary:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_name:
+          type: string
+          maxLength: 120
+        relation:
+          $ref: '#/components/schemas/RelationEnum'
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+        gender:
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        notes:
+          type: string
+        is_active:
+          type: boolean
+    PatchedBranchWrite:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        legal_entity:
+          type: integer
+        name_ar:
+          type: string
+          maxLength: 120
+        name_en:
+          type: string
+          maxLength: 120
+        code:
+          type: string
+          maxLength: 20
+        business_type:
+          $ref: '#/components/schemas/BusinessTypeEnum'
+        address:
+          type: string
+        phone:
+          type: string
+          maxLength: 20
+        is_active:
+          type: boolean
+    PatchedCustomer:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_name:
+          type: string
+          maxLength: 120
+        phone:
+          type: string
+          maxLength: 16
+        email:
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        preferred_language:
+          $ref: '#/components/schemas/PreferredLanguageEnum'
+        whatsapp_opt_in:
+          type: boolean
+        marketing_opt_in:
+          type: boolean
+        notes:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        beneficiaries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Beneficiary'
+          readOnly: true
+        add_self:
+          type: boolean
+          writeOnly: true
+          default: true
+    PatchedDomainActivationIn:
+      type: object
+      properties:
+        is_active:
+          type: boolean
+        reason:
+          type: string
+          maxLength: 300
+    PatchedPlan:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 30
+          pattern: ^[-a-zA-Z0-9_]+$
+        name_ar:
+          type: string
+          maxLength: 60
+        name_en:
+          type: string
+          maxLength: 60
+        monthly_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        max_branches:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        max_staff:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        custom_domain:
+          type: boolean
+        is_active:
+          type: boolean
+        sort:
+          type: integer
+          maximum: 32767
+          minimum: 0
+    PatchedService:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: integer
+        business_type:
+          type: string
+          readOnly: true
+        name_ar:
+          type: string
+          maxLength: 120
+        name_en:
+          type: string
+          maxLength: 120
+        duration_minutes:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        home_visit:
+          type: boolean
+        is_active:
+          type: boolean
+        current_price:
+          type: string
+          nullable: true
+          description: Company default price valid today (branch overrides are listed
+            under /prices).
+          readOnly: true
+    PatchedStaff:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_name_ar:
+          type: string
+          maxLength: 120
+        full_name_en:
+          type: string
+          maxLength: 120
+        phone:
+          type: string
+          maxLength: 16
+        is_active:
+          type: boolean
+        branch_ids:
+          type: array
+          items:
+            type: integer
+        service_ids:
+          type: array
+          items:
+            type: integer
+    PatchedTenantAdminIn:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/TenantStatusEnum'
+        plan_code:
+          type: string
+          pattern: ^[-a-zA-Z0-9_]+$
+        reason:
+          type: string
+          maxLength: 300
     PeriodActionIn:
       type: object
       properties:
@@ -778,6 +1852,97 @@ components:
       required:
       - id
       - status
+    Plan:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 30
+          pattern: ^[-a-zA-Z0-9_]+$
+        name_ar:
+          type: string
+          maxLength: 60
+        name_en:
+          type: string
+          maxLength: 60
+        monthly_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        max_branches:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        max_staff:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        custom_domain:
+          type: boolean
+        is_active:
+          type: boolean
+        sort:
+          type: integer
+          maximum: 32767
+          minimum: 0
+      required:
+      - code
+      - id
+      - max_branches
+      - max_staff
+      - monthly_price
+      - name_ar
+      - name_en
+    PreferredLanguageEnum:
+      enum:
+      - ar
+      - en
+      type: string
+      description: |-
+        * `ar` - ar
+        * `en` - en
+    Price:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        branch:
+          type: integer
+          nullable: true
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        valid_from:
+          type: string
+          format: date
+        valid_to:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - id
+      - price
+      - valid_from
+    PriceIn:
+      type: object
+      properties:
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        branch_id:
+          type: integer
+          nullable: true
+        valid_from:
+          type: string
+          format: date
+      required:
+      - price
     PublicBranch:
       type: object
       properties:
@@ -808,6 +1973,8 @@ components:
           type: string
         name:
           type: string
+        locked:
+          type: boolean
         business_type:
           type: string
         branches:
@@ -817,8 +1984,19 @@ components:
       required:
       - branches
       - business_type
+      - locked
       - name
       - slug
+    RelationEnum:
+      enum:
+      - self
+      - child
+      - other
+      type: string
+      description: |-
+        * `self` - Self
+        * `child` - Child
+        * `other` - Other
     ReverseIn:
       type: object
       properties:
@@ -830,14 +2008,137 @@ components:
           minLength: 3
       required:
       - reason
-    StatusEnum:
-      enum:
-      - draft
-      - posted
-      type: string
-      description: |-
-        * `draft` - Draft
-        * `posted` - Posted
+    Service:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: integer
+        business_type:
+          type: string
+          readOnly: true
+        name_ar:
+          type: string
+          maxLength: 120
+        name_en:
+          type: string
+          maxLength: 120
+        duration_minutes:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        home_visit:
+          type: boolean
+        is_active:
+          type: boolean
+        current_price:
+          type: string
+          nullable: true
+          description: Company default price valid today (branch overrides are listed
+            under /prices).
+          readOnly: true
+      required:
+      - business_type
+      - category
+      - current_price
+      - duration_minutes
+      - id
+      - name_ar
+    ServiceIn:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: integer
+        business_type:
+          type: string
+          readOnly: true
+        name_ar:
+          type: string
+          maxLength: 120
+        name_en:
+          type: string
+          maxLength: 120
+        duration_minutes:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        home_visit:
+          type: boolean
+        is_active:
+          type: boolean
+        current_price:
+          type: string
+          nullable: true
+          description: Company default price valid today (branch overrides are listed
+            under /prices).
+          readOnly: true
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+          writeOnly: true
+      required:
+      - business_type
+      - category
+      - current_price
+      - duration_minutes
+      - id
+      - name_ar
+    Staff:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_name_ar:
+          type: string
+          maxLength: 120
+        full_name_en:
+          type: string
+          maxLength: 120
+        phone:
+          type: string
+          maxLength: 16
+        is_active:
+          type: boolean
+        branch_ids:
+          type: array
+          items:
+            type: integer
+        service_ids:
+          type: array
+          items:
+            type: integer
+      required:
+      - full_name_ar
+      - id
+    SubscriptionOut:
+      type: object
+      properties:
+        plan:
+          type: object
+          additionalProperties: {}
+        current_period_end:
+          type: string
+          format: date
+        hosts:
+          type: array
+          items:
+            type: string
+        usage:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+      - current_period_end
+      - hosts
+      - plan
+      - usage
     TBRow:
       type: object
       properties:
@@ -922,12 +2223,67 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BranchIn'
+        plan_code:
+          type: string
+          default: basic
+          pattern: ^[-a-zA-Z0-9_]+$
       required:
       - business_type
       - legal_name_ar
       - owner_email
       - owner_name
       - tenant_name
+    TenantOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          maxLength: 60
+          pattern: ^[-a-zA-Z0-9_]+$
+        status:
+          $ref: '#/components/schemas/TenantStatusEnum'
+        default_business_type:
+          $ref: '#/components/schemas/BusinessTypeEnum'
+        plan:
+          type: string
+        branches:
+          type: integer
+        hosts:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - branches
+      - created_at
+      - hosts
+      - id
+      - name
+      - slug
+    TenantStatusEnum:
+      enum:
+      - trial
+      - active
+      - past_due
+      - read_only
+      - suspended
+      type: string
+      description: |-
+        * `trial` - Trial
+        * `active` - Active
+        * `past_due` - Past Due
+        * `read_only` - Read Only
+        * `suspended` - Suspended
     TrialBalance:
       type: object
       properties:

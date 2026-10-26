@@ -20,7 +20,11 @@ ENVIRONMENT = env("QASSA_ENV", "development")  # development | test | staging | 
 DEBUG = env_bool("DJANGO_DEBUG", ENVIRONMENT == "development")
 SECRET_KEY = env("DJANGO_SECRET_KEY", "dev-only-insecure-key" if ENVIRONMENT in {"development", "test"} else None,
                  required=ENVIRONMENT not in {"development", "test"})
-ALLOWED_HOSTS = [h for h in env("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",") if h]
+# Static hosts (platform back-office). Company PWA hosts live in platform.TenantDomain and are checked by
+# apps.platform.middleware.HostMiddleware, which replaces Django's static ALLOWED_HOSTS check.
+PLATFORM_HOSTS = [h for h in env("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",") if h]
+ALLOWED_HOSTS = ["*"]
+TENANT_BASE_DOMAIN = env("QASSA_TENANT_BASE_DOMAIN", "localhost")  # company subdomains: <slug>.<base>
 CSRF_TRUSTED_ORIGINS = [o for o in env("DJANGO_CSRF_TRUSTED_ORIGINS", "http://localhost:5173").split(",") if o]
 
 INSTALLED_APPS = [
@@ -40,10 +44,14 @@ INSTALLED_APPS = [
     "apps.tenancy",
     "apps.audit",
     "apps.accounting",
+    "apps.catalog",
+    "apps.staff",
+    "apps.customers",
     "apps.platform",
 ]
 
 MIDDLEWARE = [
+    "apps.platform.middleware.HostMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -136,6 +144,8 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
+    "ENUM_NAME_OVERRIDES": {"TenantStatusEnum": "apps.tenancy.models.Tenant.Status",
+                            "BusinessTypeEnum": "apps.tenancy.models.BusinessType"},
     "TITLE": "Qassa POS API",
     "VERSION": "0.1.0",
     "DESCRIPTION": "Multi-tenant salon POS & accounting API. Tenant-scoped endpoints require the X-Tenant header.",

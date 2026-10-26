@@ -12,10 +12,21 @@ from apps.tenancy.models import Branch, LegalEntity, Membership, MembershipBranc
 TODAY = date.today()
 
 
+def ensure_plans():
+    """Plans come from a data migration; transactional tests flush tables, so recreate them when needed."""
+    from apps.platform.models import Plan
+    for code, ar, en, price, br, st, sort in [("basic", "أساسي", "Basic", "15.000", 1, 3, 1),
+                                               ("pro", "احترافي", "Pro", "29.000", 3, 10, 2),
+                                               ("chains", "سلاسل", "Chains", "69.000", 99, 99, 3)]:
+        Plan.objects.get_or_create(code=code, defaults=dict(name_ar=ar, name_en=en, monthly_price=price,
+                                                            max_branches=br, max_staff=st, sort=sort))
+
+
 def make_company(name, email, btype="kids"):
+    ensure_plans()
     t = onboard_tenant(OnboardingSpec(
         tenant_name=name, owner_email=email, owner_name="Owner", legal_name_ar=name, legal_name_en=name,
-        business_type=btype, owner_password="Owner-Pass-2026!",
+        business_type=btype, owner_password="Owner-Pass-2026!", plan_code="pro",
         branches=[BranchSpec("حولي", "HAW", btype), BranchSpec("السالمية", "SAL", "women"),
                   BranchSpec("الجهراء", "JAH", "men")]))
     with tenant_context(t.id):
