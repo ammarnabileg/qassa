@@ -4,6 +4,13 @@ Release versions follow `MAJOR.MINOR.PATCH` and are tagged `vX.Y.Z` on `main`.
 Builds between releases are **debug** builds: `X.(Y+1).0-dev.N+sha` (see `scripts/version.py`).
 
 ## [Unreleased]
+### Added — customer app (D-006)
+- Login first: phone + WhatsApp code (hashed, expiring, attempt-limited, throttled), registration with children.
+- Booking flow per the approved design: service → branch (nearest suggested) → day/staff/time → who → confirm; my bookings with cancel; account with children.
+- Branch location, opening hours and online-booking switch; free slots from hours and staff skills.
+### Fixed
+- Wrong OTP attempts were rolled back with the error and not counted (found by tests before release).
+- Booking times shown in the device time zone instead of the salon's.
 ### Added — Phase 3 (operations)
 - Bookings and walk-in queue on one board (waiting / on the chair / done), multi-service visits, PostgreSQL exclusion constraint against double-booking a staff member.
 - Checkout (POS) priced by the server's price list, line discounts within the role limit, cash / KNET / transfer / split, credit sales with permission, printable receipt and WhatsApp link.

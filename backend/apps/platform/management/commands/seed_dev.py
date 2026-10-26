@@ -57,8 +57,11 @@ class Command(BaseCommand):
                       ("سبا", "Spa", [("مساج استرخاء", "Relaxing massage", 60, "20.000"), ("مانيكير", "Manicure", 45, "7.000")])],
         }
         names = {"kids": ["منى", "سارة", "هدى"], "men": ["أحمد", "خالد", "يوسف"], "women": ["نورة", "ريم", "دانة"]}
+        spots = {"HAW": ("29.337500", "48.028100"), "SAL": ("29.333900", "48.076100"), "JAH": ("29.337500", "47.658100")}
         for t in Tenant.objects.all():
             with tenant_context(t.id):
+                for code, (lat, lng) in spots.items():
+                    Branch.objects.filter(code=code, latitude__isnull=True).update(latitude=lat, longitude=lng)
                 if Service.objects.exists():
                     continue
                 btype = t.default_business_type

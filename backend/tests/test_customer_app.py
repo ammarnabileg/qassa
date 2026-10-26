@@ -106,6 +106,7 @@ def test_book_a_free_slot_then_it_disappears_and_cancel(app):
     assert r.status_code == 201, r.content
     bk = r.json()
     assert bk["status"] == "booked" and bk["can_cancel"] and bk["services"][0]["staff_ar"] == "منى"
+    assert bk["starts_at"] == first["starts_at"] and bk["starts_at"].endswith("+03:00")  # salon time, not UTC
     with tenant_context(app["t"].id):
         assert Appointment.objects.get(id=bk["id"]).source == "online"
     assert first["starts_at"] not in [s["starts_at"] for s in c.get("/api/v1/app/slots", q).json()["slots"]]

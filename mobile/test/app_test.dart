@@ -9,70 +9,103 @@ import 'package:qassa_app/l10n.dart';
 import 'package:qassa_app/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final salonJson = {
-  'slug': 'my-kids', 'name': 'My Kids', 'business_type': 'kids',
-  'branches': [{'id': 1, 'name_ar': 'حولي', 'name_en': 'Hawalli', 'business_type': 'kids', 'address': '', 'phone': '55551234'}],
+final catalogJson = {
+  'salon': {'name': 'My Kids', 'business_type': 'kids'},
+  'branches': [
+    {'id': 2, 'name_ar': 'الجهراء', 'name_en': 'Jahra', 'business_type': 'kids', 'address': '', 'phone': '', 'opens_at': '10:00', 'closes_at': '22:00', 'distance_km': 1.2, 'recommended': true},
+    {'id': 1, 'name_ar': 'حولي', 'name_en': 'Hawalli', 'business_type': 'kids', 'address': '', 'phone': '55551234', 'opens_at': '10:00', 'closes_at': '22:00', 'distance_km': 30.5},
+  ],
+  'categories': [{'id': 1, 'name_ar': 'قصات', 'name_en': 'Cuts', 'business_type': 'kids'}],
+  'services': [{'id': 7, 'category': 1, 'business_type': 'kids', 'name_ar': 'قص شعر', 'name_en': 'Haircut', 'duration_minutes': 30, 'price': '4.500'}],
 };
+final meJson = {'id': 1, 'full_name': 'أم سارة', 'phone': '96555550001', 'preferred_language': 'ar', 'beneficiaries': [
+  {'id': 11, 'full_name': 'سارة', 'relation': 'child', 'birth_date': null, 'gender': ''}]};
 
-Api fakeApi() => Api(baseUrl: 'http://x', client: MockClient((req) async {
-      if (req.url.path.endsWith('/my-kids')) return http.Response.bytes(utf8.encode(jsonEncode(salonJson)), 200);
-      return http.Response(jsonEncode({'error': {'code': 'salon_not_found'}}), 404);
-    }));
+http.Response ok(Object body, [int status = 200]) => http.Response.bytes(utf8.encode(jsonEncode(body)), status);
+
+/// A fake backend that records what the app sends.
+class Fake {
+  final calls = <String>[];
+  bool salonExists = true;
+  Api api() => Api(baseUrl: 'http://x', client: MockClient((req) async {
+        final p = req.url.path.replaceFirst('/api/v1/app', '');
+        calls.add('${req.method} $p');
+        if (!salonExists) return ok({'error': {'code': 'salon_not_found'}}, 404);
+        final authed = req.headers['Authorization'] == 'Customer T1';
+        switch ('${req.method} $p') {
+          case 'GET /catalog': return ok(catalogJson);
+          case 'POST /otp/request': return ok({'sent': true, 'channel': 'console', 'expires_in': 300, 'debug_code': '123456'});
+          case 'POST /otp/verify':
+            final code = (jsonDecode(req.body) as Map)['code'];
+            return code == '123456' ? ok({'new': true, 'registration_token': 'R'}) : ok({'error': {'code': 'otp_invalid'}}, 422);
+          case 'POST /register': return ok({'token': 'T1', 'me': meJson}, 201);
+          case 'GET /me': return authed ? ok(meJson) : ok({}, 401);
+          case 'GET /bookings': return ok([]);
+        }
+        return ok({'error': {'code': 'unknown'}}, 500);
+      }));
+}
+
+Future<AppController> start(WidgetTester tester, Fake fake) async {
+  SharedPreferences.setMockInitialValues({});
+  final c = AppController(api: fake.api(), prefs: await SharedPreferences.getInstance(), locate: false);
+  await tester.pumpWidget(QassaApp(controller: c));
+  await tester.pumpAndSettle();
+  return c;
+}
 
 void main() {
   test('Arabic and English have the same keys', () {
     expect(strings['ar']!.keys.toSet(), strings['en']!.keys.toSet());
   });
 
-  test('Kuwait phone gets 965 for wa.me', () {
-    expect(SalonScreen.intl('5555 1234'), '96555551234');
-    expect(SalonScreen.intl('+96555551234'), '96555551234');
+  testWidgets('without a salon there is no picker — only a message to open the salon link', (tester) async {
+    await start(tester, Fake()..salonExists = false);
+    expect(find.text(tr('ar', 'no_salon_title')), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
   });
 
-  testWidgets('on a company host the salon opens directly and cannot be changed', (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
-    final api = Api(baseUrl: 'http://x', client: MockClient((req) async {
-      if (req.url.path == '/api/v1/public/salon') {
-        return http.Response.bytes(utf8.encode(jsonEncode({...salonJson, 'locked': true})), 200);
-      }
-      return http.Response('{}', 500);
-    }));
-    await tester.pumpWidget(QassaApp(api: api, prefs: prefs, byHost: true));
+  testWidgets('first screen is login; wrong code is refused; new customer registers and lands on home', (tester) async {
+    final fake = Fake();
+    await start(tester, fake);
+    expect(find.text(tr('ar', 'login_title')), findsOneWidget);
+    expect(Directionality.of(tester.element(find.byKey(const Key('phone')))), TextDirection.rtl);
+    await tester.enterText(find.byKey(const Key('phone')), '55550001');
+    await tester.tap(find.byKey(const Key('send')));
     await tester.pumpAndSettle();
-    expect(find.text('حولي'), findsOneWidget);
-    expect(find.byIcon(Icons.swap_horiz), findsNothing);
+    expect(find.textContaining('123456'), findsOneWidget); // test-environment code banner
+    await tester.enterText(find.byKey(const Key('code')), '000000');
+    await tester.tap(find.byKey(const Key('verify')));
+    await tester.pumpAndSettle();
+    expect(find.text(tr('ar', 'err_otp_invalid')), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('code')), '123456');
+    await tester.tap(find.byKey(const Key('verify')));
+    await tester.pumpAndSettle();
+    expect(find.text(tr('ar', 'register_title')), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('name')), 'أم سارة');
+    await tester.tap(find.text(tr('ar', 'add_child')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('child0')), 'سارة');
+    await tester.tap(find.byKey(const Key('register')));
+    await tester.pumpAndSettle();
+    expect(find.text(tr('ar', 'hello', {'name': 'أم'})), findsOneWidget);
+    // nearest branch first, marked as recommended
+    expect(find.text(tr('ar', 'nearest')), findsOneWidget);
+    expect(tester.getTopLeft(find.text('الجهراء')).dy, lessThan(tester.getTopLeft(find.text('حولي')).dy));
   });
 
-  testWidgets('on the platform host (no company) the picker is shown', (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
-    await tester.pumpWidget(QassaApp(api: fakeApi(), prefs: prefs, byHost: true));
+  testWidgets('booking flow starts with services and suggests the nearest branch', (tester) async {
+    final fake = Fake();
+    SharedPreferences.setMockInitialValues({'token:${Uri.base.host}': 'T1'});
+    final c = AppController(api: fake.api(), prefs: await SharedPreferences.getInstance(), locate: false);
+    await tester.pumpWidget(QassaApp(controller: c));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('slug')), findsOneWidget);
-  });
-
-  testWidgets('unknown salon shows translated error; known salon shows branches; choice persists', (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
-    await tester.pumpWidget(QassaApp(api: fakeApi(), prefs: prefs));
-    expect(Directionality.of(tester.element(find.byType(TextField))), TextDirection.rtl);
-
-    await tester.enterText(find.byKey(const Key('slug')), 'nope');
-    await tester.tap(find.byType(FilledButton));
+    await tester.tap(find.byKey(const Key('book_now')));
     await tester.pumpAndSettle();
-    expect(find.text(tr('ar', 'err_salon_not_found')), findsOneWidget);
-
-    await tester.enterText(find.byKey(const Key('slug')), 'My-Kids ');
-    await tester.tap(find.byType(FilledButton));
+    expect(find.text(tr('ar', 'step_service')), findsWidgets);
+    await tester.tap(find.text('قص شعر'));
     await tester.pumpAndSettle();
-    expect(find.text('حولي'), findsOneWidget);
-    expect(prefs.getString('salon'), 'my-kids');
-
-    await tester.tap(find.text('English'));
-    await tester.pumpAndSettle();
-    expect(find.text('Hawalli'), findsOneWidget);
-    expect(Directionality.of(tester.element(find.text('Hawalli'))), TextDirection.ltr);
+    expect(find.text(tr('ar', 'step_branch')), findsWidgets);
+    expect(find.text(tr('ar', 'other_branches')), findsOneWidget);
   });
 }
-

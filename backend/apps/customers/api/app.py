@@ -240,7 +240,7 @@ class BookIn(serializers.Serializer):
 
 def booking_payload(a: Appointment) -> dict:
     items = sorted(a.items.all(), key=lambda i: i.position)
-    return {"id": a.id, "status": a.status, "branch_id": a.branch_id, "starts_at": a.starts_at.isoformat(), "ends_at": a.ends_at.isoformat(),
+    return {"id": a.id, "status": a.status, "branch_id": a.branch_id, "starts_at": timezone.localtime(a.starts_at).isoformat(), "ends_at": timezone.localtime(a.ends_at).isoformat(),
             "beneficiary_name": a.beneficiary.full_name if a.beneficiary_id else "",
             "services": [{"name_ar": i.service.name_ar, "name_en": i.service.name_en, "staff_ar": i.staff.full_name_ar,
                           "staff_en": i.staff.full_name_en} for i in items],
