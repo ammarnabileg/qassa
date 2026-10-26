@@ -1,0 +1,1570 @@
+[
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "الممتلكات والمنشآت والمعدات",
+  "sign": 1,
+  "tag": "ifrs-full:PropertyPlantAndEquipment"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "العقارات الاستثمارية",
+  "sign": 1,
+  "tag": "ifrs-full:InvestmentProperty"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "الشهرة",
+  "sign": 1,
+  "tag": "ifrs-full:Goodwill"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "الأصول غير الملموسة بخلاف الشهرة",
+  "sign": 1,
+  "tag": "ifrs-full:IntangibleAssetsOtherThanGoodwill"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "اصول حق الاستخدام",
+  "sign": 1,
+  "tag": "ifrs-full:RightofuseAssets"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "مبالغ مستحقة من أطراف ذات علاقة، غير متداولة",
+  "sign": 1,
+  "tag": "ifrs-full:NoncurrentReceivablesDueFromRelatedParties"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "ودائع لأجل - غير متداولة",
+  "sign": 1,
+  "tag": "ifrs-full:LongtermDeposits"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "مرابحات طويلة الأجل",
+  "sign": 1,
+  "tag": "moci:MurabahaReceivableCurrent"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "نقد محتجز",
+  "sign": 1,
+  "tag": "ifrs-full:NoncurrentRestrictedCashAndCashEquivalents"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "استثمارات في مشاريع مشتركة",
+  "sign": 1,
+  "tag": "ifrs-full:InvestmentsInJointVentures"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "استثمارات في شركات زميلة",
+  "sign": 1,
+  "tag": "ifrs-full:InvestmentsInAssociates"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "الاستثمارات في شركات زميلة ومشاريع مشتركة بطريقة حقوق الملكية",
+  "sign": 1,
+  "tag": "ifrs-full:InvestmentsInAssociatesAccountedForUsingEquityMethod"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "استثمارات في شركات تابعة",
+  "sign": 1,
+  "tag": "ifrs-full:InvestmentsInSubsidiaries"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "موجودات مالية غير متداولة بالقيمة العادلة من خلال الأرباح أو الخسائر",
+  "sign": 1,
+  "tag": "ifrs-full:NoncurrentFinancialAssetsAtFairValueThroughProfitOrLoss"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "موجودات مالية غير متداولة بالقيمة العادلة من خلال بيان الدخل الشامل الآخر",
+  "sign": 1,
+  "tag": "ifrs-full:NoncurrentFinancialAssetsAtFairValueThroughOtherComprehensiveIncome"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "موجودات مالية بالتكلفة المطفأة غير متداولة",
+  "sign": 1,
+  "tag": "ifrs-full:NoncurrentFinancialAssetsAtAmortisedCost"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "الموجودات المالية الأخرى غير المتداولة",
+  "sign": 1,
+  "tag": "ifrs-full:OtherNoncurrentFinancialAssets"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "الموجودات الضريبية المؤجلة",
+  "sign": 1,
+  "tag": "ifrs-full:DeferredTaxAssets"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "الموجودات غير المالية الأخرى غير المتداولة",
+  "sign": 1,
+  "tag": "ifrs-full:OtherNoncurrentNonfinancialAssets"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_assets",
+  "label_ar": "موجودات غير متداولة أخرى",
+  "sign": 1,
+  "tag": "ifrs-full:OtherNoncurrentAssets"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "نقد ونقد معادل",
+  "sign": 1,
+  "tag": "ifrs-full:CashAndCashEquivalents"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "المخزون المتداول",
+  "sign": 1,
+  "tag": "ifrs-full:Inventories"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "مدينون وأرصدة مدينة أخرى",
+  "sign": 1,
+  "tag": "ifrs-full:TradeAndOtherReceivables"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "مستحقات متداولة من أطراف ذات صلة",
+  "sign": 1,
+  "tag": "ifrs-full:TradeAndOtherCurrentReceivablesDueFromRelatedParties"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "مدفوعات مقدماً",
+  "sign": 1,
+  "tag": "ifrs-full:Prepayments"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "عقارات بغرض المتاجرة",
+  "sign": 1,
+  "tag": "moci:TradingProperties"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "الموجودات غير المالية الأخرى المتداولة",
+  "sign": 1,
+  "tag": "ifrs-full:OtherCurrentNonfinancialAssets"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "ودائع لاجل - متداولة",
+  "sign": 1,
+  "tag": "moci:TermDepositsCurrent"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "تسهيلات ائتمانية, متداولة",
+  "sign": 1,
+  "tag": "moci:CreditFacilitiesProvidedCurrent"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "موجودات مالية متداولة بالتكلفة المطفأة",
+  "sign": 1,
+  "tag": "ifrs-full:CurrentFinancialAssetsAtAmortisedCost"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "موجودات مالية مدرجة بالقيمة العادلة من خلال الأرباح أو الخسائر",
+  "sign": 1,
+  "tag": "ifrs-full:CurrentFinancialAssetsAtFairValueThroughProfitOrLoss"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "موجودات مالية مدرجة بالقيمة العادلة من خلال بيان الدخل الشامل الآخر - متداولة",
+  "sign": 1,
+  "tag": "ifrs-full:CurrentFinancialAssetsAtFairValueThroughOtherComprehensiveIncome"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "الموجودات المالية الأخرى المتداولة",
+  "sign": 1,
+  "tag": "ifrs-full:OtherCurrentFinancialAssets"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "اصول العقد",
+  "sign": 1,
+  "tag": "ifrs-full:ContractAssets"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "الموجودات الضريبية الحالية، متداولة",
+  "sign": 1,
+  "tag": "ifrs-full:CurrentTaxAssetsCurrent"
+ },
+ {
+  "statement": "fp",
+  "section": "current_assets",
+  "label_ar": "موجودات متداولة أخرى",
+  "sign": 1,
+  "tag": "ifrs-full:OtherCurrentAssets"
+ },
+ {
+  "statement": "fp",
+  "section": "Equity",
+  "label_ar": "رأس المال المصدر",
+  "sign": 1,
+  "tag": "ifrs-full:IssuedCapital"
+ },
+ {
+  "statement": "fp",
+  "section": "Equity",
+  "label_ar": "الأرباح المرحلة / الخسائر المتراكمة",
+  "sign": 1,
+  "tag": "ifrs-full:RetainedEarnings"
+ },
+ {
+  "statement": "fp",
+  "section": "Equity",
+  "label_ar": "علاوة الإصدار",
+  "sign": 1,
+  "tag": "ifrs-full:SharePremium"
+ },
+ {
+  "statement": "fp",
+  "section": "Equity",
+  "label_ar": "فائض إعادة تقييم",
+  "sign": 1,
+  "tag": "ifrs-full:RevaluationSurplus"
+ },
+ {
+  "statement": "fp",
+  "section": "Equity",
+  "label_ar": "احتياطي إجباري/ قانوني",
+  "sign": 1,
+  "tag": "ifrs-full:StatutoryReserve"
+ },
+ {
+  "statement": "fp",
+  "section": "Equity",
+  "label_ar": "احتياطي اختياري",
+  "sign": 1,
+  "tag": "moci:VoluntaryReserve"
+ },
+ {
+  "statement": "fp",
+  "section": "Equity",
+  "label_ar": "احتياطي اخر",
+  "sign": 1,
+  "tag": "ifrs-full:OtherReserves"
+ },
+ {
+  "statement": "fp",
+  "section": "Equity",
+  "label_ar": "احتياطي تحوط التدفقات النقدية",
+  "sign": 1,
+  "tag": "ifrs-full:ReserveOfCashFlowHedges"
+ },
+ {
+  "statement": "fp",
+  "section": "Equity",
+  "label_ar": "احتياطي القيمة العادلة",
+  "sign": 1,
+  "tag": "moci:FairValueReserve"
+ },
+ {
+  "statement": "fp",
+  "section": "Equity",
+  "label_ar": "احتياطي ترجمة عملات أجنبية",
+  "sign": 1,
+  "tag": "ifrs-full:ReserveOfExchangeDifferencesOnTranslation"
+ },
+ {
+  "statement": "fp",
+  "section": "Equity",
+  "label_ar": "احتياطي الموجودات المالية المدرجة بالقيمة العادلة من خلال الإيرادات الشاملة الأخرى",
+  "sign": 1,
+  "tag": "moci:ReserveOfChangeInInvestmentsFairValue"
+ },
+ {
+  "statement": "fp",
+  "section": "Equity",
+  "label_ar": "احتياطي حصة المجموعة من الدخل الشامل الآخر للشركات الزميلة والمشاريع المشتركة",
+  "sign": 1,
+  "tag": "moci:ReserveOfShareInOtherComprehensiveIncomeOfAssociateCompaniesAndJointVenture"
+ },
+ {
+  "statement": "fp",
+  "section": "Equity",
+  "label_ar": "جاري الشركاء",
+  "sign": 1,
+  "tag": "moci:PartnersCurrentAccounts"
+ },
+ {
+  "statement": "fp",
+  "section": "Equity",
+  "label_ar": "حقوق ملكية أخرى",
+  "sign": 1,
+  "tag": "ifrs-full:OtherEquityInterest"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_liabilities",
+  "label_ar": "قروض طويلة الأجل / مطلوبات تمويلية غير متداولة",
+  "sign": 1,
+  "tag": "ifrs-full:LongtermBorrowings"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_liabilities",
+  "label_ar": "مطلوبات تأجير غير المتداولة",
+  "sign": 1,
+  "tag": "ifrs-full:NoncurrentLeaseLiabilities"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_liabilities",
+  "label_ar": "مبالغ مستحقة إلى أطراف ذات علاقة، غير متداولة",
+  "sign": 1,
+  "tag": "ifrs-full:NoncurrentPayablesToRelatedParties"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_liabilities",
+  "label_ar": "مخصصات غير المتداولة لمزايا الموظفين",
+  "sign": 1,
+  "tag": "ifrs-full:NoncurrentProvisionsForEmployeeBenefits"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_liabilities",
+  "label_ar": "مخصصات غير متداولة أخرى",
+  "sign": 1,
+  "tag": "ifrs-full:OtherLongtermProvisions"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_liabilities",
+  "label_ar": "التزامات العقود غير المتداولة",
+  "sign": 1,
+  "tag": "ifrs-full:NoncurrentContractLiabilities"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_liabilities",
+  "label_ar": "القروض وذمم التمويل الإسلامي الدائنة، غير المتداولة",
+  "sign": 1,
+  "tag": "moci:NoncurrentIslamicFinancingAndPayables"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_liabilities",
+  "label_ar": "المطلوبات الضريبية الحالية، غير المتداولة",
+  "sign": 1,
+  "tag": "ifrs-full:CurrentTaxLiabilitiesNoncurrent"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_liabilities",
+  "label_ar": "المطلوبات المالية الأخرى غير المتداولة",
+  "sign": 1,
+  "tag": "ifrs-full:OtherNoncurrentFinancialLiabilities"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_liabilities",
+  "label_ar": "المطلوبات غير المالية الأخرى غير المتداولة",
+  "sign": 1,
+  "tag": "ifrs-full:OtherNoncurrentNonfinancialLiabilities"
+ },
+ {
+  "statement": "fp",
+  "section": "noncurrent_liabilities",
+  "label_ar": "مطلوبات غير متداولة أخرى",
+  "sign": 1,
+  "tag": "ifrs-full:OtherNoncurrentLiabilities"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "دائنون وأرصدة دائنة أخرى",
+  "sign": 1,
+  "tag": "ifrs-full:TradeAndOtherPayables"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "مبالغ مستحقة إلى أطراف ذات علاقة، جارية",
+  "sign": 1,
+  "tag": "ifrs-full:TradeAndOtherCurrentPayablesToRelatedParties"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "مخصصات مكافأة نهاية الخدمة للموظفين",
+  "sign": 1,
+  "tag": "ifrs-full:CurrentProvisionsForEmployeeBenefits"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "مخصصات أخرى قصيرة الأجل.",
+  "sign": 1,
+  "tag": "ifrs-full:OtherShorttermProvisions"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "مخصصات متداولة أخرى",
+  "sign": 1,
+  "tag": "ifrs-full:CurrentProvisions"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "مطلوبات تأجير المتداولة",
+  "sign": 1,
+  "tag": "ifrs-full:CurrentLeaseLiabilities"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "قروض قصيرة الأجل",
+  "sign": 1,
+  "tag": "ifrs-full:ShorttermBorrowings"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "الجزء المتداول من القروض طويلة الأجل",
+  "sign": 1,
+  "tag": "ifrs-full:CurrentPortionOfLongtermBorrowings"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "فوائد مستحقة الدفع",
+  "sign": 1,
+  "tag": "ifrs-full:InterestPayable"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "القروض وذمم التمويل الإسلامي الدائنة، الجارية",
+  "sign": 1,
+  "tag": "moci:CurrentIslamicFinancingAndPayables"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "التزامات العقود المتداولة",
+  "sign": 1,
+  "tag": "ifrs-full:CurrentContractLiabilities"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "السحوبات على المكشوف بالبنك",
+  "sign": 1,
+  "tag": "moci:BankOverdraft"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "مطلوبات مرتبطة بموجودات مصنفة كمحتفظ بها لغرض البيع",
+  "sign": 1,
+  "tag": "ifrs-full:LiabilitiesIncludedInDisposalGroupsClassifiedAsHeldForSale"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "الخصوم الضريبية الحالية، متداولة",
+  "sign": 1,
+  "tag": "ifrs-full:CurrentTaxLiabilities"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "الخصوم المالية الأخرى المتداولة",
+  "sign": 1,
+  "tag": "ifrs-full:OtherCurrentFinancialLiabilities"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "الخصوم غير المالية الأخرى المتداولة",
+  "sign": 1,
+  "tag": "ifrs-full:OtherCurrentNonfinancialLiabilities"
+ },
+ {
+  "statement": "fp",
+  "section": "current_liabilities",
+  "label_ar": "مطلوبات متداولة أخرى",
+  "sign": 1,
+  "tag": "ifrs-full:OtherCurrentLiabilities"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "الإيرادات من عقود العملاء",
+  "sign": 1,
+  "tag": "ifrs-full:RevenueFromContractsWithCustomers"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "إيرادات توزيعات أرباح",
+  "sign": 1,
+  "tag": "ifrs-full:RevenueFromDividends"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "إيرادات أتعاب وعمولات",
+  "sign": 1,
+  "tag": "ifrs-full:FeeAndCommissionIncome"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "إيرادات الفوائد",
+  "sign": 1,
+  "tag": "ifrs-full:InterestRevenueCalculatedUsingEffectiveInterestMethod"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "ايردات الإيجارات",
+  "sign": 1,
+  "tag": "ifrs-full:OperatingLeaseIncome"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "إيرادات بيع عقارات محتفظ بها للمتاجرة",
+  "sign": 1,
+  "tag": "moci:RevenueFromSaleOfTradingProperty"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "ربح من شراء بأسعار مخفضة",
+  "sign": 1,
+  "tag": "ifrs-full:GainRecognisedInBargainPurchaseTransaction"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "أرباح تسوية القروض ودائني التمويل الإسلامي والالتزامات",
+  "sign": 1,
+  "tag": "moci:GainsLossesOnSettlementOfBorrowingsAndLiabilities"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "حصة من نتائج الشركات الزميلة والمشاريع المشتركة",
+  "sign": 1,
+  "tag": "ifrs-full:ShareOfProfitLossOfAssociatesAndJointVenturesAccountedForUsingEquityMethod"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "إيرادات تشغيليّة أخرى",
+  "sign": 1,
+  "tag": "ifrs-full:OtherOperatingIncomeExpense"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "ربح (خسارة) من بيع شركات تابعة",
+  "sign": 1,
+  "tag": "ifrs-full:GainsLossesRecognisedWhenControlInSubsidiaryIsLost"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "ربح (خسارة) ترجمة عملات أجنبية",
+  "sign": 1,
+  "tag": "ifrs-full:GainsLossesOnExchangeDifferencesOnTranslationRecognisedInProfitOrLoss"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "الربح (الخسارة) من بيع آلات ومعدات وممتلكات",
+  "sign": 1,
+  "tag": "ifrs-full:GainsLossesOnDisposalsOfPropertyPlantAndEquipment"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "ربح (خسارة) من العمليات الموقوفة",
+  "sign": 1,
+  "tag": "ifrs-full:ProfitLossFromDiscontinuedOperations"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "ربح (خسارة) محققة من بيع موجودات مالية مدرجة بالقيمة العادلة من خلال الأرباح أو الخسائر",
+  "sign": 1,
+  "tag": "ifrs-full:GainsLossesOnFinancialAssetsAtFairValueThroughProfitOrLoss"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "ربح (خسارة) غير محققة من موجودات مالية مدرجة بالقيمة العادلة من خلال الأرباح أو الخسائر",
+  "sign": 1,
+  "tag": "moci:UnrealisedGainsLossesOnFinancialAssetsAtFairValueThroughProfitOrLoss"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "ربح (خسائر) غير محققة من التغيرات في القيمة العادلة لعقارات استثمار",
+  "sign": 1,
+  "tag": "moci:UnrealisedGainsLossesFromChangeInFairValueOfInvestmentProperties"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "ربح (خسارة) محققة من بيع عقارات استثمارية",
+  "sign": 1,
+  "tag": "moci:RealisedGainsLossesFromSaleOfInvestmentProperties"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "الربح من إعادة قياس الفائدة المحتفظ بها سابقًا",
+  "sign": 1,
+  "tag": "moci:GainsLossesOnRemeasurementOfPreviouslyHeldInterest"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "عكس خسائر انخفاض قيمة الممتلكات والمنشآت والمعدات",
+  "sign": 1,
+  "tag": "moci:ReversalOfImpairmentLossFromPropertyPlantAndEquipment"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "عكس خسائر انخفاض قيمة الموجودات غير الملموسة",
+  "sign": 1,
+  "tag": "moci:ReversalOfImpairmentLossFromIntangibleAssets"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "عكس خسائر انخفاض قيمة موجودات مالية بالقيمة العادلة من خلال الدخل الشامل الآخر – أدوات دين",
+  "sign": 1,
+  "tag": "moci:ReversalOfImpairmentLossFromFinancialAssetsCarriedAtFairValueThroughOtherComprehensiveIncomeDebtSecurities"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "عكس خسائر انخفاض قيمة الاستثمارات في الشركات الزميلة والمشاريع المشتركة",
+  "sign": 1,
+  "tag": "moci:ReversalOfImpairmentLossFromAssociatesAndJointVentures"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "عكس خسائر انخفاض قيمة أخرى",
+  "sign": 1,
+  "tag": "moci:ReversalOfOtherImpairmentLoss"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "رد مخصصات على تسهيلات ائتمانية",
+  "sign": 1,
+  "tag": "moci:ReversalOfProvisionOnCreditFacilities"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "رد مخصصات على المخزون بطيء الحركة والمتقادم",
+  "sign": 1,
+  "tag": "moci:ReversalOfProvisionOnSlowMovingAndObsoleteInventory"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "رد مخصصات أخرى",
+  "sign": 1,
+  "tag": "moci:ReversalOfOtherProvision"
+ },
+ {
+  "statement": "pl",
+  "section": "revenue",
+  "label_ar": "إيرادات أخرى",
+  "sign": 1,
+  "tag": "ifrs-full:OtherIncome"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "تكلفة المبيعات والخدمات",
+  "sign": -1,
+  "tag": "ifrs-full:CostOfSales"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "مصروفات عمومية وإدارية",
+  "sign": -1,
+  "tag": "ifrs-full:GeneralAndAdministrativeExpense"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "مصروفات أتعاب وعمولات",
+  "sign": -1,
+  "tag": "ifrs-full:FeeAndCommissionExpense"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "مصروفات مبيعات وتوزيع",
+  "sign": -1,
+  "tag": "moci:SellingDistributionAndMarketingExpense"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "الاستهلاك على الممتلكات والمنشآت والمعدات",
+  "sign": -1,
+  "tag": "ifrs-full:DepreciationPropertyPlantAndEquipment"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "استهلاك الأصول غير الملموسة",
+  "sign": -1,
+  "tag": "ifrs-full:AmortisationIntangibleAssetsOtherThanGoodwill"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "الاستهلاك على أصول حق الاستخدام",
+  "sign": -1,
+  "tag": "ifrs-full:DepreciationRightofuseAssets"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "الرواتب ومصروفات الموظفين",
+  "sign": -1,
+  "tag": "ifrs-full:EmployeeBenefitsExpense"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "تكاليف التمويل على التزامات الإيجار",
+  "sign": -1,
+  "tag": "ifrs-full:InterestExpenseOnLeaseLiabilities"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "تكاليف تمويل اخري",
+  "sign": -1,
+  "tag": "ifrs-full:OtherFinanceCost"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "تكاليف التمويل على القروض وذمم التمويل الإسلامي الدائنة",
+  "sign": -1,
+  "tag": "moci:FinanceCostOnBorrowingsAndIslamicFinancingPayables"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "خسائر انخفاض قيمة الممتلكات والمنشآت والمعدات",
+  "sign": -1,
+  "tag": "moci:ImpairmentLossFromPropertyPlantAndEquipment"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "خسائر انخفاض قيمة الموجودات غير الملموسة",
+  "sign": -1,
+  "tag": "moci:ImpairmentLossFromIntangibleAssets"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "خسائر انخفاض قيمة الشهرة",
+  "sign": -1,
+  "tag": "moci:ImpairmentLossFromGoodwill"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "خسائر انخفاض قيمة موجودات مالية بالقيمة العادلة من خلال الدخل الشامل الآخر – أدوات دين",
+  "sign": -1,
+  "tag": "moci:ImpairmentLossFromFinancialAssetsCarriedAtFairValueThroughOtherComprehensiveIncomeDebtSecurities"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "خسائر انخفاض قيمة الاستثمارات في الشركات الزميلة والمشاريع المشتركة",
+  "sign": -1,
+  "tag": "moci:ImpairmentLossFromAssociatesAndJointVentures"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "خسائر انخفاض قيمة أخرى",
+  "sign": -1,
+  "tag": "moci:OtherImpairmentLoss"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "مصروف مخصصات على تسهيلات ائتمانية",
+  "sign": -1,
+  "tag": "moci:ProvisionExpenseOnCreditFacilities"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "مصروف مخصصات على المخزون بطيء الحركة والمتقادم",
+  "sign": -1,
+  "tag": "moci:ProvisionExpenseOnSlowMovingAndObsoleteInventory"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "مصروف مخصصات أخرى",
+  "sign": -1,
+  "tag": "moci:OtherProvisionExpense"
+ },
+ {
+  "statement": "pl",
+  "section": "expense",
+  "label_ar": "مصروفات تشغيليّة أخرى",
+  "sign": -1,
+  "tag": "ifrs-full:MiscellaneousOtherOperatingExpense"
+ },
+ {
+  "statement": "pl",
+  "section": "after_tax",
+  "label_ar": "حصة مؤسسة الكويت للتقدم العلمي",
+  "sign": -1,
+  "tag": "moci:ContributionToKuwaitFoundationForAdvancementOfSciences"
+ },
+ {
+  "statement": "pl",
+  "section": "after_tax",
+  "label_ar": "ضرائب غير كويتية و ضرائب مؤجلة",
+  "sign": -1,
+  "tag": "moci:OverseasAndDeferredTaxation"
+ },
+ {
+  "statement": "pl",
+  "section": "after_tax",
+  "label_ar": "ضريبة دعم العمالة الوطنية",
+  "sign": -1,
+  "tag": "moci:NationalLabourSupportTax"
+ },
+ {
+  "statement": "pl",
+  "section": "after_tax",
+  "label_ar": "الزكاة",
+  "sign": -1,
+  "tag": "moci:Zakat"
+ },
+ {
+  "statement": "pl",
+  "section": "after_tax",
+  "label_ar": "مكافأة أعضاء مجلس الإدارة",
+  "sign": -1,
+  "tag": "ifrs-full:DirectorsRemunerationExpense"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لـ(ربح) خسارة غير محققة من التغيرات في القيمة العادلة لعقارات استثمارية",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForUnrealizedGainsLossesFromChangeInFairValueOfInvestmentProperties"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لـ(ربح) خسارة غير محققة من موجودات مالية مدرجة بالقيمة العادلة من خلال الأرباح أو الخسائر",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForUnrealizedGainsLossesFromFinancialAssetsAtFairValueThroughProfitOrLoss"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لـ(ربح) خسارة محققة من بيع موجودات مالية مدرجة بالقيمة العادلة من خلال الأرباح أو الخسائر",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForRealizedGainsLossesOnSaleOfFinancialAssetsAtFairValueThroughProfitOrLoss"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لـ(ربح) خسارة محققة من بيع موجودات مالية مدرجة بالقيمة العادلة من خلال بيان الدخل الشامل الآخر - أدوات دين",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForRealizedGainsLossesOnSaleOfFinancialAssetsAtFairValueThroughOtherComprehensiveIncomeDebtInstruments"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لـ(ربح) خسارة من بيع شركات تابعة",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForGainsLossesFromSaleOfSubsidiaries"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لـ(ربح) خسارة من استبعاد شركات زميلة ومشاريع مشتركة",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForGainsLossesFromAssociatesAndJointVentures"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لبند تكاليف التمويل",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForFinanceCosts"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لبند إيرادات تمويل",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForFinanceIncome"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لبند إيرادات توزيعات أرباح",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForDividendIncome"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لخسائر (عكس) انخفاض قيمة الشركات الزميلة والمشاريع المشتركة",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForImpairmentLossReversalOfImpairmentLossFromAssociatesAndJointVenturesRecognisedInProfitOrLoss"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لخسائر (عكس) انخفاض قيمة آلات ومعدات وممتلكات",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForImpairmentLossReversalOfImpairmentLossRecognisedInProfitOrLossPropertyPlantAndEquipment"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لـ(ربح) خسارة من تسوية قروض ومطلوبات مصنفة كأنشطة تشغيل",
+  "sign": 1,
+  "tag": "moci:GainOnSettlementOfBorrowingsAndLiabilitiesClassifiedAsOperatingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لخسائر (عكس) انخفاض قيمة موجودات غير ملموسة",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForImpairmentLossReversalOfImpairmentLossFromIntangibleAssetsOtherThanGoodwillRecognisedInProfitOrLoss"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لخسائر (عكس) انخفاض قيمة موجودات مالية مدرجة بالقيمة العادلة من خلال بيان الدخل الشامل الآخر",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForImpairmentLossReversalOfImpairmentLossFromFinancialAssetsAtFairValueThroughOtherComprehensiveIncomeDebtInstruments"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لخسائر انخفاض قيمة الشهرة",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForImpairmentLossRecognisedInProfitOrLossGoodwill"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لتحميل (رد) مخصص مخزون بطيء الحركة ومتقادم",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForProvisionChargeReversalOfProvisionOnInventories"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لمخصص (رد مخصص) لمدينون تجاريون وأرصدة مدينة أخرى",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForProvisionChargeReversalOfProvisionOnTradeAndReceivables"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لمخصص نهاية الخدمة للموظفين",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForProvisionForEmployeeEndOfTermBenefits"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لتسوية إطفاء موجودات غير ملموسة",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForAmortisationExpense"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لتسويات أخرى ذات تأثيرات نقدية استثمارية أو تمويلية",
+  "sign": 1,
+  "tag": "ifrs-full:OtherAdjustmentsForWhichCashEffectsAreInvestingOrFinancingCashFlow"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات الربح من الشراء التفاوضيّ لشركة تابعة",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForGainFromBargainPurchaseOfSubsidiary"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لتسويات إيرادات من ودائع محددة الأجل",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForInterestIncome"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لتسويات لأرباح غير موزعة من الشركات الزميلة",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForUndistributedProfitsOfAssociates"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لـ(ربح) خسارة ترجمة عملات أجنبية",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForUnrealisedForeignExchangeLossesGains"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لـ(ربح) خسارة القيمة العادلة",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForFairValueGainsLosses"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لـ(ربح) خسارة التخلص من أصول غير متداولة",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForLossesGainsOnDisposalOfNoncurrentAssets"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لـ(ربح) خسارة انخفاض القيمة (عكس خسائر انخفاض القيمة) المعترف بها في الربح أو الخسارة",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForImpairmentLossReversalOfImpairmentLossRecognisedInProfitOrLoss"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لتسويات المخصصات",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForProvisions"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لتسويات مصاريف ضريبة الدخل",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForIncomeTaxExpense"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات الربح (الخسارة) من استبعاد آلات ومعدات وممتلكات",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForGainLossOnDisposalsPropertyPlantAndEquipment"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لتسويات استهلاك الممتلكات والمنشآت والمعدات",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForDepreciationOnPropertyPlantAndEquipment"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لتسويات استهلاك موجودات حق الاستخدام",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForDepreciationOnRightOfUseAssets"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لتسويات أخرى لبنود غير نقدية",
+  "sign": 1,
+  "tag": "ifrs-full:OtherAdjustmentsForNoncashItems"
+ },
+ {
+  "statement": "cf",
+  "section": "adjustments",
+  "label_ar": "التعديلات لتسويات أخرى لمطابقة الربح (الخسارة)",
+  "sign": 1,
+  "tag": "ifrs-full:OtherAdjustmentsToReconcileProfitLoss"
+ },
+ {
+  "statement": "cf",
+  "section": "working_capital",
+  "label_ar": "التعديلات للانخفاض (الزيادة) في بند المخزون",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForDecreaseIncreaseInInventories"
+ },
+ {
+  "statement": "cf",
+  "section": "working_capital",
+  "label_ar": "تعديلات النقص (الزيادة) في المطلوبات الأخرى",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForIncreaseDecreaseInOtherLiabilities"
+ },
+ {
+  "statement": "cf",
+  "section": "working_capital",
+  "label_ar": "التعديلات للانخفاض (الزيادة) لموجودات تشغيلية أخرى",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForDecreaseIncreaseInOtherOperatingAssets"
+ },
+ {
+  "statement": "cf",
+  "section": "working_capital",
+  "label_ar": "التعديلات للزيادة (الانخفاض) لمطلوبات تشغيلية أخرى",
+  "sign": 1,
+  "tag": "ifrs-full:AdjustmentsForIncreaseDecreaseInOtherOperatingPayables"
+ },
+ {
+  "statement": "cf",
+  "section": "working_capital",
+  "label_ar": "من/إلى عملاء لأجل الأعمال المتعاقد عليها",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForDecreaseIncreaseInDueFromOrToCustomersForContractWork"
+ },
+ {
+  "statement": "cf",
+  "section": "working_capital",
+  "label_ar": "تعديلات النقص (الزيادة) في مطلوبات العقود",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForIncreaseDecreaseInAdvancesFromCustomers"
+ },
+ {
+  "statement": "cf",
+  "section": "working_capital",
+  "label_ar": "الافراج عن النقد المقيد",
+  "sign": 1,
+  "tag": "moci:BlockorReleaseOfRestrictedCash"
+ },
+ {
+  "statement": "cf",
+  "section": "working_capital",
+  "label_ar": "مبالغ مستحقة من أطراف ذات علاقة",
+  "sign": 1,
+  "tag": "moci:ChangesInAmountsDueFromRelatedPartiesOperating"
+ },
+ {
+  "statement": "cf",
+  "section": "working_capital",
+  "label_ar": "مبالغ مستحقة إلى أطراف ذات علاقة",
+  "sign": 1,
+  "tag": "moci:ChangesInAmountsDueToRelatedPartiesOperating"
+ },
+ {
+  "statement": "cf",
+  "section": "working_capital",
+  "label_ar": "التعديلات للانخفاض (الزيادة) في بند مدينون تجاريون وأرصدة مدينة أخرى",
+  "sign": 1,
+  "tag": "moci:ChangesInOtherOperatingReceivables"
+ },
+ {
+  "statement": "cf",
+  "section": "working_capital",
+  "label_ar": "التعديلات للانخفاض (الزيادة) في بند دائنون تجاريين وأرصدة دائنة أخرى",
+  "sign": 1,
+  "tag": "moci:ChangesInOtherOperatingPayables"
+ },
+ {
+  "statement": "cf",
+  "section": "working_capital",
+  "label_ar": "التعديلات للانخفاض (الزيادة) في بند تسهيلات ائتمانية",
+  "sign": 1,
+  "tag": "moci:AdjustmentsForIncreaseDecreaseInCreditFacilities"
+ },
+ {
+  "statement": "cf",
+  "section": "operating_other",
+  "label_ar": "ضرائب مدفوعة (مستردة)",
+  "sign": -1,
+  "tag": "ifrs-full:IncomeTaxesPaidRefundClassifiedAsOperatingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "operating_other",
+  "label_ar": "أرباح موزعة مدفوعة في الأنشطة التشغيلية",
+  "sign": -1,
+  "tag": "ifrs-full:DividendsPaidClassifiedAsOperatingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "operating_other",
+  "label_ar": "أرباح موزعة مقبوضة من الأنشطة التشغيلية",
+  "sign": 1,
+  "tag": "ifrs-full:DividendsReceivedClassifiedAsOperatingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "operating_other",
+  "label_ar": "فوائد مدفوعة في الأنشطة التشغيلية",
+  "sign": -1,
+  "tag": "ifrs-full:InterestPaidClassifiedAsOperatingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "operating_other",
+  "label_ar": "فوائد مقبوضة من الأنشطة التشغيلية",
+  "sign": 1,
+  "tag": "ifrs-full:InterestReceivedClassifiedAsOperatingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "operating_other",
+  "label_ar": "مخصص نهاية الخدمة المدفوع للموظفين",
+  "sign": -1,
+  "tag": "moci:PaymentForEmployeeEndOfTermBenefitsClassifiedAsOperatingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "operating_other",
+  "label_ar": "تدفقات نقدية أخرى من الأنشطة التشغيلية",
+  "sign": 1,
+  "tag": "ifrs-full:OtherInflowsOutflowsOfCashClassifiedAsOperatingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المتحصلات من بيع حصص في مشاريع مشتركة",
+  "sign": 1,
+  "tag": "ifrs-full:OtherCashReceiptsFromSalesOfInterestsInJointVenturesClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المدفوعات لشراء حصص في مشاريع مشتركة",
+  "sign": -1,
+  "tag": "ifrs-full:OtherCashPaymentsToAcquireInterestsInJointVenturesClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المتحصلات من بيع الممتلكات والآلات والمعدات",
+  "sign": 1,
+  "tag": "ifrs-full:ProceedsFromSalesOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المدفوعات لشراء الممتلكات والآلات والمعدات",
+  "sign": -1,
+  "tag": "ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المتحصلات من بيع الأصول غير الملموسة",
+  "sign": 1,
+  "tag": "ifrs-full:ProceedsFromSalesOfIntangibleAssetsClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المدفوعات لشراء الأصول غير الملموسة",
+  "sign": -1,
+  "tag": "ifrs-full:PurchaseOfIntangibleAssetsClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المتحصلات من بيع أصول طويلة الأجل أخرى",
+  "sign": 1,
+  "tag": "ifrs-full:ProceedsFromOtherLongtermAssetsClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المدفوعات لشراء أصول طويلة الأجل أخرى",
+  "sign": -1,
+  "tag": "ifrs-full:PurchaseOfOtherLongtermAssetsClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "سلف وقروض نقدية ممنوحة لأطراف أخرى",
+  "sign": -1,
+  "tag": "ifrs-full:CashAdvancesAndLoansMadeToOtherPartiesClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المتحصلات من سداد السلف والقروض الممنوحة لأطراف أخرى",
+  "sign": 1,
+  "tag": "ifrs-full:CashReceiptsFromRepaymentOfAdvancesAndLoansMadeToOtherPartiesClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المدفوعات لعقود العقود الآجلة، عقود الخيارات، عقود المبادلة",
+  "sign": -1,
+  "tag": "ifrs-full:CashPaymentsForFutureContractsForwardContractsOptionContractsAndSwapContractsClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المتحصلات من عقود العقود الآجلة، عقود الخيارات، عقود المبادلة",
+  "sign": 1,
+  "tag": "ifrs-full:CashReceiptsFromFutureContractsForwardContractsOptionContractsAndSwapContractsClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "توزيعات أرباح مستلمة من الأنشطة الاستثمارية",
+  "sign": 1,
+  "tag": "ifrs-full:DividendsReceivedClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "فوائد مدفوعة من الأنشطة الاستثمارية",
+  "sign": -1,
+  "tag": "ifrs-full:InterestPaidClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "فوائد مقبوضة من الأنشطة الاستثمارية",
+  "sign": 1,
+  "tag": "ifrs-full:InterestReceivedClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المدفوعات لشراء عقارات استثمارية",
+  "sign": -1,
+  "tag": "ifrs-full:PurchaseOfInvestmentProperty"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المتحصلات من بيع عقارات استثمارية",
+  "sign": 1,
+  "tag": "ifrs-full:ProceedsFromSalesOfInvestmentProperty"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المتحصلات من بيع موجودات مالية بالقيمة العادلة من خلال الدخل الشامل الآخر",
+  "sign": 1,
+  "tag": "moci:OtherProceedsFromFinancialAssetsAtFairValueThroughOtherComprehensiveIncome"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المدفوعات لشراء موجودات مالية مدرجة بالقيمة العادلة من خلال بيان الدخل الشامل الآخر",
+  "sign": -1,
+  "tag": "moci:PurchaseOfFinancialAssetsAtFairValueThroughOtherComprehensiveIncome"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المدفوعات لشراء حصة في شركات زميلة",
+  "sign": -1,
+  "tag": "moci:CashPaymentsToAcquireInvestmentsInAssociatesClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المتحصلات من بيع/استرداد حصة في شركات زميلة",
+  "sign": 1,
+  "tag": "moci:ProceedsFromSalesCapitalRedemptionOfInvestmentsInAssociatesClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المدفوعات لشراء موجودات مالية مدرجة بالتكلفة المطفأة",
+  "sign": -1,
+  "tag": "moci:PurchaseOfFinancialAssetsCarriedAtAmortisedCostClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المتحصلات من بيع موجودات مالية مدرجة بالتكلفة المطفأة",
+  "sign": 1,
+  "tag": "moci:ProceedsFromSalesOfFinancialAssetsCarriedAtAmortisedCostClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المتحصلات من بيع موجودات مالية بالقيمة العادلة من خلال الأرباح أو الخسائر",
+  "sign": 1,
+  "tag": "moci:ProceedsFromSalesOfFinancialAssetsAtFairValueThroughProfitOrLoss"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "الحركة على ودائع لأجل أخرى",
+  "sign": 1,
+  "tag": "moci:NetMovementInOtherShortTermDepositIncomeClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المتحصلات النقدية من إيرادات الإيجارات المصنفة ضمن الأنشطة الاستثمارية",
+  "sign": 1,
+  "tag": "moci:CashReceiptsFromRentalIncomeClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "المدفوعات لشراء موجودات مالية بالقيمة العادلة من خلال الأرباح أو الخسائر",
+  "sign": -1,
+  "tag": "moci:PurchaseOfFinancialAssetsAtFairValueThroughProfitOrLossClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "investing",
+  "label_ar": "تدفقات نقدية أخرى داخلة (خارجة)",
+  "sign": 1,
+  "tag": "ifrs-full:OtherInflowsOutflowsOfCashClassifiedAsInvestingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "financing",
+  "label_ar": "المتحصلات من الاقتراض",
+  "sign": 1,
+  "tag": "ifrs-full:ProceedsFromBorrowingsClassifiedAsFinancingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "financing",
+  "label_ar": "المدفوعات لسداد القروض",
+  "sign": -1,
+  "tag": "ifrs-full:RepaymentsOfBorrowingsClassifiedAsFinancingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "financing",
+  "label_ar": "المدفوعات لالتزامات الإيجار",
+  "sign": -1,
+  "tag": "ifrs-full:PaymentsOfLeaseLiabilitiesClassifiedAsFinancingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "financing",
+  "label_ar": "تكاليف تمويل مدفوعة",
+  "sign": -1,
+  "tag": "ifrs-full:InterestPaidClassifiedAsFinancingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "financing",
+  "label_ar": "توزيعات أرباح مدفوعة",
+  "sign": -1,
+  "tag": "ifrs-full:DividendsPaidClassifiedAsFinancingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "financing",
+  "label_ar": "ذمم أطراف ذات علاقة",
+  "sign": 1,
+  "tag": "moci:NetMovementInRelatedPartiesBalances"
+ },
+ {
+  "statement": "cf",
+  "section": "financing",
+  "label_ar": "تدفقات نقدية أخرى من الأنشطة التمويليّة",
+  "sign": 1,
+  "tag": "ifrs-full:OtherInflowsOutflowsOfCashClassifiedAsFinancingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "financing",
+  "label_ar": "المدفوعات لشراء أوراق مالية أخرى",
+  "sign": -1,
+  "tag": "ifrs-full:PaymentsOfOtherEquityInstruments"
+ },
+ {
+  "statement": "cf",
+  "section": "financing",
+  "label_ar": "الحركة على حسابات الشركاء الجارية",
+  "sign": 1,
+  "tag": "moci:NetMovementsInPartnersCurrentAccountsClassifiedAsFinancingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "financing",
+  "label_ar": "سداد قروض ودائني تمويل إسلامي",
+  "sign": -1,
+  "tag": "moci:RepaymentsOfBorrowingsAndIslamicFinancePayablesClassifiedAsFinancingActivities"
+ },
+ {
+  "statement": "cf",
+  "section": "financing",
+  "label_ar": "المتحصلات من قروض ودائني تمويل إسلامي",
+  "sign": 1,
+  "tag": "moci:ProceedsFromBorrowingsAndIslamicFinancePayablesClassifiedAsFinancingActivities"
+ }
+]

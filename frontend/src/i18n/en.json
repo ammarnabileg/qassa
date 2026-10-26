@@ -79,7 +79,8 @@
     "inventory": "Inventory",
     "marketing": "Packages & offers",
     "commissions": "Commissions",
-    "users": "Users"
+    "users": "Users",
+    "xbrl": "MOCI statements"
   },
   "org": {
     "entities": "Legal entities",
@@ -205,7 +206,9 @@
     "whatsapp_unavailable": "WhatsApp unavailable — connect the salon number or contact the Qassa team",
     "whatsapp_gateway_error": "The WhatsApp gateway did not respond — try again",
     "mfa_no_phone": "No WhatsApp number on your account — contact the administrator",
-    "whatsapp_gateway_key": "The WhatsApp gateway key is not the global key — contact the Qassa team (AUTHENTICATION_API_KEY needed)"
+    "whatsapp_gateway_key": "The WhatsApp gateway key is not the global key — contact the Qassa team (AUTHENTICATION_API_KEY needed)",
+    "xbrl_tag_invalid": "This line is not in the account's statement",
+    "all_branches_required": "Company statements need access to all branches"
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -662,5 +665,52 @@
     "mismatch": "Passwords don't match",
     "doneTitle": "Saved",
     "doneSub": "Sign in now with your email and password."
+  },
+  "xbrl": {
+    "sub": "Annual statements in the XBRL template order, for the accountant to transfer",
+    "yearEnd": "Fiscal year end",
+    "draft": "Draft from posted entries — not audited. The accountant and auditor must review before filing.",
+    "py": "prior year",
+    "chk": {
+      "bs": "Assets = liabilities + equity",
+      "mapped": "All accounts mapped"
+    },
+    "tab": {
+      "fp": "Financial position",
+      "pl": "Profit or loss",
+      "map": "Account mapping"
+    },
+    "copyCy": "Copy current year",
+    "copyPy": "Copy prior year",
+    "line": "Line",
+    "noData": "No posted entries in this period",
+    "sec": {
+      "noncurrent_assets": "Non-current assets",
+      "current_assets": "Current assets",
+      "Equity": "Equity",
+      "noncurrent_liabilities": "Non-current liabilities",
+      "current_liabilities": "Current liabilities",
+      "revenue": "Revenue",
+      "expense": "Expenses",
+      "after_tax": "Taxes & contributions"
+    },
+    "tot": {
+      "NoncurrentAssets": "Total non-current assets",
+      "CurrentAssets": "Total current assets",
+      "Equity": "Total equity",
+      "NoncurrentLiabilities": "Total non-current liabilities",
+      "CurrentLiabilities": "Total current liabilities",
+      "Assets": "Total assets",
+      "Liabilities": "Total liabilities",
+      "EquityAndLiabilities": "Total equity and liabilities",
+      "Revenue": "Total revenue",
+      "ProfitLoss": "Profit (loss) for the year"
+    },
+    "cfNote": "Cash flows and changes in equity are not generated yet — they need the accountant's classification.",
+    "mapHelp": "Each account goes to a template line. Defaults come from the account role; the accountant can change them.",
+    "unmapped": "Unmapped",
+    "useDefault": "Default",
+    "custom": "Custom",
+    "default": "Default"
   }
 }

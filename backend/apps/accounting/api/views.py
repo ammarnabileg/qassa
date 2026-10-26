@@ -186,3 +186,65 @@ class PeriodCloseView(TenantAPIView):
         else:
             raise DomainError("Unknown action", code="bad_action")
         return Response({"id": p.id, "status": p.status})
+
+
+class XbrlReportView(TenantAPIView):
+    """MOCI annual statements in the template's order (draft from the ledger, for the accountant to transfer)."""
+    required_permissions = {"GET": "accounting.view"}
+
+    @extend_schema(parameters=[OpenApiParameter("legal_entity_id", int, required=True),
+                               OpenApiParameter("year_end", str, required=True)], responses=dict)
+    def get(self, request):
+        from apps.accounting.services import xbrl
+        if request.membership.branch_ids() is not None:
+            raise DomainError("Company-wide statements need access to all branches", code="all_branches_required")
+        entity = _entity(request, request.query_params.get("legal_entity_id") or 0)
+        try:
+            year_end = date.fromisoformat(request.query_params["year_end"])
+        except (KeyError, ValueError):
+            raise DomainError("year_end is required (YYYY-MM-DD)", code="bad_dates")
+        return Response(xbrl.report(entity, year_end))
+
+
+class XbrlMappingIn(serializers.Serializer):
+    account_id = serializers.IntegerField()
+    tag = serializers.CharField(max_length=200, allow_blank=True)
+
+
+class XbrlMappingView(TenantAPIView):
+    """Which MOCI line each account goes to. PUT with an empty tag returns the account to its default."""
+    required_permissions = {"GET": "accounting.view", "PUT": "accounting.setup"}
+
+    @extend_schema(parameters=[OpenApiParameter("legal_entity_id", int, required=True)], responses=dict)
+    def get(self, request):
+        from apps.accounting.models import XbrlMapping
+        from apps.accounting.services import xbrl
+        entity = _entity(request, request.query_params.get("legal_entity_id") or 0)
+        tags = xbrl.mapping(entity.id)
+        custom = set(XbrlMapping.objects.filter(legal_entity=entity).values_list("account_id", flat=True))
+        accounts = [{"account_id": a.id, "code": a.code, "name_ar": a.name_ar, "name_en": a.name_en, "type": a.type,
+                     "tag": tags.get(a.id), "custom": a.id in custom}
+                    for a in Account.objects.filter(legal_entity=entity, is_postable=True).order_by("code")]
+        lines = [{"statement": c["statement"], "section": c["section"], "tag": c["tag"], "label_ar": c["label_ar"]}
+                 for c in xbrl.CATALOG if c["statement"] in ("fp", "pl")]
+        return Response({"accounts": accounts, "lines": lines})
+
+    @extend_schema(parameters=[OpenApiParameter("legal_entity_id", int, required=True)], request=XbrlMappingIn, responses=dict)
+    def put(self, request):
+        from apps.accounting.models import XbrlMapping
+        from apps.accounting.services import xbrl
+        from apps.audit.services.log import record as audit
+        entity = _entity(request, request.query_params.get("legal_entity_id") or 0)
+        s = XbrlMappingIn(data=request.data)
+        s.is_valid(raise_exception=True)
+        acc = get_object_or_404(Account.objects.filter(legal_entity=entity, is_postable=True), pk=s.validated_data["account_id"])
+        tag = s.validated_data["tag"]
+        if not tag:
+            XbrlMapping.objects.filter(legal_entity=entity, account=acc).delete()
+        else:
+            statement = "fp" if acc.type in xbrl.FP_TYPES else "pl"
+            if (statement, tag) not in xbrl.TAGS:
+                raise DomainError("This line does not belong to the account's statement", code="xbrl_tag_invalid")
+            XbrlMapping.objects.update_or_create(legal_entity=entity, account=acc, defaults={"tag": tag})
+        audit("accounting.xbrl_mapping", tenant_id=request.tenant_id, actor=request.user, obj=acc, data={"tag": tag})
+        return self.get(request)

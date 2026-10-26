@@ -132,3 +132,13 @@ class JournalLine(TenantScopedModel):
             models.UniqueConstraint(fields=["entry", "line_no"], name="uniq_jl_line_no"),
         ]
         indexes = [models.Index(fields=["account", "entry"])]
+
+
+class XbrlMapping(TenantScopedModel):
+    """Account → MOCI XBRL line (annual financial statements). Overrides the role-based default (D-009)."""
+    legal_entity = models.ForeignKey("tenancy.LegalEntity", on_delete=models.PROTECT)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    tag = models.CharField(max_length=200)
+
+    class Meta(TenantScopedModel.Meta):
+        constraints = [models.UniqueConstraint(fields=["legal_entity", "account"], name="uniq_xbrl_account")]

@@ -52,6 +52,8 @@ urlpatterns = [
     path(api + "accounting/journal-entries", acc.JournalEntryListCreateView.as_view()),
     path(api + "accounting/journal-entries/<int:pk>/reverse", acc.JournalEntryReverseView.as_view()),
     path(api + "accounting/trial-balance", acc.TrialBalanceView.as_view()),
+    path(api + "accounting/xbrl", acc.XbrlReportView.as_view()),
+    path(api + "accounting/xbrl/mapping", acc.XbrlMappingView.as_view()),
     path(api + "accounting/periods/<int:pk>/<str:action>", acc.PeriodCloseView.as_view()),
     # platform
     path(api + "platform/tenants", plat.TenantsView.as_view()),

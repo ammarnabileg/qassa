@@ -24,6 +24,7 @@ import Marketing from './pages/Marketing'
 import Commissions from './pages/Commissions'
 import Users from './pages/Users'
 import SetPassword from './pages/SetPassword'
+import XbrlReport from './pages/XbrlReport'
 
 const ellipsis = { display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } as const
 
@@ -137,6 +138,7 @@ export default function App() {
     [t('nav.accounting'), [
       { path: '/accounting/journal', label: t('nav.journal'), icon: 'book', show: can('accounting.journal.post') },
       { path: '/accounting/trial-balance', label: t('nav.trialBalance'), icon: 'chart', show: can('accounting.view') },
+      { path: '/accounting/xbrl', label: t('nav.xbrl'), icon: 'file', show: can('accounting.view') && !!membership.all_branches },
     ]],
     [t('nav.account'), [
       { path: '/whatsapp', label: t('nav.whatsapp'), icon: 'whatsapp', show: can('org.manage') },
@@ -164,6 +166,7 @@ export default function App() {
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/accounting/journal" element={<JournalEntry />} />
         <Route path="/accounting/trial-balance" element={<TrialBalance />} />
+        <Route path="/accounting/xbrl" element={<XbrlReport />} />
         <Route path="*" element={<Navigate to={home} replace />} />
       </Routes>
     </Shell>
