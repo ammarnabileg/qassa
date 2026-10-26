@@ -28,6 +28,7 @@ class CashSession(TenantScopedModel):
     closed_at = models.DateTimeField(null=True, blank=True)
     expected_cash = models.DecimalField(**MONEY, null=True, blank=True)
     counted_cash = models.DecimalField(**MONEY, null=True, blank=True)
+    denominations = models.JSONField(default=dict, blank=True)  # {"20.000": 3, "0.100": 7, …} counted at close
     variance = models.DecimalField(**MONEY, null=True, blank=True)  # counted - expected
     variance_status = models.CharField(max_length=8, choices=Variance.choices, default=Variance.NONE)
     variance_approved_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, null=True, blank=True, related_name="+")

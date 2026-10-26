@@ -466,7 +466,16 @@
     "history": "Drawer history",
     "closedNotice": "No open drawer in this branch",
     "floatHelp": "Opening float in the drawer",
-    "countHelp": "Count the cash and enter it. The system computes the variance, which someone else approves."
+    "countHelp": "Count each note and coin. The system totals it and shows the variance, which someone else approves.",
+    "notes": "Notes",
+    "coins": "Coins",
+    "denomination": "Denomination",
+    "pieces": "Count",
+    "subtotal": "Value",
+    "kd": "{{n}} KD",
+    "halfKd": "Half dinar",
+    "quarterKd": "Quarter dinar",
+    "fils": "{{n}} fils"
   },
   "wa": {
     "sub": "Your company's WhatsApp number for login codes and customer messages",

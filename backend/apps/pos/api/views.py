@@ -22,7 +22,7 @@ class SessionOut(serializers.ModelSerializer):
     class Meta:
         model = CashSession
         fields = ["id", "branch", "status", "opened_by", "opened_at", "opening_float", "closed_by", "closed_at",
-                  "expected_cash", "counted_cash", "variance", "variance_status", "variance_approved_by", "notes",
+                  "expected_cash", "counted_cash", "denominations", "variance", "variance_status", "variance_approved_by", "notes",
                   "expected_now"]
 
     def get_expected_now(self, obj) -> str | None:
@@ -35,7 +35,8 @@ class OpenIn(serializers.Serializer):
 
 
 class CloseIn(serializers.Serializer):
-    counted_cash = serializers.DecimalField(**AMOUNT, min_value=0)
+    counted_cash = serializers.DecimalField(**AMOUNT, min_value=0, required=False, allow_null=True)
+    denominations = serializers.DictField(child=serializers.IntegerField(min_value=0), required=False, default=dict)
     notes = serializers.CharField(required=False, allow_blank=True, default="")
 
 
@@ -64,8 +65,9 @@ class SessionCloseView(TenantAPIView):
         branch_for(request, session.branch_id)
         s = CloseIn(data=request.data)
         s.is_valid(raise_exception=True)
-        return Response(SessionOut(sales.close_session(session, s.validated_data["counted_cash"], request.user,
-                                                       s.validated_data["notes"])).data)
+        v = s.validated_data
+        return Response(SessionOut(sales.close_session(session, v.get("counted_cash"), request.user, v["notes"],
+                                                       denominations=v["denominations"])).data)
 
 
 class SessionApproveView(TenantAPIView):

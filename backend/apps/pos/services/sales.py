@@ -70,19 +70,42 @@ def expected_cash(session: CashSession) -> Decimal:
     return money(session.opening_float + total("in") - total("out"))
 
 
-def close_session(session: CashSession, counted, user, notes="") -> CashSession:
+# Kuwaiti dinar notes and coins, largest first (value in KWD)
+DENOMINATIONS = ["20.000", "10.000", "5.000", "1.000", "0.500", "0.250", "0.100", "0.050", "0.020", "0.010", "0.005"]
+
+
+def count_denominations(counts: dict) -> tuple[Decimal, dict]:
+    """Total of a drawer count. Unknown denominations, negative or non-integer counts are refused."""
+    clean, total = {}, Decimal("0.000")
+    for key, n in (counts or {}).items():
+        if key not in DENOMINATIONS:
+            raise DomainError(code="denomination_unknown", details={"denomination": key})
+        if not isinstance(n, int) or isinstance(n, bool) or n < 0 or n > 100000:
+            raise DomainError(code="denomination_count_invalid", details={"denomination": key})
+        if n:
+            clean[key] = n
+            total += Decimal(key) * n
+    return money(total), clean
+
+
+def close_session(session: CashSession, counted, user, notes="", denominations=None) -> CashSession:
     with transaction.atomic():
         s = CashSession.objects.select_for_update().get(id=session.id)
         if s.status != CashSession.Status.OPEN:
             raise DomainError(code="session_not_open")
         s.expected_cash = expected_cash(s)
+        if denominations:  # the server computes the total from the count; a typed total is ignored
+            counted, s.denominations = count_denominations(denominations)
+        elif counted is None:
+            raise DomainError(code="count_required")
         s.counted_cash = money(counted)
         s.variance = money(s.counted_cash - s.expected_cash)
         s.status, s.closed_by, s.closed_at, s.notes = CashSession.Status.CLOSED, user, timezone.now(), notes
         s.variance_status = CashSession.Variance.NONE if s.variance == 0 else CashSession.Variance.PENDING
         s.save()
         audit("cash.session.closed", tenant_id=s.tenant_id, actor=user, obj=s,
-              data={"expected": str(s.expected_cash), "counted": str(s.counted_cash), "variance": str(s.variance)})
+              data={"expected": str(s.expected_cash), "counted": str(s.counted_cash), "variance": str(s.variance),
+                    "denominations": s.denominations})
     return s
 
 

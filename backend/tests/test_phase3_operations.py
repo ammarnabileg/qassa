@@ -346,3 +346,23 @@ def test_branch_scope_on_pos_and_booking(salon):
                HTTP_IDEMPOTENCY_KEY="x")
     assert r.status_code == 403
     assert c.get("/api/v1/booking/appointments", {"branch_id": other}).status_code == 403
+
+
+def test_close_by_counting_notes_and_coins(salon):
+    s = salon
+    sess = open_drawer(s, amount="20.000")
+    checkout(s, s["cashier"], [{"service_id": s["cut"].id}], [{"method": "cash", "amount": "5.000"}])
+    c = client_for(s["cashier"], s["t"])
+    # 1×20 + 4×1 + 1×0.500 + 4×0.100 + 2×0.050 = 25.000; a typed total is ignored when a count is sent
+    count = {"20.000": 1, "1.000": 4, "0.500": 1, "0.100": 4, "0.050": 2}
+    r = c.post(f"/api/v1/pos/sessions/{sess['id']}/close", {"denominations": count, "counted_cash": "999"}, format="json")
+    assert r.status_code == 200, r.content
+    assert r.json()["counted_cash"] == "25.000" and r.json()["variance"] == "0.000" and r.json()["variance_status"] == "none"
+    assert r.json()["denominations"] == count
+
+
+def test_count_rejects_unknown_denomination(salon):
+    s = salon
+    sess = open_drawer(s)
+    r = client_for(s["cashier"], s["t"]).post(f"/api/v1/pos/sessions/{sess['id']}/close", {"denominations": {"3.000": 1}}, format="json")
+    assert r.status_code == 422 and r.json()["error"]["code"] == "denomination_unknown"
