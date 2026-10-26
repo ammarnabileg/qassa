@@ -20,7 +20,8 @@ class Command(BaseCommand):
         if len(password) < 12:
             raise CommandError("staging requires SEED_PASSWORD (12+ characters)")
         if Tenant.objects.filter(slug="my-kids").exists():
-            self.stdout.write("Already seeded.")
+            self.stdout.write("Companies already seeded.")
+            self.seed_catalog()
             return
         specs = [("My Kids", "My Kids", "ماي كيدز", "kids", "mykids"), ("Gentleman Cut", "Gentleman Cut", "جنتلمان كت", "men", "gentle"),
                  ("Lamsa", "Lamsa Salon", "صالون لمسة", "women", "lamsa")]
@@ -37,3 +38,43 @@ class Command(BaseCommand):
                         MembershipBranch.objects.create(tenant=t, membership=m, branch=Branch.objects.get(code=branch))
         User.objects.create_user("support@qassa.dev", password, is_platform_staff=True, mfa_required=True)
         self.stdout.write(self.style.SUCCESS(f"Seeded 3 companies. Password for all dev users: {password if settings.ENVIRONMENT != 'staging' else '(SEED_PASSWORD)'}"))
+        self.seed_catalog()
+
+    def seed_catalog(self):
+        """Synthetic services, prices and staff per company (only where a company has no services yet)."""
+        from apps.catalog.models import Service, ServiceCategory
+        from apps.catalog.services.pricing import set_price
+        from apps.staff.models import StaffBranch, StaffMember, StaffSkill
+        menus = {
+            "kids": [("قصات", "Cuts", [("قص شعر أطفال", "Kids haircut", 30, "4.500"), ("أول قصة للطفل", "First haircut", 30, "6.000"),
+                                        ("قصة + غسيل", "Cut + wash", 45, "6.000")]),
+                     ("تسريحات", "Styling", [("ضفائر", "Braids", 40, "5.000"), ("تسريحة مناسبة", "Party style", 45, "7.500")])],
+            "men": [("حلاقة", "Barber", [("قص شعر", "Haircut", 30, "5.000"), ("تحديد لحية", "Beard trim", 20, "3.000"),
+                                          ("حلاقة كاملة + لحية", "Cut + beard", 45, "7.000")]),
+                    ("عناية", "Care", [("ماسك وجه", "Face mask", 20, "4.000"), ("صبغة", "Colour", 60, "12.000")])],
+            "women": [("شعر", "Hair", [("قص وتسريح", "Cut & style", 60, "12.000"), ("صبغة", "Colour", 120, "25.000"),
+                                        ("سشوار", "Blow-dry", 40, "8.000")]),
+                      ("سبا", "Spa", [("مساج استرخاء", "Relaxing massage", 60, "20.000"), ("مانيكير", "Manicure", 45, "7.000")])],
+        }
+        names = {"kids": ["منى", "سارة", "هدى"], "men": ["أحمد", "خالد", "يوسف"], "women": ["نورة", "ريم", "دانة"]}
+        for t in Tenant.objects.all():
+            with tenant_context(t.id):
+                if Service.objects.exists():
+                    continue
+                btype = t.default_business_type
+                services = []
+                for i, (cat_ar, cat_en, items) in enumerate(menus[btype]):
+                    cat = ServiceCategory.objects.create(name_ar=cat_ar, name_en=cat_en, business_type=btype, sort=i)
+                    for ar, en, minutes, price in items:
+                        svc = Service.objects.create(category=cat, name_ar=ar, name_en=en, duration_minutes=minutes)
+                        set_price(svc, price=price)
+                        services.append(svc)
+                branches = list(Branch.objects.filter(business_type=btype))
+                for j, name in enumerate(names[btype]):
+                    person = StaffMember.objects.create(full_name_ar=name)
+                    for br in branches[: 1 + j % len(branches)] if branches else []:
+                        StaffBranch.objects.create(staff=person, branch=br)
+                    for svc in services:
+                        StaffSkill.objects.create(staff=person, service=svc)
+                Membership.objects.filter(tenant=t, role__key="cashier").update(discount_limit_percent=10)
+                self.stdout.write(f"Catalog seeded for {t.slug}")
