@@ -9,7 +9,9 @@ from apps.identity.api import views as auth
 from apps.platform.api import views as plat
 from apps.tenancy.api import views as org
 from apps.tenancy.api.public import PublicManifestView, PublicSalonView
+from apps.booking.api import views as bk
 from apps.catalog.api import views as cat
+from apps.pos.api import views as pos
 from apps.customers.api import views as cust
 from apps.staff.api import views as stf
 
@@ -63,4 +65,16 @@ urlpatterns = [
     path(api + "platform/domains/<int:pk>", plat.DomainDetailView.as_view()),
     path(api + "platform/plans", plat.PlansView.as_view()),
     path(api + "platform/plans/<int:pk>", plat.PlanDetailView.as_view()),
+    # phase 3: operations
+    path(api + "booking/appointments", bk.AppointmentsView.as_view()),
+    path(api + "booking/appointments/<int:pk>", bk.AppointmentDetailView.as_view()),
+    path(api + "booking/appointments/<int:pk>/status", bk.AppointmentStatusView.as_view()),
+    path(api + "pos/sessions", pos.SessionsView.as_view()),
+    path(api + "pos/sessions/<int:pk>/close", pos.SessionCloseView.as_view()),
+    path(api + "pos/sessions/<int:pk>/approve", pos.SessionApproveView.as_view()),
+    path(api + "pos/checkout", pos.CheckoutView.as_view()),
+    path(api + "pos/invoices", pos.InvoicesView.as_view()),
+    path(api + "pos/invoices/<int:pk>", pos.InvoiceDetailView.as_view()),
+    path(api + "pos/invoices/<int:pk>/payments", pos.InvoicePaymentsView.as_view()),
+    path(api + "pos/invoices/<int:pk>/credit-notes", pos.InvoiceCreditNotesView.as_view()),
 ]

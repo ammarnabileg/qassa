@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     "apps.catalog",
     "apps.staff",
     "apps.customers",
+    "apps.booking",
+    "apps.pos",
     "apps.platform",
 ]
 

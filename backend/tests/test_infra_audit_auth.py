@@ -103,7 +103,7 @@ def test_login_without_mfa_for_cashier(company_a):
     add_member(t, "cashier2@mykids.test", "cashier", branch=b["HAW"])
     r = APIClient().post("/api/v1/auth/login", {"email": "cashier2@mykids.test", "password": "Staff-Pass-2026!"},
                          format="json")
-    assert r.status_code == 200 and r.json()["memberships"][0]["permissions"] == ["cash.session.open", "catalog.view", "customers.manage", "customers.view", "pos.discount.line", "pos.sell", "staff.view"]
+    assert r.status_code == 200 and r.json()["memberships"][0]["permissions"] == ["booking.manage", "booking.view", "cash.session.open", "catalog.view", "customers.manage", "customers.view", "pos.discount.line", "pos.invoices.view", "pos.sell", "staff.view"]
 
 
 def test_platform_onboarding_api_requires_platform_staff(db):

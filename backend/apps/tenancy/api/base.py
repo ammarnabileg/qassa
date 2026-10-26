@@ -41,3 +41,19 @@ class TenantAPIView(APIView):
 class IsPlatformStaff(permissions.BasePermission):
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated and request.user.is_platform_staff)
+
+
+def branch_for(request, branch_id):
+    """The branch, if it belongs to the tenant and the member may act on it; otherwise a clear error."""
+    from apps.core.errors import DomainError
+    from apps.tenancy.models import Branch
+    try:
+        branch = Branch.objects.select_related("legal_entity").filter(id=int(branch_id), is_active=True).first()
+    except (TypeError, ValueError):
+        branch = None
+    if branch is None:
+        raise DomainError(code="branch_unknown")
+    allowed = request.membership.branch_ids()
+    if allowed is not None and branch.id not in allowed:
+        raise PermissionDenied("No access to this branch")
+    return branch

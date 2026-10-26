@@ -370,6 +370,139 @@ paths:
               schema:
                 $ref: '#/components/schemas/Beneficiary'
           description: ''
+  /api/v1/booking/appointments:
+    get:
+      operationId: v1_booking_appointments_list
+      parameters:
+      - in: query
+        name: branch_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: date
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AppointmentOut'
+          description: ''
+    post:
+      operationId: v1_booking_appointments_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AppointmentIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AppointmentIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentOut'
+          description: ''
+  /api/v1/booking/appointments/{id}:
+    get:
+      operationId: v1_booking_appointments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentOut'
+          description: ''
+    patch:
+      operationId: v1_booking_appointments_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRescheduleIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRescheduleIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRescheduleIn'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentOut'
+          description: ''
+  /api/v1/booking/appointments/{id}/status:
+    post:
+      operationId: v1_booking_appointments_status_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StatusIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StatusIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentOut'
+          description: ''
   /api/v1/catalog/categories:
     get:
       operationId: v1_catalog_categories_list
@@ -958,6 +1091,248 @@ paths:
               schema:
                 $ref: '#/components/schemas/Domain'
           description: ''
+  /api/v1/pos/checkout:
+    post:
+      operationId: v1_pos_checkout_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CheckoutIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckoutIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceOut'
+          description: ''
+  /api/v1/pos/invoices:
+    get:
+      operationId: v1_pos_invoices_list
+      parameters:
+      - in: query
+        name: branch_id
+        schema:
+          type: integer
+      - in: query
+        name: date
+        schema:
+          type: string
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: unpaid
+        schema:
+          type: boolean
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InvoiceOut'
+          description: ''
+  /api/v1/pos/invoices/{id}:
+    get:
+      operationId: v1_pos_invoices_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceOut'
+          description: ''
+  /api/v1/pos/invoices/{id}/credit-notes:
+    post:
+      operationId: v1_pos_invoices_credit_notes_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditNoteIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreditNoteIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreditNoteIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceOut'
+          description: ''
+  /api/v1/pos/invoices/{id}/payments:
+    post:
+      operationId: v1_pos_invoices_payments_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CollectIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CollectIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceOut'
+          description: ''
+  /api/v1/pos/sessions:
+    get:
+      operationId: v1_pos_sessions_list
+      parameters:
+      - in: query
+        name: branch_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionOut'
+          description: ''
+    post:
+      operationId: v1_pos_sessions_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OpenIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OpenIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionOut'
+          description: ''
+  /api/v1/pos/sessions/{id}/approve:
+    post:
+      operationId: v1_pos_sessions_approve_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionOut'
+          description: ''
+  /api/v1/pos/sessions/{id}/close:
+    post:
+      operationId: v1_pos_sessions_close_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloseIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CloseIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CloseIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionOut'
+          description: ''
   /api/v1/public/salon:
     get:
       operationId: v1_public_salon_retrieve
@@ -1116,6 +1491,121 @@ components:
       - name_ar
       - name_en
       - type
+    AppointmentIn:
+      type: object
+      properties:
+        branch_id:
+          type: integer
+        starts_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemIn'
+        customer_id:
+          type: integer
+          nullable: true
+        beneficiary_id:
+          type: integer
+          nullable: true
+        walk_in_name:
+          type: string
+          default: ''
+        source:
+          allOf:
+          - $ref: '#/components/schemas/AppointmentInSourceEnum'
+          default: reception
+        notes:
+          type: string
+          default: ''
+      required:
+      - branch_id
+      - items
+      - starts_at
+    AppointmentInSourceEnum:
+      enum:
+      - reception
+      - walk_in
+      type: string
+      description: |-
+        * `reception` - reception
+        * `walk_in` - walk_in
+    AppointmentOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        branch:
+          type: integer
+        customer:
+          type: integer
+          nullable: true
+        beneficiary:
+          type: integer
+          nullable: true
+        walk_in_name:
+          type: string
+          maxLength: 120
+        customer_name:
+          type: string
+          readOnly: true
+        beneficiary_name:
+          type: string
+          readOnly: true
+        customer_phone:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/Status569Enum'
+        source:
+          $ref: '#/components/schemas/AppointmentOutSourceEnum'
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        business_date:
+          type: string
+          format: date
+        notes:
+          type: string
+        status_reason:
+          type: string
+          maxLength: 200
+        invoice_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+      required:
+      - beneficiary_name
+      - branch
+      - business_date
+      - customer_name
+      - customer_phone
+      - ends_at
+      - id
+      - invoice_id
+      - items
+      - starts_at
+    AppointmentOutSourceEnum:
+      enum:
+      - reception
+      - walk_in
+      - online
+      type: string
+      description: |-
+        * `reception` - Reception
+        * `walk_in` - Walk In
+        * `online` - Online
     Beneficiary:
       type: object
       properties:
@@ -1265,6 +1755,96 @@ components:
       - business_type
       - id
       - name_ar
+    CheckoutIn:
+      type: object
+      properties:
+        branch_id:
+          type: integer
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineIn'
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentIn'
+        customer_id:
+          type: integer
+          nullable: true
+        beneficiary_id:
+          type: integer
+          nullable: true
+        appointment_id:
+          type: integer
+          nullable: true
+        expected_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+          nullable: true
+      required:
+      - branch_id
+      - lines
+    CloseIn:
+      type: object
+      properties:
+        counted_cash:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        notes:
+          type: string
+          default: ''
+      required:
+      - counted_cash
+    CollectIn:
+      type: object
+      properties:
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentIn'
+      required:
+      - payments
+    CreditNoteIn:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReturnLineIn'
+        reason:
+          type: string
+          maxLength: 300
+        refund:
+          allOf:
+          - $ref: '#/components/schemas/PaymentIn'
+          nullable: true
+      required:
+      - lines
+      - reason
+    CreditNoteOut:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+        reason:
+          type: string
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        issued_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - issued_at
+      - number
+      - reason
+      - total
     Csrf:
       type: object
       properties:
@@ -1445,6 +2025,144 @@ components:
       description: |-
         * `m` - m
         * `f` - f
+    InvoiceLineOut:
+      type: object
+      properties:
+        id:
+          type: integer
+        service_id:
+          type: integer
+        staff_id:
+          type: integer
+          nullable: true
+        name_ar:
+          type: string
+        name_en:
+          type: string
+        qty:
+          type: integer
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        discount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        line_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        returned:
+          type: string
+          readOnly: true
+      required:
+      - discount
+      - id
+      - line_total
+      - name_ar
+      - name_en
+      - qty
+      - returned
+      - service_id
+      - staff_id
+      - unit_price
+    InvoiceOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: string
+          maxLength: 24
+        branch:
+          type: integer
+        customer:
+          type: integer
+          nullable: true
+        customer_name:
+          type: string
+          readOnly: true
+        customer_phone:
+          type: string
+          readOnly: true
+        beneficiary:
+          type: integer
+          nullable: true
+        beneficiary_name:
+          type: string
+          readOnly: true
+        appointment:
+          type: integer
+          nullable: true
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        discount_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        is_credit:
+          type: boolean
+        business_date:
+          type: string
+          format: date
+        issued_at:
+          type: string
+          format: date-time
+          readOnly: true
+        issued_by_name:
+          type: string
+          readOnly: true
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceLineOut'
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentOut'
+        credit_notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreditNoteOut'
+        state:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+      required:
+      - beneficiary_name
+      - branch
+      - business_date
+      - credit_notes
+      - customer_name
+      - customer_phone
+      - discount_total
+      - id
+      - issued_at
+      - issued_by_name
+      - lines
+      - number
+      - payments
+      - state
+      - subtotal
+      - total
+    ItemIn:
+      type: object
+      properties:
+        service_id:
+          type: integer
+        staff_id:
+          type: integer
+      required:
+      - service_id
+      - staff_id
     KindEnum:
       enum:
       - subdomain
@@ -1581,6 +2299,8 @@ components:
           type: string
         tenant_status:
           type: string
+        tenant_business_type:
+          type: string
         role:
           type: string
         role_name:
@@ -1602,9 +2322,20 @@ components:
       - permissions
       - role
       - role_name
+      - tenant_business_type
       - tenant_id
       - tenant_name
       - tenant_status
+    MethodEnum:
+      enum:
+      - cash
+      - knet
+      - transfer
+      type: string
+      description: |-
+        * `cash` - cash
+        * `knet` - knet
+        * `transfer` - transfer
     Mfa:
       type: object
       properties:
@@ -1620,6 +2351,18 @@ components:
           type: string
       required:
       - otpauth_url
+    OpenIn:
+      type: object
+      properties:
+        branch_id:
+          type: integer
+        opening_float:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+      required:
+      - branch_id
+      - opening_float
     Org:
       type: object
       properties:
@@ -1769,6 +2512,16 @@ components:
           type: integer
           maximum: 32767
           minimum: 0
+    PatchedRescheduleIn:
+      type: object
+      properties:
+        starts_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemIn'
     PatchedService:
       type: object
       properties:
@@ -1836,6 +2589,51 @@ components:
         reason:
           type: string
           maxLength: 300
+    PaymentIn:
+      type: object
+      properties:
+        method:
+          $ref: '#/components/schemas/MethodEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        reference:
+          type: string
+          default: ''
+          maxLength: 60
+      required:
+      - amount
+      - method
+    PaymentOut:
+      type: object
+      properties:
+        id:
+          type: integer
+        direction:
+          type: string
+        method:
+          type: string
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        reference:
+          type: string
+        received_at:
+          type: string
+          format: date-time
+        credit_note_id:
+          type: integer
+          nullable: true
+      required:
+      - amount
+      - credit_note_id
+      - direction
+      - id
+      - method
+      - received_at
+      - reference
     PeriodActionIn:
       type: object
       properties:
@@ -1997,6 +2795,18 @@ components:
         * `self` - Self
         * `child` - Child
         * `other` - Other
+    ReturnLineIn:
+      type: object
+      properties:
+        invoice_line_id:
+          type: integer
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+      required:
+      - amount
+      - invoice_line_id
     ReverseIn:
       type: object
       properties:
@@ -2089,6 +2899,76 @@ components:
       - duration_minutes
       - id
       - name_ar
+    SessionOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        branch:
+          type: integer
+        status:
+          allOf:
+          - $ref: '#/components/schemas/SessionOutStatusEnum'
+          default: open
+        opened_by:
+          type: integer
+        opened_at:
+          type: string
+          format: date-time
+          readOnly: true
+        opening_float:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        closed_by:
+          type: integer
+          nullable: true
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+        expected_cash:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+          nullable: true
+        counted_cash:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+          nullable: true
+        variance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+          nullable: true
+        variance_status:
+          $ref: '#/components/schemas/VarianceStatusEnum'
+        variance_approved_by:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+        expected_now:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - branch
+      - expected_now
+      - id
+      - opened_at
+      - opened_by
+      - opening_float
+    SessionOutStatusEnum:
+      enum:
+      - open
+      - closed
+      type: string
+      description: |-
+        * `open` - Open
+        * `closed` - Closed
     Staff:
       type: object
       properties:
@@ -2117,6 +2997,34 @@ components:
       required:
       - full_name_ar
       - id
+    Status569Enum:
+      enum:
+      - booked
+      - arrived
+      - in_service
+      - completed
+      - invoiced
+      - cancelled
+      - no_show
+      type: string
+      description: |-
+        * `booked` - Booked
+        * `arrived` - Arrived
+        * `in_service` - In Service
+        * `completed` - Completed
+        * `invoiced` - Invoiced
+        * `cancelled` - Cancelled
+        * `no_show` - No Show
+    StatusIn:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/Status569Enum'
+        reason:
+          type: string
+          default: ''
+      required:
+      - status
     SubscriptionOut:
       type: object
       properties:
@@ -2320,6 +3228,16 @@ components:
         * `equity` - Equity
         * `revenue` - Revenue
         * `expense` - Expense
+    VarianceStatusEnum:
+      enum:
+      - none
+      - pending
+      - approved
+      type: string
+      description: |-
+        * `none` - None
+        * `pending` - Pending
+        * `approved` - Approved
   securitySchemes:
     cookieAuth:
       type: apiKey
