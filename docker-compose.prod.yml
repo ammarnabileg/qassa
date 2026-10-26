@@ -25,6 +25,11 @@ services:
       REDIS_URL: redis://redis:6379/1
       SEED_PASSWORD: ${SEED_PASSWORD:-}
       QASSA_TENANT_BASE_DOMAIN: ${QASSA_TENANT_BASE_DOMAIN:?}
+      QASSA_WHATSAPP_ADAPTER: ${QASSA_WHATSAPP_ADAPTER:-disabled}
+      QASSA_WHATSAPP_URL: ${QASSA_WHATSAPP_URL:-}
+      QASSA_WHATSAPP_TOKEN: ${QASSA_WHATSAPP_TOKEN:-}
+      QASSA_WHATSAPP_INSTANCE: ${QASSA_WHATSAPP_INSTANCE:-}
+      QASSA_OTP_ECHO: ${QASSA_OTP_ECHO:-0}  # staging only; ignored in production
     depends_on: { db: { condition: service_healthy }, redis: { condition: service_healthy } }
     healthcheck: { test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/api/v1/version')"], interval: 10s, retries: 10, start_period: 90s }
   worker:
