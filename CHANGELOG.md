@@ -4,6 +4,17 @@ Release versions follow `MAJOR.MINOR.PATCH` and are tagged `vX.Y.Z` on `main`.
 Builds between releases are **debug** builds: `X.(Y+1).0-dev.N+sha` (see `scripts/version.py`).
 
 ## [Unreleased]
+### Added — Phase 4 (stock, purchasing, loyalty, commissions)
+- Products and stock per branch at weighted-average cost, never negative; adjustments with reason; stock moves log.
+- Purchasing: goods receipt → supplier bill (must equal the receipt) → bank payment, with proposed journal entries.
+- Session packages (contract liability, revenue per session used), coupons, loyalty points; all priced by the server (`/pos/quote`).
+- Tips to a staff member (tips payable); commission % per staff member, accrued on net service value, reversed on returns, paid out by bank.
+- Staff working hours and time off, enforced in booking and free slots; reschedule a booking.
+- Returns can put products back in stock; receipts show tip and points.
+- Users: invite / edit / resend; set-password page; forgot-password link.
+- MOCI XBRL draft statements (financial position, profit or loss) with account mapping and CSV export (D-009).
+### Removed
+- Front-desk one-time customer login link (owner decision; see D-003).
 ### Added — customer app (D-006)
 - Login first: phone + WhatsApp code (hashed, expiring, attempt-limited, throttled), registration with children.
 - Booking flow per the approved design: service → branch (nearest suggested) → day/staff/time → who → confirm; my bookings with cancel; account with children.

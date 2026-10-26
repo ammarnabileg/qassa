@@ -24,7 +24,8 @@
     "nameAr": "Arabic name",
     "nameEn": "English name",
     "change": "Change",
-    "back": "Back"
+    "back": "Back",
+    "delete": "Delete"
   },
   "auth": {
     "title": "Sign in",
@@ -51,7 +52,9 @@
     "resend": "Send a new code",
     "waSent": "Sent to {{to}}",
     "testCode": "test environment — code {{code}}",
-    "remember": "Remember this device for 60 days (not on a shared device)"
+    "remember": "Remember this device for 60 days (not on a shared device)",
+    "forgot": "Forgot password?",
+    "forgotSent": "If this email is registered, a reset link is on its way."
   },
   "tenant": {
     "choose": "Choose a company",
@@ -208,7 +211,8 @@
     "mfa_no_phone": "No WhatsApp number on your account — contact the administrator",
     "whatsapp_gateway_key": "The WhatsApp gateway key is not the global key — contact the Qassa team (AUTHENTICATION_API_KEY needed)",
     "xbrl_tag_invalid": "This line is not in the account's statement",
-    "all_branches_required": "Company statements need access to all branches"
+    "all_branches_required": "Company statements need access to all branches",
+    "email_required": "Enter your email first"
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -279,7 +283,17 @@
     "male": "Male",
     "female": "Female",
     "years": "yrs",
-    "bNotes": "Notes (allergies, afraid of clippers…)"
+    "bNotes": "Notes (allergies, afraid of clippers…)",
+    "wallet": "Packages & points",
+    "sessionsLeft": "{{n}} of {{total}} sessions left",
+    "expires": "expires",
+    "noPackages": "No active packages",
+    "pk": {
+      "earn": "Earned",
+      "redeem": "Redeemed",
+      "reverse": "Reversed after return",
+      "adjust": "Adjustment"
+    }
   },
   "plan": {
     "sub": "Your plan, its limits and your customer app links",
@@ -388,7 +402,8 @@
       "invoiced": "Paid",
       "cancelled": "Cancelled",
       "no_show": "No-show"
-    }
+    },
+    "reschedule": "Reschedule"
   },
   "pos": {
     "search": "Search services…",
@@ -465,7 +480,9 @@
     "returnTotal": "Return total",
     "refundMethod": "Refund method",
     "refundAmount": "Amount refunded",
-    "returnHelp": "A return issues a credit note; the original invoice never changes. Cash refunds need an open drawer."
+    "returnHelp": "A return issues a credit note; the original invoice never changes. Cash refunds need an open drawer.",
+    "restock": "Back to stock",
+    "pointsUsed": "Points redeemed"
   },
   "cash": {
     "sub": "Open with a float and count the drawer at close to find shortages or overages",
@@ -712,5 +729,23 @@
     "useDefault": "Default",
     "custom": "Custom",
     "default": "Default"
+  },
+  "sched": {
+    "title": "Schedule",
+    "help": "Bookings are refused outside these hours or during time off. With no hours set, the staff member follows branch hours.",
+    "noBranch": "Assign the staff member to a branch first",
+    "none": "No hours set — follows branch hours",
+    "addDay": "Add day",
+    "fillWeek": "Every day except Friday",
+    "timeOff": "Time off",
+    "noTimeOff": "No time off",
+    "addOff": "Add time off",
+    "d0": "Monday",
+    "d1": "Tuesday",
+    "d2": "Wednesday",
+    "d3": "Thursday",
+    "d4": "Friday",
+    "d5": "Saturday",
+    "d6": "Sunday"
   }
 }

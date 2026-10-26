@@ -77,6 +77,40 @@ function NewBooking({ onClose, date }: { onClose: () => void; date: string }) {
   )
 }
 
+const kwDate = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Kuwait' })
+
+function Reschedule({ appt, onClose }: { appt: Appointment; onClose: () => void }) {
+  const { t, i18n } = useTranslation()
+  const toast = useToast()
+  const { branchServices, staffFor } = useServicesStaff()
+  const [day, setDay] = useState(kwDate(appt.starts_at))
+  const [time, setTime] = useState(hhmm(appt.starts_at))
+  const [rows, setRows] = useState<Row[]>(appt.items.map((i) => ({ service_id: i.service_id, staff_id: i.staff_id })))
+  const { save, busy, error } = useSave<Appointment>([['appointments']], () => { toast(t('common.saved')); onClose() })
+  const setRow = (i: number, r: Partial<Row>) => setRows(rows.map((x, j) => (j === i ? { ...x, ...r } : x)))
+  return (
+    <Dialog open wide title={`${t('book.reschedule')}: ${appt.beneficiary_name || appt.customer_name}`} onClose={onClose} busy={busy}
+      onSubmit={() => save({ path: `/booking/appointments/${appt.id}`, method: 'PATCH',
+        body: { starts_at: new Date(`${day}T${time}:00+03:00`).toISOString(), items: rows.filter((r) => r.service_id && r.staff_id) } })}>
+      <div className="two">
+        <label className="field">{t('acc.date')}<input className="input" type="date" value={day} onChange={(e) => setDay(e.target.value)} required /></label>
+        <label className="field">{t('book.time')}<input className="input" type="time" step={300} value={time} onChange={(e) => setTime(e.target.value)} required /></label>
+      </div>
+      {rows.map((r, i) => <div className="row" key={i} style={{ flexWrap: 'nowrap' }}>
+        <select className="input" value={r.service_id} onChange={(e) => setRow(i, { service_id: Number(e.target.value), staff_id: 0 })} required>
+          <option value={0} disabled>{t('book.pickService')}</option>
+          {branchServices.map((s) => <option key={s.id} value={s.id}>{nameOf(s, i18n.language)} · {s.duration_minutes} {t('svc.min')}</option>)}</select>
+        <select className="input" value={r.staff_id} onChange={(e) => setRow(i, { staff_id: Number(e.target.value) })} required disabled={!r.service_id}>
+          <option value={0} disabled>{t('book.pickStaff')}</option>
+          {staffFor(r.service_id).map((p) => <option key={p.id} value={p.id}>{i18n.language === 'en' && p.full_name_en ? p.full_name_en : p.full_name_ar}</option>)}</select>
+        {rows.length > 1 && <button type="button" className="btn sm ghost" aria-label={t('common.delete')} onClick={() => setRows(rows.filter((_, j) => j !== i))}><Icon name="trash" /></button>}
+      </div>)}
+      <button type="button" className="btn sm" onClick={() => setRows([...rows, { service_id: 0, staff_id: 0 }])}><Icon name="plus" />{t('book.addService')}</button>
+      <ErrorText error={error} />
+    </Dialog>
+  )
+}
+
 export default function Bookings() {
   const { t, i18n } = useTranslation()
   const { can } = useAuth()
@@ -85,6 +119,7 @@ export default function Bookings() {
   const toast = useToast()
   const [date, setDate] = useState(todayISO())
   const [adding, setAdding] = useState(false)
+  const [moving, setMoving] = useState<Appointment | null>(null)
   const [reasonFor, setReasonFor] = useState<{ appt: Appointment; status: ApptStatus } | null>(null)
   const [reason, setReason] = useState('')
   const { staff } = useServicesStaff()
@@ -129,6 +164,7 @@ export default function Bookings() {
         {col(t('book.waiting'), ['booked', 'arrived'], (a) => <>
           {a.status === 'booked' && <button className="btn sm" onClick={() => setStatus(a, 'arrived')}>{t('book.arrived')}</button>}
           <button className="btn sm primary" onClick={() => setStatus(a, 'in_service')}>{t('book.toChair')}</button>
+          <button className="btn sm ghost" onClick={() => setMoving(a)}>{t('book.reschedule')}</button>
           {a.status === 'booked' && <button className="btn sm ghost danger" onClick={() => setReasonFor({ appt: a, status: 'no_show' })}>{t('book.noShow')}</button>}
           <button className="btn sm ghost danger" onClick={() => setReasonFor({ appt: a, status: 'cancelled' })}>{t('book.cancel')}</button>
         </>)}
@@ -142,6 +178,7 @@ export default function Bookings() {
           {a.status === 'invoiced' && a.invoice_id && <button className="btn sm ghost" onClick={() => nav(`/invoices?open=${a.invoice_id}`)}>{t('book.viewInvoice')}</button>}
         </>)}
       </div>
+      {moving && <Reschedule appt={moving} onClose={() => setMoving(null)} />}
       {adding && <NewBooking date={date} onClose={() => setAdding(false)} />}
       <Dialog open={!!reasonFor} title={reasonFor ? t(`book.st.${reasonFor.status}`) : ''} onClose={() => setReasonFor(null)} busy={move.busy}
         onSubmit={() => { setStatus(reasonFor!.appt, reasonFor!.status, reason); toast(t('common.saved')) }}>

@@ -35,7 +35,9 @@ export function Receipt({ invoice: inv, onClose }: { invoice: Invoice; onClose: 
       {inv.lines.map((l) => <div className="r" key={l.id}><span>{l.qty > 1 && <bdi>{l.qty}× </bdi>}{nameOf({ name_ar: l.name_ar, name_en: l.name_en }, lang)}</span><span className="money">{formatKWD(l.line_total, lang)}</span></div>)}
       <hr />
       {inv.discount_total !== '0.000' && <div className="r"><span>{t('pos.discount')}</span><span className="money">-{formatKWD(inv.discount_total, lang)}</span></div>}
+      {inv.points_redeemed > 0 && <div className="r cap muted"><span>{t('inv.pointsUsed')}</span><span><bdi>{inv.points_redeemed}</bdi> {t('pos.pointsUnit')}</span></div>}
       <div className="r"><b>{t('pos.total')}</b><b className="money">{formatKWD(inv.total, lang)}</b></div>
+      {inv.tip !== '0.000' && <div className="r"><span>{t('pos.tip')}</span><span className="money">{formatKWD(inv.tip, lang)}</span></div>}
       {inv.payments.map((p) => <div className="r" key={p.id}><span>{p.direction === 'out' ? t('inv.refund') + ' · ' : ''}{t(`pos.m.${p.method}`)}{p.reference && ` (${p.reference})`}</span><span className="money">{formatKWD(p.amount, lang)}</span></div>)}
       {inv.state.balance !== '0.000' && <div className="r"><b>{t('inv.balance')}</b><b className="money">{formatKWD(inv.state.balance, lang)}</b></div>}
       <hr /><div className="rc cap">{inv.beneficiary_name || inv.customer_name}{inv.customer_phone && <> · <bdi>+{inv.customer_phone}</bdi></>}</div>
@@ -66,6 +68,7 @@ function InvoiceDialog({ id, onClose }: { id: number; onClose: () => void }) {
   const [mode, setMode] = useState<'view' | 'collect' | 'return' | 'receipt'>('view')
   const [pay, setPay] = useState({ method: 'cash', amount: '', reference: '' })
   const [ret, setRet] = useState<Record<number, string>>({})
+  const [restock, setRestock] = useState<Record<number, string>>({})
   const [reason, setReason] = useState('')
   const [refund, setRefund] = useState({ method: 'cash', amount: '', reference: '' })
   const [key, setKey] = useState(() => crypto.randomUUID())
@@ -80,7 +83,7 @@ function InvoiceDialog({ id, onClose }: { id: number; onClose: () => void }) {
     ? () => collect.save({ path: `/pos/invoices/${id}/payments`, idempotencyKey: key, body: { payments: [pay] } })
     : mode === 'return'
       ? () => credit.save({ path: `/pos/invoices/${id}/credit-notes`, idempotencyKey: key, body: {
-        reason, lines: Object.entries(ret).filter(([, v]) => safeFils(v) > 0n).map(([lid, amount]) => ({ invoice_line_id: Number(lid), amount })),
+        reason, lines: Object.entries(ret).filter(([, v]) => safeFils(v) > 0n).map(([lid, amount]) => ({ invoice_line_id: Number(lid), amount, restock_qty: Number(restock[Number(lid)] || 0) })),
         refund: safeFils(refund.amount) > 0n ? refund : null } })
       : undefined
   return (
@@ -96,7 +99,8 @@ function InvoiceDialog({ id, onClose }: { id: number; onClose: () => void }) {
         <tbody>{inv.lines.map((l) => { const left = fromFils(safeFils(l.line_total) - safeFils(l.returned)); return <tr key={l.id}>
           <td>{nameOf({ name_ar: l.name_ar, name_en: l.name_en }, lang)}{l.returned !== '0' && l.returned !== '0.000' && <> <span className="pill warn">{t('inv.returned')} {formatKWD(l.returned, lang)}</span></>}</td>
           <td><bdi>{l.qty}</bdi></td><td className="n money">{formatKWD(l.unit_price, lang)}</td><td className="n money">{formatKWD(l.discount, lang)}</td><td className="n money">{formatKWD(l.line_total, lang)}</td>
-          {mode === 'return' && <td className="n"><input className="input" dir="ltr" inputMode="decimal" placeholder={left} style={{ width: 100 }} value={ret[l.id] ?? ''} onChange={(e) => setRet({ ...ret, [l.id]: e.target.value })} /></td>}
+          {mode === 'return' && <td className="n"><input className="input" dir="ltr" inputMode="decimal" placeholder={left} style={{ width: 100 }} value={ret[l.id] ?? ''} onChange={(e) => setRet({ ...ret, [l.id]: e.target.value })} />
+            {l.kind === 'product' && <label className="cap muted" style={{ display: 'block' }}>{t('inv.restock')} <input className="input" type="number" min={0} max={l.qty} style={{ width: 64 }} value={restock[l.id] ?? ''} onChange={(e) => setRestock({ ...restock, [l.id]: e.target.value })} /></label>}</td>}
         </tr> })}</tbody></table></div>
       <div className="list">
         {inv.payments.map((p) => <div className="li" key={p.id}><Icon name={p.direction === 'in' ? 'wallet' : 'undo'} /><div className="grow small">{p.direction === 'out' && `${t('inv.refund')} · `}{t(`pos.m.${p.method}`)}{p.reference && <> · <span className="code">{p.reference}</span></>}<div className="cap muted">{dt(p.received_at, lang)}</div></div><b className="money">{p.direction === 'out' ? '-' : ''}{formatKWD(p.amount, lang)}</b></div>)}

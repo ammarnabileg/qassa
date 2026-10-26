@@ -11,6 +11,7 @@ export default function Login() {
   const { setMe } = useAuth()
   const [step, setStep] = useState<'password' | 'setup' | 'verify'>('password')
   const [email, setEmail] = useState('')
+  const [forgotSent, setForgotSent] = useState(false)
   const [password, setPassword] = useState('')
   const [token, setToken] = useState('')
   const [otpUrl, setOtpUrl] = useState('')
@@ -79,6 +80,12 @@ export default function Login() {
             <label className="field">{t('auth.password')}<input className="input" type="password" dir="ltr" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
             <ErrorText error={err} />
             <button className="btn primary lg" disabled={busy}>{t('auth.submit')}</button>
+            {forgotSent ? <div className="notice good">{t('auth.forgotSent')}</div> :
+              <button type="button" className="btn ghost sm" disabled={busy} onClick={async () => {
+                if (!email) { setErr({ code: 'email_required' }); return }
+                setErr(null)
+                try { await api('/auth/password/forgot', { method: 'POST', body: { email } }); setForgotSent(true) } catch (x) { setErr(x) }
+              }}>{t('auth.forgot')}</button>}
           </form>
         ) : (
           <form onSubmit={submitToken}>

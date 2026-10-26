@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { api, type Beneficiary, type Customer } from '../api/client'
+import { api, type Beneficiary, type Customer, type Wallet } from '../api/client'
 import { useAuth } from '../auth'
 import { ErrorText } from '../components/ErrorText'
 import { useSave } from '../components/hooks'
-import { Dialog, Head, Icon, useToast } from '../components/ui'
+import { Dialog, Head, Icon, nameOf, useToast } from '../components/ui'
+import { formatKWD } from '../money'
 
 type CForm = { id?: number; full_name: string; phone: string; email: string; preferred_language: 'ar' | 'en'; whatsapp_opt_in: boolean; marketing_opt_in: boolean; notes: string; add_self: boolean }
 type BForm = { id?: number; full_name: string; relation: Beneficiary['relation']; birth_date: string; gender: Beneficiary['gender']; notes: string }
@@ -18,7 +19,8 @@ const age = (d: string | null) => {
 const display = (phone: string) => phone.startsWith('965') && phone.length === 11 ? `+965 ${phone.slice(3, 7)} ${phone.slice(7)}` : `+${phone}`
 
 export default function Customers() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.language as 'ar' | 'en'
   const { can } = useAuth()
   const toast = useToast()
   const [q, setQ] = useState('')
@@ -27,6 +29,7 @@ export default function Customers() {
   const [profile, setProfile] = useState<number | null>(null)
   const [bForm, setBForm] = useState<BForm | null>(null)
   const current = useQuery({ queryKey: ['customer', profile], enabled: !!profile, queryFn: () => api<Customer>(`/customers/${profile}`) })
+  const wallet = useQuery({ queryKey: ['wallet', profile], enabled: !!profile, queryFn: () => api<Wallet>(`/customers/${profile}/wallet`) })
   const cSave = useSave<Customer>([['customers'], ['customer']], (c) => { setCForm(null); toast(t('common.saved')); if (!cForm?.id) setProfile(c.id) })
   const bSave = useSave<Beneficiary>([['customers'], ['customer']], () => { setBForm(null); toast(t('common.saved')) })
   const manage = can('customers.manage')
@@ -92,6 +95,16 @@ export default function Customers() {
               <div className="cap muted">{[age(b.birth_date) !== null ? `${age(b.birth_date)} ${t('cust.years')}` : '', b.notes].filter(Boolean).join(' · ')}</div></div>
             {manage && <button className="btn sm" onClick={() => { bSave.reset(); setBForm({ id: b.id, full_name: b.full_name, relation: b.relation, birth_date: b.birth_date ?? '', gender: b.gender, notes: b.notes }) }}>{t('common.edit')}</button>}
           </div>)}</div>
+          {wallet.data && <>
+            <div className="row sb"><h3>{t('cust.wallet')}</h3><span className="pill info">⭐ <bdi>{wallet.data.points}</bdi> {t('pos.pointsUnit')}</span></div>
+            <div className="list">{wallet.data.packages.map((p) => <div className="li" key={p.id}>
+              <div className="grow"><b>{nameOf(p, lang)}</b>
+                <div className="cap muted">{t('cust.sessionsLeft', { n: p.sessions_left, total: p.sessions_total })} · {t('cust.expires')} <bdi>{p.expires_on}</bdi> · {formatKWD(p.session_value, lang)}</div>
+                <div className="prog"><i style={{ width: `${(p.sessions_left / p.sessions_total) * 100}%` }} /></div></div></div>)}
+              {wallet.data.packages.length === 0 && <div className="small muted">{t('cust.noPackages')}</div>}</div>
+            {wallet.data.history.length > 0 && <div className="small muted">{wallet.data.history.slice(0, 5).map((h, i) =>
+              <div key={i}><bdi>{h.points > 0 ? '+' : ''}{h.points}</bdi> · {t(`cust.pk.${h.kind}`)}{h.invoice && <> · <span className="code">{h.invoice}</span></>}</div>)}</div>}
+          </>}
         </>}
       </Dialog>
 
