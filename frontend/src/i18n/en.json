@@ -80,7 +80,14 @@
     "currency": "Currency",
     "phone": "Phone",
     "address": "Address",
-    "status": "Status"
+    "status": "Status",
+    "opens": "Opens",
+    "closes": "Closes",
+    "lat": "Latitude",
+    "lng": "Longitude",
+    "locationHelp": "From Google Maps: long-press the branch and copy the two numbers. Used to suggest the nearest branch.",
+    "online": "Online booking",
+    "onlineHelp": "Show this branch and its times in the customer app"
   },
   "biz": {
     "kids": "Kids",

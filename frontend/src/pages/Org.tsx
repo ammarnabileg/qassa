@@ -10,7 +10,7 @@ import { Dialog, Head, Icon, nameOf, useToast } from '../components/ui'
 export type OrgData = { legal_entities: LegalEntity[]; branches: Branch[] }
 export const useOrg = () => useQuery({ queryKey: ['org'], queryFn: () => api<OrgData>('/org') })
 
-type Form = { id?: number; legal_entity: number; name_ar: string; name_en: string; code: string; business_type: Branch['business_type']; address: string; phone: string; is_active: boolean }
+type Form = { id?: number; legal_entity: number; name_ar: string; name_en: string; code: string; business_type: Branch['business_type']; address: string; phone: string; latitude: string; longitude: string; opens_at: string; closes_at: string; online_booking: boolean; is_active: boolean }
 
 export default function Org() {
   const { t, i18n } = useTranslation()
@@ -22,9 +22,10 @@ export default function Org() {
   if (q.isPending) return <p className="muted">{t('common.loading')}</p>
   if (q.isError) return <><ErrorText error={q.error} /><button className="btn" onClick={() => q.refetch()}>{t('common.retry')}</button></>
   const entity = q.data.legal_entities[0]
-  const open = (b?: Branch) => { reset(); setForm(b ? { ...b } : { legal_entity: entity.id, name_ar: '', name_en: '', code: '', business_type: 'kids', address: '', phone: '', is_active: true }) }
+  const open = (b?: Branch) => { reset(); setForm(b ? { ...b, latitude: b.latitude ?? '', longitude: b.longitude ?? '', opens_at: b.opens_at.slice(0, 5), closes_at: b.closes_at.slice(0, 5) } : { legal_entity: entity.id, name_ar: '', name_en: '', code: '', business_type: 'kids', address: '', phone: '', latitude: '', longitude: '', opens_at: '10:00', closes_at: '22:00', online_booking: true, is_active: true }) }
   const submit = () => {
-    const { id, ...body } = form!
+    const { id, ...rest } = form!
+    const body = { ...rest, latitude: rest.latitude || null, longitude: rest.longitude || null }
     save({ path: id ? `/org/branches/${id}` : '/org/branches', method: id ? 'PATCH' : 'POST', body })
   }
   const set = (k: keyof Form, v: unknown) => setForm({ ...form!, [k]: v })
@@ -57,6 +58,16 @@ export default function Org() {
             <label className="field">{t('org.phone')}<input className="input" dir="ltr" inputMode="tel" value={form.phone} onChange={(e) => set('phone', e.target.value)} /></label>
             <label className="field">{t('org.address')}<input className="input" value={form.address} onChange={(e) => set('address', e.target.value)} /></label>
           </div>
+          <div className="two">
+            <label className="field">{t('org.opens')}<input className="input" type="time" value={form.opens_at} onChange={(e) => set('opens_at', e.target.value)} /></label>
+            <label className="field">{t('org.closes')}<input className="input" type="time" value={form.closes_at} onChange={(e) => set('closes_at', e.target.value)} /></label>
+          </div>
+          <div className="two">
+            <label className="field">{t('org.lat')}<input className="input" dir="ltr" inputMode="decimal" placeholder="29.3375" value={form.latitude} onChange={(e) => set('latitude', e.target.value)} /></label>
+            <label className="field">{t('org.lng')}<input className="input" dir="ltr" inputMode="decimal" placeholder="48.0281" value={form.longitude} onChange={(e) => set('longitude', e.target.value)} /></label>
+          </div>
+          <div className="small muted">{t('org.locationHelp')}</div>
+          <label className="chk"><span>{t('org.online')}<small>{t('org.onlineHelp')}</small></span><input type="checkbox" className="sw" checked={form.online_booking} onChange={(e) => set('online_booking', e.target.checked)} /></label>
           {form.id && <label className="chk">{t('common.active')}<input type="checkbox" className="sw" checked={form.is_active} onChange={(e) => set('is_active', e.target.checked)} /></label>}
           <ErrorText error={error} />
         </>}

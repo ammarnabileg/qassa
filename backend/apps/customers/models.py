@@ -42,3 +42,18 @@ class Beneficiary(TenantScopedModel):
             models.UniqueConstraint(fields=["tenant", "id"], name="uniq_beneficiary_tenant_id"),
             models.UniqueConstraint(fields=["customer"], condition=models.Q(relation="self"), name="uniq_beneficiary_self"),
         ]
+
+
+class OtpChallenge(TenantScopedModel):
+    """A one-time login code sent to a phone (D-003: over WhatsApp). Only a hash is stored."""
+    phone = models.CharField(max_length=16)
+    code_hash = models.CharField(max_length=128)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    consumed_at = models.DateTimeField(null=True, blank=True)
+    channel = models.CharField(max_length=20)
+    ip = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta(TenantScopedModel.Meta):
+        indexes = [models.Index(fields=["tenant", "phone", "created_at"])]

@@ -12,6 +12,7 @@ from apps.tenancy.api.public import PublicManifestView, PublicSalonView
 from apps.booking.api import views as bk
 from apps.catalog.api import views as cat
 from apps.pos.api import views as pos
+from apps.customers.api import app as capp
 from apps.customers.api import views as cust
 from apps.staff.api import views as stf
 
@@ -77,4 +78,14 @@ urlpatterns = [
     path(api + "pos/invoices/<int:pk>", pos.InvoiceDetailView.as_view()),
     path(api + "pos/invoices/<int:pk>/payments", pos.InvoicePaymentsView.as_view()),
     path(api + "pos/invoices/<int:pk>/credit-notes", pos.InvoiceCreditNotesView.as_view()),
+    # customer app
+    path(api + "app/otp/request", capp.OtpRequestView.as_view()),
+    path(api + "app/otp/verify", capp.OtpVerifyView.as_view()),
+    path(api + "app/register", capp.RegisterView.as_view()),
+    path(api + "app/me", capp.MeView.as_view()),
+    path(api + "app/me/beneficiaries", capp.MyBeneficiariesView.as_view()),
+    path(api + "app/catalog", capp.CatalogView.as_view()),
+    path(api + "app/slots", capp.SlotsView.as_view()),
+    path(api + "app/bookings", capp.MyBookingsView.as_view()),
+    path(api + "app/bookings/<int:pk>/cancel", capp.MyBookingCancelView.as_view()),
 ]

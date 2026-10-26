@@ -95,11 +95,15 @@ def idempotent(view_method):
         key = request.headers.get("Idempotency-Key")
         if not key or len(key) > 128:
             raise DomainError("Idempotency-Key header is required", code="idempotency_key_required")
-        tenant_id = getattr(request, "tenant_id", None)
+        tenant_id = getattr(request, "tenant_id", None) or getattr(getattr(request, "tenant", None), "id", None)
+        customer = getattr(request, "customer", None)
+        if customer is not None:  # customer-app requests: keys are scoped to the customer
+            key = f"c{customer.id}:{key}"
+        user = request.user if request.user.is_authenticated else None
         req_hash = _hash_request(request)
         try:
             with transaction.atomic():
-                rec = IdempotencyRecord.objects.create(tenant_id=tenant_id, key=key, user=request.user,
+                rec = IdempotencyRecord.objects.create(tenant_id=tenant_id, key=key, user=user,
                                                        method=request.method, path=request.path,
                                                        request_hash=req_hash)
         except IntegrityError:

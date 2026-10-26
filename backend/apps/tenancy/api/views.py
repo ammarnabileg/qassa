@@ -17,7 +17,7 @@ class BranchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Branch
         fields = ["id", "legal_entity", "name_ar", "name_en", "code", "business_type", "timezone", "address", "phone",
-                  "is_active"]
+                  "latitude", "longitude", "opens_at", "closes_at", "online_booking", "is_active"]
 
 
 class OrgView(TenantAPIView):
@@ -38,7 +38,8 @@ class OrgView(TenantAPIView):
 class BranchWrite(serializers.ModelSerializer):
     class Meta:
         model = Branch
-        fields = ["id", "legal_entity", "name_ar", "name_en", "code", "business_type", "address", "phone", "is_active"]
+        fields = ["id", "legal_entity", "name_ar", "name_en", "code", "business_type", "address", "phone", "latitude",
+                  "longitude", "opens_at", "closes_at", "online_booking", "is_active"]
 
     def validate_legal_entity(self, value):
         if not LegalEntity.objects.filter(id=value.id).exists():

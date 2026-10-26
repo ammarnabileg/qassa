@@ -161,6 +161,14 @@ CELERY_TASK_ALWAYS_EAGER = ENVIRONMENT == "test"
 QASSA = {
     "BUSINESS_DAY_START_HOUR": 4,  # shifts crossing midnight belong to the previous business day
     "MFA_REQUIRED_ROLES": ["owner", "finance_manager", "accountant"],
+    "WHATSAPP_ADAPTER": env("QASSA_WHATSAPP_ADAPTER", "console" if ENVIRONMENT in {"development", "test"} else "disabled"),
+    "WHATSAPP_URL": env("QASSA_WHATSAPP_URL", ""),
+    "WHATSAPP_TOKEN": env("QASSA_WHATSAPP_TOKEN", ""),
+    "WHATSAPP_INSTANCE": env("QASSA_WHATSAPP_INSTANCE", ""),
+    # Show the login code in the API response — ONLY for testing environments without a WhatsApp channel.
+    "OTP_ECHO": env_bool("QASSA_OTP_ECHO", ENVIRONMENT in {"development", "test"}) and ENVIRONMENT != "production",
+    "OTP_TTL_SECONDS": 300,
+    "CUSTOMER_TOKEN_DAYS": 30,
 }
 
 LOGGING = {

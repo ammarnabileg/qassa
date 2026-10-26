@@ -12,6 +12,15 @@ from apps.tenancy.models import Branch, LegalEntity, Membership, MembershipBranc
 TODAY = date.today()
 
 
+@pytest.fixture(autouse=True)
+def _clear_cache():
+    """Host→tenant lookups are cached; tests recreate tenants with new ids, so start each test clean."""
+    from django.core.cache import cache
+    cache.clear()
+    yield
+    cache.clear()
+
+
 def ensure_plans():
     """Plans come from a data migration; transactional tests flush tables, so recreate them when needed."""
     from apps.platform.models import Plan
