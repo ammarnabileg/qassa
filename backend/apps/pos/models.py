@@ -58,6 +58,11 @@ class Invoice(TenantScopedModel):
     issued_at = models.DateTimeField(auto_now_add=True)
     issued_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="+")
     discount_approved_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
+    coupon = models.ForeignKey("loyalty.Coupon", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
+    points_redeemed = models.PositiveIntegerField(default=0)
+    # tip for the staff, collected with the payment; not revenue (§6.3) → TIPS_PAYABLE
+    tip = models.DecimalField(**MONEY, default=0)
+    tip_staff = models.ForeignKey("staff.StaffMember", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
 
     class Meta(TenantScopedModel.Meta):
         constraints = [
@@ -69,8 +74,19 @@ class Invoice(TenantScopedModel):
 
 
 class InvoiceLine(TenantScopedModel):
+    class Kind(models.TextChoices):
+        SERVICE = "service"
+        PRODUCT = "product"
+        PACKAGE = "package"      # a package sold (prepaid sessions)
+
     invoice = models.ForeignKey(Invoice, on_delete=models.PROTECT, related_name="lines")
-    service = models.ForeignKey("catalog.Service", on_delete=models.PROTECT, related_name="+")
+    kind = models.CharField(max_length=8, choices=Kind.choices, default=Kind.SERVICE)
+    service = models.ForeignKey("catalog.Service", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
+    product = models.ForeignKey("inventory.Product", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
+    package_plan = models.ForeignKey("loyalty.PackagePlan", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
+    # a service paid by a customer's package: line_total is 0 and revenue comes from the package liability
+    redeemed_package = models.ForeignKey("loyalty.CustomerPackage", on_delete=models.PROTECT, null=True, blank=True, related_name="redemptions")
+    unit_cost = models.DecimalField(max_digits=18, decimal_places=6, default=0)  # product cost at sale (average)
     staff = models.ForeignKey("staff.StaffMember", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
     name_ar = models.CharField(max_length=120)
     name_en = models.CharField(max_length=120, blank=True)
@@ -83,6 +99,10 @@ class InvoiceLine(TenantScopedModel):
         constraints = [
             models.UniqueConstraint(fields=["tenant", "id"], name="uniq_invline_tenant_id"),
             models.CheckConstraint(condition=Q(qty__gte=1), name="invline_qty_positive"),
+            models.CheckConstraint(name="invline_kind_target", condition=(
+                Q(kind="service", service__isnull=False, product__isnull=True, package_plan__isnull=True)
+                | Q(kind="product", product__isnull=False, service__isnull=True, package_plan__isnull=True)
+                | Q(kind="package", package_plan__isnull=False, product__isnull=True))),
             models.CheckConstraint(condition=Q(line_total=F("qty") * F("unit_price") - F("discount")), name="invline_math"),
             models.CheckConstraint(condition=Q(discount__gte=0) & Q(line_total__gte=0), name="invline_non_negative"),
         ]
@@ -110,6 +130,7 @@ class CreditNoteLine(TenantScopedModel):
     credit_note = models.ForeignKey(CreditNote, on_delete=models.PROTECT, related_name="lines")
     invoice_line = models.ForeignKey(InvoiceLine, on_delete=models.PROTECT, related_name="credit_lines")
     amount = models.DecimalField(**MONEY)
+    restock_qty = models.PositiveSmallIntegerField(default=0)  # products returned in sellable condition
 
     class Meta(TenantScopedModel.Meta):
         constraints = [models.CheckConstraint(condition=Q(amount__gt=0), name="cnline_positive")]

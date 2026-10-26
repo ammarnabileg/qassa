@@ -54,6 +54,10 @@ def _plan(branch: Branch, starts_at: datetime, specs: list[ItemSpec]):
         if not StaffSkill.objects.filter(staff=person, service=svc).exists():
             raise DomainError(code="staff_lacks_skill", details={"position": i})
         end = t + timedelta(minutes=svc.duration_minutes)
+        from apps.staff.services.availability import available
+        if not available(person.id, branch, t, end):
+            raise DomainError(code="staff_unavailable", message="Outside the staff member's hours or on time off",
+                              details={"position": i})
         plan.append((svc, person, t, end))
         t = end
     return plan

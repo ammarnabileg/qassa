@@ -81,7 +81,10 @@ class SessionApproveView(TenantAPIView):
 
 
 class SaleLineIn(serializers.Serializer):
-    service_id = serializers.IntegerField()
+    service_id = serializers.IntegerField(required=False, allow_null=True)
+    product_id = serializers.IntegerField(required=False, allow_null=True)
+    package_plan_id = serializers.IntegerField(required=False, allow_null=True)
+    redeem_package_id = serializers.IntegerField(required=False, allow_null=True)
     qty = serializers.IntegerField(min_value=1, max_value=50, default=1)
     discount = serializers.DecimalField(**AMOUNT, min_value=0, default="0")
     staff_id = serializers.IntegerField(required=False, allow_null=True)
@@ -101,11 +104,24 @@ class CheckoutIn(serializers.Serializer):
     beneficiary_id = serializers.IntegerField(required=False, allow_null=True)
     appointment_id = serializers.IntegerField(required=False, allow_null=True)
     expected_total = serializers.DecimalField(**AMOUNT, required=False, allow_null=True)
+    coupon_code = serializers.CharField(required=False, allow_blank=True, default="", max_length=30)
+    redeem_points = serializers.IntegerField(required=False, min_value=0, default=0)
+    tip = serializers.DecimalField(**AMOUNT, min_value=0, required=False, default="0")
+    tip_staff_id = serializers.IntegerField(required=False, allow_null=True)
+
+    def validate_lines(self, lines):
+        for ln in lines:
+            if sum(1 for k in ("service_id", "product_id", "package_plan_id") if ln.get(k)) != 1:
+                raise serializers.ValidationError("each line needs exactly one of service_id, product_id, package_plan_id")
+        return lines
 
 
 class InvoiceLineOut(serializers.Serializer):
     id = serializers.IntegerField()
-    service_id = serializers.IntegerField()
+    kind = serializers.CharField()
+    service_id = serializers.IntegerField(allow_null=True)
+    product_id = serializers.IntegerField(allow_null=True)
+    redeemed_package_id = serializers.IntegerField(allow_null=True)
     staff_id = serializers.IntegerField(allow_null=True)
     name_ar = serializers.CharField()
     name_en = serializers.CharField()
@@ -150,7 +166,7 @@ class InvoiceOut(serializers.ModelSerializer):
     class Meta:
         model = Invoice
         fields = ["id", "number", "branch", "customer", "customer_name", "customer_phone", "beneficiary", "beneficiary_name",
-                  "appointment", "subtotal", "discount_total", "total", "is_credit", "business_date", "issued_at",
+                  "appointment", "subtotal", "discount_total", "total", "tip", "points_redeemed", "is_credit", "business_date", "issued_at",
                   "issued_by_name", "lines", "payments", "credit_notes", "state"]
 
     def get_customer_name(self, obj) -> str:
@@ -193,7 +209,8 @@ class CheckoutView(TenantAPIView):
             branch=branch_for(request, v["branch_id"]), lines=[sales.LineIn(**x) for x in v["lines"]],
             payments=[sales.PaymentIn(**x) for x in v["payments"]], customer_id=v.get("customer_id"),
             beneficiary_id=v.get("beneficiary_id"), appointment_id=v.get("appointment_id"),
-            expected_total=v.get("expected_total")), user=request.user, membership=request.membership)
+            expected_total=v.get("expected_total"), coupon_code=v["coupon_code"], redeem_points=v["redeem_points"],
+            tip=v["tip"], tip_staff_id=v.get("tip_staff_id")), user=request.user, membership=request.membership)
         return Response(InvoiceOut(_invoices().get(id=inv.id)).data, status=status.HTTP_201_CREATED)
 
 
@@ -248,6 +265,7 @@ class InvoicePaymentsView(TenantAPIView):
 class ReturnLineIn(serializers.Serializer):
     invoice_line_id = serializers.IntegerField()
     amount = serializers.DecimalField(**AMOUNT, min_value=0)
+    restock_qty = serializers.IntegerField(min_value=0, default=0)
 
 
 class CreditNoteIn(serializers.Serializer):
@@ -269,6 +287,6 @@ class InvoiceCreditNotesView(TenantAPIView):
         refund = sales.PaymentIn(**v["refund"]) if v.get("refund") else None
         if refund and refund.method == "cash" and not request.membership.has_perm("pos.sell"):
             raise PermissionDenied("Cash refunds need POS access")
-        sales.credit_note(inv, lines=[(x["invoice_line_id"], x["amount"]) for x in v["lines"]], reason=v["reason"],
+        sales.credit_note(inv, lines=[(x["invoice_line_id"], x["amount"], x["restock_qty"]) for x in v["lines"]], reason=v["reason"],
                           refund=refund, user=request.user)
         return Response(InvoiceOut(_invoices().get(id=pk)).data, status=status.HTTP_201_CREATED)

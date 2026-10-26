@@ -16,6 +16,11 @@ PERMISSIONS = {
     "booking.view": "View appointments and the queue",
     "booking.manage": "Create, move and update appointments",
     "pos.invoices.view": "View invoices of own branches",
+    # phase 4
+    "inventory.view": "View products and stock",
+    "inventory.purchase": "Receive goods, record supplier bills and payments",
+    "marketing.manage": "Manage packages, coupons and loyalty settings",
+    "commission.pay": "Pay out staff commissions",
     # POS & operations (implemented in phase 3)
     "pos.sell": "Sell at the POS",
     "pos.discount.line": "Apply discounts within the role limit",
@@ -50,21 +55,22 @@ ROLE_TEMPLATES = {
         "reporting.statements.approve", "qayd.export", "qayd.submission.record"}},
     "branch_manager": {"name_ar": "مدير الفرع", "name_en": "Branch manager", "permissions": {
         "org.view", "catalog.view", "staff.view", "customers.view", "customers.manage",
-        "booking.view", "booking.manage", "pos.invoices.view",
+        "booking.view", "booking.manage", "pos.invoices.view", "inventory.view",
         "pos.sell", "pos.discount.line", "pos.discount.override", "pos.credit_sale", "pos.return",
         "cash.session.open", "cash.variance.approve", "commission.view.all", "data.export"}},
     "cashier": {"name_ar": "كاشير واستقبال", "name_en": "Cashier / reception", "permissions": {
         "catalog.view", "staff.view", "customers.view", "customers.manage",
-        "booking.view", "booking.manage", "pos.invoices.view",
+        "booking.view", "booking.manage", "pos.invoices.view", "inventory.view",
         "pos.sell", "pos.discount.line", "cash.session.open"}},
     "service_provider": {"name_ar": "مقدم خدمة", "name_en": "Service provider", "permissions": {"catalog.view", "booking.view"}},
     "inventory_officer": {"name_ar": "مسؤول المخزون", "name_en": "Inventory officer", "permissions": {
-        "inventory.adjust", "org.view", "catalog.view"}},
+        "inventory.adjust", "inventory.view", "inventory.purchase", "org.view", "catalog.view"}},
     "accountant": {"name_ar": "محاسب", "name_en": "Accountant", "permissions": {
         "org.view", "catalog.view", "pos.invoices.view", "accounting.view", "accounting.journal.post", "report.view.cost_profit",
         "commission.view.all", "qayd.export", "qayd.submission.record", "data.export"}},
     "finance_manager": {"name_ar": "المدير المالي", "name_en": "Finance manager", "permissions": {
-        "org.view", "pos.invoices.view", "accounting.view", "accounting.journal.post", "accounting.journal.reverse",
+        "org.view", "pos.invoices.view", "inventory.view", "inventory.purchase", "commission.pay",
+        "accounting.view", "accounting.journal.post", "accounting.journal.reverse",
         "accounting.period.close", "accounting.setup", "reporting.statements.approve", "report.view.cost_profit",
         "commission.view.all", "cash.variance.approve", "qayd.export", "qayd.submission.record", "data.export",
         "audit.view"}},

@@ -11,6 +11,8 @@ from apps.tenancy.api import views as org
 from apps.tenancy.api.public import PublicManifestView, PublicSalonView
 from apps.booking.api import views as bk
 from apps.catalog.api import views as cat
+from apps.inventory.api import views as inv
+from apps.loyalty.api import views as loy
 from apps.notifications.api.views import WhatsAppView
 from apps.pos.api import views as pos
 from apps.customers.api import app as capp
@@ -83,6 +85,26 @@ urlpatterns = [
     path(api + "pos/invoices/<int:pk>/credit-notes", pos.InvoiceCreditNotesView.as_view()),
     path(api + "whatsapp", WhatsAppView.as_view()),
     path(api + "whatsapp/<str:action>", WhatsAppView.as_view()),
+    # phase 4
+    path(api + "inventory/products", inv.ProductsView.as_view()),
+    path(api + "inventory/products/<int:pk>", inv.ProductDetailView.as_view()),
+    path(api + "inventory/suppliers", inv.SuppliersView.as_view()),
+    path(api + "inventory/receipts", inv.ReceiptsView.as_view()),
+    path(api + "inventory/receipts/<int:pk>/bill", inv.ReceiptBillView.as_view()),
+    path(api + "inventory/bills/<int:pk>/payments", inv.BillPaymentView.as_view()),
+    path(api + "inventory/adjust", inv.AdjustView.as_view()),
+    path(api + "inventory/moves", inv.MovesView.as_view()),
+    path(api + "loyalty/plans", loy.PlansView.as_view()),
+    path(api + "loyalty/plans/<int:pk>", loy.PlanDetailView.as_view()),
+    path(api + "loyalty/settings", loy.LoyaltySettingsView.as_view()),
+    path(api + "loyalty/coupons", loy.CouponsView.as_view()),
+    path(api + "loyalty/coupons/<int:pk>", loy.CouponDetailView.as_view()),
+    path(api + "customers/<int:pk>/wallet", loy.CustomerWalletView.as_view()),
+    path(api + "commissions", stf.CommissionsView.as_view()),
+    path(api + "staff/<int:pk>/payout", stf.CommissionPayoutView.as_view()),
+    path(api + "staff/<int:pk>/schedule", stf.StaffScheduleView.as_view()),
+    path(api + "staff/<int:pk>/time-off", stf.StaffTimeOffView.as_view()),
+    path(api + "staff/<int:pk>/time-off/<int:off_id>", stf.StaffTimeOffView.as_view()),
     # customer app
     path(api + "app/otp/request", capp.OtpRequestView.as_view()),
     path(api + "app/otp/verify", capp.OtpVerifyView.as_view()),

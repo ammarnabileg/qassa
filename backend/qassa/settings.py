@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     "apps.staff",
     "apps.customers",
     "apps.booking",
+    "apps.inventory",
+    "apps.loyalty",
     "apps.notifications",
     "apps.pos",
     "apps.platform",
