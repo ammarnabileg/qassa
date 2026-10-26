@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,16 +12,18 @@ import 'theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
-  // PWA per salon: https://app.qassa…/?salon=<slug> opens that salon directly (D-001).
+  // Web (PWA): each company has its own host, so the salon comes from the address bar.
+  // Store app (D-001 picker): ?salon=<slug> link or the last chosen salon.
   final fromUrl = Uri.base.queryParameters['salon'];
-  runApp(QassaApp(api: Api(), prefs: prefs, initialSlug: fromUrl ?? prefs.getString('salon')));
+  runApp(QassaApp(api: Api(), prefs: prefs, byHost: kIsWeb, initialSlug: fromUrl ?? prefs.getString('salon')));
 }
 
 class QassaApp extends StatefulWidget {
-  const QassaApp({super.key, required this.api, required this.prefs, this.initialSlug});
+  const QassaApp({super.key, required this.api, required this.prefs, this.initialSlug, this.byHost = false});
   final Api api;
   final SharedPreferences prefs;
   final String? initialSlug;
+  final bool byHost;
   @override
   State<QassaApp> createState() => _QassaAppState();
 }
@@ -34,7 +37,22 @@ class _QassaAppState extends State<QassaApp> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialSlug != null) open(widget.initialSlug!);
+    start();
+  }
+
+  Future<void> start() async {
+    if (widget.byHost) {
+      setState(() => loading = true);
+      try {
+        final s = await widget.api.salonForHost();
+        setState(() { salon = s; loading = false; });
+        return;
+      } on ApiError catch (e) {
+        setState(() => loading = false);
+        if (e.code != 'salon_not_found') { setState(() => error = e.code == 'network' ? 'err_network' : 'err_unknown'); return; }
+      }
+    }
+    if (widget.initialSlug != null) await open(widget.initialSlug!);
   }
 
   Future<void> open(String slug) async {
@@ -73,7 +91,7 @@ class _QassaAppState extends State<QassaApp> {
       darkTheme: themeFor(salon?.businessType, Brightness.dark),
       home: salon == null
           ? PickerScreen(t: t, loading: loading, error: error, onSubmit: open, onLang: toggleLang)
-          : SalonScreen(t: t, lang: lang, salon: salon!, onChange: changeSalon, onLang: toggleLang),
+          : SalonScreen(t: t, lang: lang, salon: salon!, onChange: salon!.locked ? null : changeSalon, onLang: toggleLang),
     );
   }
 }
@@ -121,7 +139,8 @@ class SalonScreen extends StatelessWidget {
   final String Function(String) t;
   final String lang;
   final Salon salon;
-  final VoidCallback onChange, onLang;
+  final VoidCallback? onChange;
+  final VoidCallback onLang;
 
   /// Kuwait numbers: 8 digits → +965.
   static String intl(String phone) {
@@ -134,7 +153,7 @@ class SalonScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(salon.name), actions: [
         TextButton(onPressed: onLang, child: Text(t('language'))),
-        IconButton(tooltip: t('change_salon'), onPressed: onChange, icon: const Icon(Icons.swap_horiz)),
+        if (onChange != null) IconButton(tooltip: t('change_salon'), onPressed: onChange, icon: const Icon(Icons.swap_horiz)),
       ]),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         Card(child: Padding(padding: const EdgeInsets.all(16), child: Text(t('booking_soon')))),

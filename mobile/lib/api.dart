@@ -27,13 +27,17 @@ class Branch {
 }
 
 class Salon {
-  Salon({required this.slug, required this.name, required this.businessType, required this.branches});
+  Salon({required this.slug, required this.name, required this.businessType, required this.branches, this.locked = false});
   factory Salon.fromJson(Map<String, dynamic> j) => Salon(
       slug: j['slug'] as String,
       name: j['name'] as String,
       businessType: j['business_type'] as String,
-      branches: [for (final b in j['branches'] as List) Branch.fromJson(b as Map<String, dynamic>)]);
+      branches: [for (final b in j['branches'] as List) Branch.fromJson(b as Map<String, dynamic>)],
+      locked: (j['locked'] as bool?) ?? false);
   final String slug, name, businessType;
+
+  /// Served on the company's own domain: the app shows only this salon (no "change salon").
+  final bool locked;
   final List<Branch> branches;
 }
 
@@ -42,10 +46,15 @@ class Api {
   final http.Client _client;
   final String _base;
 
-  Future<Salon> salon(String slug) async {
+  /// The salon that owns the current host (company subdomain or custom domain); 404 on the platform host.
+  Future<Salon> salonForHost() => _get('/api/v1/public/salon');
+
+  Future<Salon> salon(String slug) => _get('/api/v1/public/salons/${Uri.encodeComponent(slug)}');
+
+  Future<Salon> _get(String path) async {
     final http.Response res;
     try {
-      res = await _client.get(Uri.parse('$_base/api/v1/public/salons/${Uri.encodeComponent(slug)}'), headers: {'Accept': 'application/json'});
+      res = await _client.get(Uri.parse('$_base$path'), headers: {'Accept': 'application/json'});
     } catch (_) {
       throw ApiError(0, 'network');
     }

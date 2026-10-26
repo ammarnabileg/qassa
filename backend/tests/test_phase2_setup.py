@@ -214,3 +214,11 @@ def test_public_plans_list(db):
     from rest_framework.test import APIClient
     plans = APIClient().get("/api/v1/platform/plans").json()
     assert [p["code"] for p in plans] == ["basic", "pro", "chains"] and plans[0]["monthly_price"] == "15.000"
+
+
+def test_duplicate_service_name_in_category_is_a_clear_error(company_a):
+    t, _, _ = company_a
+    svc = make_service(t)
+    r = client_for(owner(t), t).post("/api/v1/catalog/services", {"category": svc["category"], "name_ar": "قص شعر",
+                                                                  "duration_minutes": 30}, format="json")
+    assert r.status_code == 422 and r.json()["error"]["code"] == "service_name_exists"

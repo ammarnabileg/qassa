@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { api, type LoginResult, type Me } from '../api/client'
 import { useAuth } from '../auth'
 import { ErrorText, LangToggle } from '../components/ErrorText'
+import { Icon, Logo } from '../components/ui'
 
 export default function Login() {
   const { t } = useTranslation()
@@ -33,30 +34,39 @@ export default function Login() {
   }) }
 
   return (
-    <div className="center">
-      <div className="card grid" style={{ width: 'min(420px,100%)', padding: 28 }}>
-        <div className="row" style={{ justifyContent: 'space-between' }}>
-          <div><h1>{t('app.name')}</h1><div className="small muted">{t('app.tagline')}</div></div>
-          <LangToggle />
+    <div className="auth">
+      <div className="side">
+        <div>
+          <Logo biz="kids" title={t('app.name')} sub={t('app.tagline')} />
+          <h2>{t('auth.hero')}</h2>
+          <ul>
+            <li><Icon name="cart" />{t('auth.f1')}</li>
+            <li><Icon name="award" />{t('auth.f2')}</li>
+            <li><Icon name="store" />{t('auth.f3')}</li>
+            <li><Icon name="chart" />{t('auth.f4')}</li>
+          </ul>
         </div>
+        <div className="cap" style={{ color: 'rgba(255,255,255,.55)', position: 'relative' }}>© 2026 {t('app.name')}</div>
+      </div>
+      <div className="form">
         {step === 'password' ? (
-          <form className="grid" onSubmit={submitPassword}>
-            <h2>{t('auth.title')}</h2>
+          <form onSubmit={submitPassword}>
+            <div style={{ alignSelf: 'flex-end' }}><LangToggle className="btn sm" /></div>
+            <div><h1>{t('auth.welcome')}</h1><div className="small muted">{t('auth.sub')}</div></div>
             <label className="field">{t('auth.email')}<input className="input" type="email" dir="ltr" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
             <label className="field">{t('auth.password')}<input className="input" type="password" dir="ltr" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
             <ErrorText error={err} />
-            <button className="btn primary" disabled={busy}>{t('auth.submit')}</button>
+            <button className="btn primary lg" disabled={busy}>{t('auth.submit')}</button>
           </form>
         ) : (
-          <form className="grid" onSubmit={submitToken}>
-            <h2>{t(step === 'setup' ? 'auth.mfaSetupTitle' : 'auth.mfaVerifyTitle')}</h2>
-            {step === 'setup' && <>
-              <div className="small muted">{t('auth.mfaSetupHelp')}</div>
-              <code dir="ltr" style={{ wordBreak: 'break-all', fontSize: 12, background: 'var(--surface-2)', padding: 8, borderRadius: 8 }}>{otpUrl}</code>
-            </>}
+          <form onSubmit={submitToken}>
+            <div style={{ alignSelf: 'flex-end' }}><LangToggle className="btn sm" /></div>
+            <div><h1>{t(step === 'setup' ? 'auth.mfaSetupTitle' : 'auth.mfaVerifyTitle')}</h1>
+              {step === 'setup' && <div className="small muted">{t('auth.mfaSetupHelp')}</div>}</div>
+            {step === 'setup' && <code className="code" style={{ wordBreak: 'break-all', fontSize: 12, padding: 8, letterSpacing: 0 }}>{otpUrl}</code>}
             <label className="field">{t('auth.mfaCode')}<input className="input" inputMode="numeric" pattern="\d{6}" maxLength={6} dir="ltr" autoComplete="one-time-code" value={token} onChange={(e) => setToken(e.target.value)} required /></label>
             <ErrorText error={err} />
-            <button className="btn primary" disabled={busy}>{t('auth.verify')}</button>
+            <button className="btn primary lg" disabled={busy}>{t('auth.verify')}</button>
           </form>
         )}
       </div>

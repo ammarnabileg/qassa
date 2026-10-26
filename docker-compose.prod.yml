@@ -24,6 +24,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
       REDIS_URL: redis://redis:6379/1
       SEED_PASSWORD: ${SEED_PASSWORD:-}
+      QASSA_TENANT_BASE_DOMAIN: ${QASSA_TENANT_BASE_DOMAIN:?}
     depends_on: { db: { condition: service_healthy }, redis: { condition: service_healthy } }
     healthcheck: { test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/api/v1/version')"], interval: 10s, retries: 10, start_period: 90s }
   worker:
@@ -33,6 +34,9 @@ services:
     depends_on: { backend: { condition: service_healthy } }
   web:
     build: { context: ., dockerfile: deploy/web.Dockerfile }
+    environment:
+      PLATFORM_HOST: ${PLATFORM_HOST:?}
+      NGINX_ENVSUBST_FILTER: PLATFORM_HOST  # only substitute this; keep nginx's own $variables
     depends_on: { backend: { condition: service_healthy } }
 volumes:
   pgdata:

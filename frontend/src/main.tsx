@@ -5,8 +5,10 @@ import { BrowserRouter } from 'react-router-dom'
 import { ApiError } from './api/client'
 import App from './App'
 import { AuthProvider } from './auth'
+import { ToastProvider } from './components/ui'
 import './i18n'
-import './styles/tokens.css'
+import './styles/design.css'
+import './styles/app.css'
 
 console.info(`Qassa ${__APP_VERSION__} (${__APP_CHANNEL__})`)
 
@@ -20,7 +22,7 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter><AuthProvider><App /></AuthProvider></BrowserRouter>
+      <BrowserRouter><AuthProvider><ToastProvider><App /></ToastProvider></AuthProvider></BrowserRouter>
     </QueryClientProvider>
   </StrictMode>,
 )

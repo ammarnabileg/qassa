@@ -4,7 +4,13 @@ Release versions follow `MAJOR.MINOR.PATCH` and are tagged `vX.Y.Z` on `main`.
 Builds between releases are **debug** builds: `X.(Y+1).0-dev.N+sha` (see `scripts/version.py`).
 
 ## [Unreleased]
-### Added
+### Added — Phase 2 (setup)
+- Services and categories per business type; prices as dated rows (no backdating, DB constraint against overlaps, branch overrides).
+- Staff with branches and skills (services they deliver).
+- Customers (guardians) with beneficiaries (self / children); Kuwait phone normalisation; search by name, phone or child.
+- Plans from the approved design (Basic 15, Pro 29, Chains 69 KWD) with branch/staff limits enforced on the server; platform staff change plan/status with an audited reason.
+- Per-company customer app host: automatic subdomain, custom domain on plans that allow it (D-005).
+- Back-office rebuilt on the approved design system (same CSS, Alexandria font, icons, themes per business type); platform console.
 - Flutter customer app (`mobile/`), one app for all salons (D-001 picker): salon code / `?salon=` link → salon name, theme by business type (kids/men/women), active branches with call and WhatsApp; Arabic RTL / English LTR; same build serves as the per-salon PWA.
 - `GET /api/v1/public/salons/<slug>`: public read-only salon profile (suspended salons hidden, throttled 60/min).
 - `mobile/tool/build.sh`: debug/release builds stamped from `VERSION`; release refuses to build from an untagged commit.

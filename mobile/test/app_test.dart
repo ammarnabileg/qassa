@@ -29,6 +29,29 @@ void main() {
     expect(SalonScreen.intl('+96555551234'), '96555551234');
   });
 
+  testWidgets('on a company host the salon opens directly and cannot be changed', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final api = Api(baseUrl: 'http://x', client: MockClient((req) async {
+      if (req.url.path == '/api/v1/public/salon') {
+        return http.Response.bytes(utf8.encode(jsonEncode({...salonJson, 'locked': true})), 200);
+      }
+      return http.Response('{}', 500);
+    }));
+    await tester.pumpWidget(QassaApp(api: api, prefs: prefs, byHost: true));
+    await tester.pumpAndSettle();
+    expect(find.text('حولي'), findsOneWidget);
+    expect(find.byIcon(Icons.swap_horiz), findsNothing);
+  });
+
+  testWidgets('on the platform host (no company) the picker is shown', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    await tester.pumpWidget(QassaApp(api: fakeApi(), prefs: prefs, byHost: true));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('slug')), findsOneWidget);
+  });
+
   testWidgets('unknown salon shows translated error; known salon shows branches; choice persists', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
@@ -52,3 +75,4 @@ void main() {
     expect(Directionality.of(tester.element(find.text('Hawalli'))), TextDirection.ltr);
   });
 }
+

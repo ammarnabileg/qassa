@@ -1,5 +1,6 @@
 from datetime import date
 
+from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, Q
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -35,6 +36,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         model = Service
         fields = ["id", "category", "business_type", "name_ar", "name_en", "duration_minutes", "home_visit",
                   "is_active", "current_price"]
+        validators = []  # duplicate names are reported as service_name_exists by the view
 
     def get_current_price(self, obj) -> str | None:
         """Company default price valid today (branch overrides are listed under /prices)."""
@@ -100,7 +102,11 @@ class ServicesView(TenantAPIView):
         s = ServiceIn(data=request.data, context={"today": timezone.localdate()})
         s.is_valid(raise_exception=True)
         price = s.validated_data.pop("price", None)
-        service = s.save()
+        try:
+            with transaction.atomic():
+                service = s.save()
+        except IntegrityError:
+            raise DomainError(code="service_name_exists")
         if price is not None:
             if not request.membership.has_perm("catalog.price.change"):
                 raise DomainError(code="permission_price_change")
@@ -117,7 +123,11 @@ class ServiceDetailView(TenantAPIView):
         service = get_object_or_404(Service.objects.all(), pk=pk)
         s = ServiceSerializer(service, data=request.data, partial=True, context={"today": timezone.localdate()})
         s.is_valid(raise_exception=True)
-        s.save()
+        try:
+            with transaction.atomic():
+                s.save()
+        except IntegrityError:
+            raise DomainError(code="service_name_exists")
         return Response(ServiceSerializer(_services().get(id=pk), context={"today": timezone.localdate()}).data)
 
 

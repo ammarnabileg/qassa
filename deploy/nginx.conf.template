@@ -1,0 +1,21 @@
+# ${PLATFORM_HOST}: platform back-office (React). Any other host: a company's customer PWA (Flutter);
+# the backend decides which company owns the host (platform.TenantDomain) and rejects unknown hosts.
+map $http_x_forwarded_proto $fwd_proto { default $http_x_forwarded_proto; "" $scheme; }
+
+server {
+  listen 80;
+  server_name ${PLATFORM_HOST};
+  root /usr/share/nginx/html/admin;
+  client_max_body_size 10m;
+  location ~ ^/(api|admin|static)/ { include /etc/nginx/conf.d/proxy.inc; }
+  location / { try_files $uri /index.html; }
+}
+
+server {
+  listen 80 default_server;
+  root /usr/share/nginx/html/pwa;
+  location /api/ { include /etc/nginx/conf.d/proxy.inc; }
+  # install name/colour per company
+  location = /manifest.json { rewrite ^ /api/v1/public/manifest break; include /etc/nginx/conf.d/proxy.inc; }
+  location / { try_files $uri /index.html; }
+}

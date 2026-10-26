@@ -28,6 +28,7 @@ class Service(TenantScopedModel):
     class Meta(TenantScopedModel.Meta):
         constraints = [
             models.UniqueConstraint(fields=["tenant", "id"], name="uniq_service_tenant_id"),
+            models.UniqueConstraint(fields=["category", "name_ar"], name="uniq_service_name_in_category"),
             models.CheckConstraint(condition=models.Q(duration_minutes__gte=5, duration_minutes__lte=600),
                                    name="service_duration_range"),
         ]

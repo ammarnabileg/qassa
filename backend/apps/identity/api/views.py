@@ -34,6 +34,7 @@ def me_payload(user):
         "id": user.id, "email": user.email, "full_name": user.full_name, "language": user.preferred_language,
         "is_platform_staff": user.is_platform_staff, "mfa_required": user.mfa_required,
         "memberships": [{"tenant_id": m.tenant_id, "tenant_name": m.tenant.name, "tenant_status": m.tenant.status,
+                         "tenant_business_type": m.tenant.default_business_type,
                          "role": m.role.key, "role_name": {"ar": m.role.name_ar, "en": m.role.name_en},
                          "permissions": sorted(m.role.permissions), "all_branches": m.all_branches,
                          "branch_ids": sorted(m.branch_ids() or [])} for m in ms],
@@ -42,6 +43,7 @@ def me_payload(user):
 
 MembershipOut = inline_serializer("MembershipOut", {
     "tenant_id": serializers.IntegerField(), "tenant_name": serializers.CharField(), "tenant_status": serializers.CharField(),
+    "tenant_business_type": serializers.CharField(),
     "role": serializers.CharField(), "role_name": serializers.DictField(), "permissions": serializers.ListField(child=serializers.CharField()),
     "all_branches": serializers.BooleanField(), "branch_ids": serializers.ListField(child=serializers.IntegerField())})
 MeOut = inline_serializer("MeOut", {
