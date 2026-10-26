@@ -450,3 +450,19 @@ def credit_note(inv: Invoice, *, lines: list[tuple], reason: str, refund: Paymen
 
 def _raise(code):
     raise DomainError(code=code)
+
+
+def quote(data: CheckoutIn) -> dict:
+    """The exact totals checkout would charge (coupons, points, package sessions), without writing anything."""
+    customer = Customer.objects.filter(id=data.customer_id).first() if data.customer_id else None
+    with transaction.atomic():
+        planned = _plan_lines(data, data.branch, business_date(), customer)
+        coupon, coupon_disc, points, points_disc = _apply_promotions(planned, data, customer, business_date())
+        for p in planned:
+            p["disc"] = money(p["disc"] + p.get("promo", ZERO))
+        subtotal = money(sum((p["gross"] for p in planned), ZERO))
+        discount = money(sum((p["disc"] for p in planned), ZERO))
+        transaction.set_rollback(True)  # quote only: release the coupon/package row locks, write nothing
+    return {"subtotal": str(subtotal), "discount_total": str(discount), "total": str(money(subtotal - discount)),
+            "coupon_discount": str(coupon_disc), "points": points, "points_discount": str(points_disc),
+            "lines": [{"total": str(money(p["gross"] - p["disc"]))} for p in planned]}

@@ -211,3 +211,18 @@ def test_working_hours_and_time_off_limit_bookings(salon):
                                                         "ends_at": (inside + timedelta(hours=2)).isoformat(), "reason": "دكتور"}, format="json")
     r = book(s, inside + timedelta(hours=1), key="off")
     assert r.json()["error"]["code"] == "staff_unavailable"
+
+
+def test_quote_matches_checkout_and_writes_nothing(salon):
+    s = salon
+    today = timezone.localdate()
+    owner(s).post("/api/v1/loyalty/coupons", {"code": "Q15", "kind": "percent", "value": "15", "valid_from": str(today),
+                                              "valid_to": str(today), "max_uses": 1}, format="json")
+    body = {"branch_id": s["b"]["HAW"].id, "lines": [{"service_id": s["wash"].id}, {"service_id": s["cut"].id}], "coupon_code": "Q15"}
+    q = client_for(s["cashier"], s["t"]).post("/api/v1/pos/quote", body, format="json").json()
+    assert q["total"] == "17.000" and q["coupon_discount"] == "3.000"
+    q2 = client_for(s["cashier"], s["t"]).post("/api/v1/pos/quote", body, format="json").json()
+    assert q2 == q  # the coupon was not consumed by quoting
+    open_drawer(s)
+    r = checkout(s, s["cashier"], body["lines"], [{"method": "cash", "amount": q["total"]}], coupon_code="Q15", expected_total=q["total"])
+    assert r.status_code == 201 and r.json()["total"] == q["total"]

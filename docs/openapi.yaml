@@ -2128,6 +2128,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/InvoiceOut'
           description: ''
+  /api/v1/pos/quote:
+    post:
+      operationId: v1_pos_quote_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CheckoutIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckoutIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/pos/sessions:
     get:
       operationId: v1_pos_sessions_list

@@ -214,6 +214,19 @@ class CheckoutView(TenantAPIView):
         return Response(InvoiceOut(_invoices().get(id=inv.id)).data, status=status.HTTP_201_CREATED)
 
 
+class QuoteView(TenantAPIView):
+    required_permissions = {"POST": "pos.sell"}
+
+    @extend_schema(request=CheckoutIn, responses=dict)
+    def post(self, request):
+        s = CheckoutIn(data=request.data)
+        s.is_valid(raise_exception=True)
+        v = s.validated_data
+        return Response(sales.quote(sales.CheckoutIn(
+            branch=branch_for(request, v["branch_id"]), lines=[sales.LineIn(**x) for x in v["lines"]],
+            customer_id=v.get("customer_id"), coupon_code=v["coupon_code"], redeem_points=v["redeem_points"])))
+
+
 class InvoicesView(TenantAPIView):
     required_permissions = {"GET": "pos.invoices.view"}
 

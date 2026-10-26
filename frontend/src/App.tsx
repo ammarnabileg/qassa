@@ -19,6 +19,11 @@ import Staff from './pages/Staff'
 import Subscription from './pages/Subscription'
 import TrialBalance from './pages/TrialBalance'
 import WhatsApp from './pages/WhatsApp'
+import Inventory from './pages/Inventory'
+import Marketing from './pages/Marketing'
+import Commissions from './pages/Commissions'
+import Users from './pages/Users'
+import SetPassword from './pages/SetPassword'
 
 const ellipsis = { display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } as const
 
@@ -93,6 +98,7 @@ export default function App() {
   const { t } = useTranslation()
   const { me, loading, membership, can } = useAuth()
   if (loading) return <div className="center muted">{t('common.loading')}</div>
+  if (window.location.pathname === '/set-password') return <SetPassword />
   if (!me) return <Login />
 
   if (me.is_platform_staff && me.memberships.length === 0) {
@@ -117,12 +123,16 @@ export default function App() {
       { path: '/bookings', label: t('nav.bookings'), icon: 'calendar', show: can('booking.view') },
       { path: '/invoices', label: t('nav.invoices'), icon: 'receipt', show: can('pos.invoices.view') },
       { path: '/cash', label: t('nav.cash'), icon: 'wallet', show: can('cash.session.open') },
+      { path: '/inventory', label: t('nav.inventory'), icon: 'box', show: can('inventory.view') },
     ]],
     [t('nav.setup'), [
       { path: '/org', label: t('nav.org'), icon: 'store', show: true },
       { path: '/services', label: t('nav.services'), icon: 'tag', show: can('catalog.view') },
       { path: '/staff', label: t('nav.staff'), icon: 'users', show: can('staff.view') },
       { path: '/customers', label: t('nav.customers'), icon: 'user', show: can('customers.view') },
+      { path: '/marketing', label: t('nav.marketing'), icon: 'sparkle', show: can('catalog.view') },
+      { path: '/commissions', label: t('nav.commissions'), icon: 'percent', show: can('commission.view.all') },
+      { path: '/users', label: t('nav.users'), icon: 'user-plus', show: can('org.manage') },
     ]],
     [t('nav.accounting'), [
       { path: '/accounting/journal', label: t('nav.journal'), icon: 'book', show: can('accounting.journal.post') },
@@ -146,6 +156,10 @@ export default function App() {
         <Route path="/services" element={<Services />} />
         <Route path="/staff" element={<Staff />} />
         <Route path="/customers" element={<Customers />} />
+        <Route path="/inventory" element={<Inventory />} />
+        <Route path="/marketing" element={<Marketing />} />
+        <Route path="/commissions" element={<Commissions />} />
+        <Route path="/users" element={<Users />} />
         <Route path="/whatsapp" element={<WhatsApp />} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/accounting/journal" element={<JournalEntry />} />

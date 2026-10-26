@@ -75,7 +75,11 @@
     "cash": "Cash drawer",
     "branch": "Branch",
     "branchOf": "📍 {{name}} branch",
-    "whatsapp": "Salon WhatsApp"
+    "whatsapp": "Salon WhatsApp",
+    "inventory": "Inventory",
+    "marketing": "Packages & offers",
+    "commissions": "Commissions",
+    "users": "Users"
   },
   "org": {
     "entities": "Legal entities",
@@ -414,7 +418,20 @@
     "openDrawer": "Open drawer",
     "checkout": "Charge & print receipt",
     "done": "Invoice {{n}} issued",
-    "qty": "Qty"
+    "qty": "Qty",
+    "tab": {
+      "service": "Services",
+      "product": "Products",
+      "package": "Packages"
+    },
+    "pointsUnit": "pts",
+    "hasPackages": "Has active packages",
+    "usePackage": "Use package",
+    "coupon": "Coupon code",
+    "redeemPoints": "Redeem points",
+    "couponApplied": "Coupon applied",
+    "tip": "Tip",
+    "tipFor": "Tip for"
   },
   "inv": {
     "sub": "Invoices, collections and returns",
@@ -510,5 +527,140 @@
       "sent": "Sent",
       "failed": "Failed"
     }
+  },
+  "pkg": {
+    "sessions": "{{n}} sessions"
+  },
+  "inv2": {
+    "sub": "Products, stock and supplier purchasing",
+    "tab": {
+      "products": "Products",
+      "receipts": "Goods receipts",
+      "suppliers": "Suppliers",
+      "moves": "Stock moves"
+    },
+    "k": {
+      "retail": "Retail",
+      "supply": "Supply"
+    },
+    "mk": {
+      "receipt": "Receipt",
+      "sale": "Sale",
+      "return": "Return",
+      "adjust": "Adjustment",
+      "consume": "Consumption"
+    },
+    "addProduct": "New product",
+    "addSupplier": "New supplier",
+    "receive": "Receive goods",
+    "sku": "SKU",
+    "product": "Product",
+    "kind": "Type",
+    "qty": "Qty",
+    "avgCost": "Avg cost",
+    "salePrice": "Sale price",
+    "unit": "Unit",
+    "adjust": "Adjust",
+    "adjustHelp": "Current stock {{qty}}. Enter a negative or positive difference.",
+    "qtyDelta": "Qty difference",
+    "supplier": "Supplier",
+    "bill": "Supplier bill",
+    "noBill": "No bill",
+    "recordBill": "Record bill",
+    "pay": "Pay",
+    "moveKind": "Move",
+    "value": "Value",
+    "noSuppliers": "Add a supplier first",
+    "addLine": "Add line",
+    "unitCost": "Unit cost",
+    "receiveHelp": "Receiving adds stock, updates average cost and proposes a journal entry.",
+    "billHelp": "The bill amount must equal the receipt value {{total}}.",
+    "supplierRef": "Supplier invoice no.",
+    "due": "Due date",
+    "payHelp": "Bank transfer only; enter the reference."
+  },
+  "mkt": {
+    "sub": "Session packages, coupons and loyalty points",
+    "tab": {
+      "packages": "Packages",
+      "coupons": "Coupons",
+      "points": "Points"
+    },
+    "addPackage": "New package",
+    "addCoupon": "New coupon",
+    "packageHelp": "Package money is a liability, recognised as revenue per session used.",
+    "validDays": "Valid {{n}} days",
+    "perSession": "{{v}} per session",
+    "off": "off",
+    "kdOff": "KD off",
+    "minTotal": "min {{v}}",
+    "used": "Used {{n}}",
+    "pointsOn": "Enable points",
+    "pointsHelp": "Customers earn points on paid invoices",
+    "perKd": "Points per KD",
+    "pointValue": "Point value (KD)",
+    "minRedeem": "Minimum to redeem",
+    "example": "Example: a 10 KD invoice = {{pts}} pts = {{v}}",
+    "accountingNote": "Points and coupon discounts are posted as discounts for the accountant to review.",
+    "sessions": "Sessions",
+    "validity": "Validity (days)",
+    "code": "Code",
+    "kind": "Type",
+    "percent": "Percent",
+    "amount": "Fixed amount",
+    "value": "Value",
+    "minTotalLabel": "Minimum invoice",
+    "maxUses": "Max uses"
+  },
+  "com": {
+    "sub": "Staff commissions accrued and paid",
+    "rule": "Commission is a % of net service value and reverses on returns.",
+    "rate": "Rate",
+    "balance": "Balance",
+    "pay": "Pay out",
+    "on": "on {{v}}",
+    "payHelp": "Paid by bank transfer; a journal entry is proposed.",
+    "k": {
+      "accrual": "Accrual",
+      "reversal": "Reversal",
+      "payout": "Payout"
+    }
+  },
+  "usr": {
+    "sub": "Who can sign in and what they can do",
+    "invite": "Invite user",
+    "role": "Role",
+    "phone": "WhatsApp number",
+    "discountLimit": "Max manual discount %",
+    "invited": "Invited",
+    "resend": "Resend",
+    "inviteSent": "Invitation",
+    "byEmail": "Invitation emailed.",
+    "byWhatsapp": "Invitation sent by WhatsApp to {{to}}.",
+    "existing": "This person already has an account and was added.",
+    "manual": "No email or WhatsApp available — send this link yourself:",
+    "copy": "Copy link",
+    "copied": "Copied",
+    "r": {
+      "owner": "Owner",
+      "operations_manager": "Operations manager",
+      "branch_manager": "Branch manager",
+      "cashier": "Cashier",
+      "service_provider": "Service provider",
+      "inventory_officer": "Inventory officer",
+      "accountant": "Accountant",
+      "finance_manager": "Finance manager",
+      "auditor": "Auditor"
+    }
+  },
+  "pw": {
+    "inviteTitle": "Set your password",
+    "resetTitle": "New password",
+    "rules": "At least 10 characters",
+    "new": "Password",
+    "repeat": "Repeat",
+    "mismatch": "Passwords don't match",
+    "doneTitle": "Saved",
+    "doneSub": "Sign in now with your email and password."
   }
 }

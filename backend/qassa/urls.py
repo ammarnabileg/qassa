@@ -82,6 +82,7 @@ urlpatterns = [
     path(api + "pos/sessions/<int:pk>/close", pos.SessionCloseView.as_view()),
     path(api + "pos/sessions/<int:pk>/approve", pos.SessionApproveView.as_view()),
     path(api + "pos/checkout", pos.CheckoutView.as_view()),
+    path(api + "pos/quote", pos.QuoteView.as_view()),
     path(api + "pos/invoices", pos.InvoicesView.as_view()),
     path(api + "pos/invoices/<int:pk>", pos.InvoiceDetailView.as_view()),
     path(api + "pos/invoices/<int:pk>/payments", pos.InvoicePaymentsView.as_view()),
