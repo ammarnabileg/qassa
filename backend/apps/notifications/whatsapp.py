@@ -152,3 +152,27 @@ def send_text(phone: str, text: str, *, kind: str, preview: str | None = None) -
         raise ChannelUnavailable(message="Sending failed; the salon's WhatsApp may be disconnected")
     log_row(WhatsAppMessage.Status.SENT)
     return name
+
+
+def platform_available() -> bool:
+    name = adapter()
+    if name == "console":
+        return settings.ENVIRONMENT != "production"
+    return name == "evolution" and bool(settings.QASSA.get("PLATFORM_WA_INSTANCE"))
+
+
+def send_platform_text(phone: str, text: str, *, kind: str) -> str:
+    """Send from the platform's own number (staff login codes). Never logs the text."""
+    name = adapter()
+    if name == "console" and settings.ENVIRONMENT != "production":
+        log.warning("WHATSAPP platform (console, not delivered) to %s [%s]", phone, kind)
+        return name
+    if not platform_available():
+        raise ChannelUnavailable(message="The platform WhatsApp number is not configured")
+    instance = settings.QASSA["PLATFORM_WA_INSTANCE"]
+    try:
+        _call("POST", f"/message/sendText/{instance}", {"number": phone, "text": text})
+    except GatewayError:
+        raise ChannelUnavailable(message="Sending failed; the platform WhatsApp number may be disconnected")
+    log.info("WHATSAPP platform sent to %s [%s]", phone, kind)
+    return name

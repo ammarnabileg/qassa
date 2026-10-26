@@ -43,7 +43,15 @@
     "f4": "Reports and proper accounting",
     "welcome": "Welcome 👋",
     "sub": "Sign in to continue",
-    "mfaManual": "Or enter the key manually (do not share it):"
+    "mfaManual": "Or enter the key manually (do not share it):",
+    "byWhatsapp": "WhatsApp message",
+    "byApp": "Authenticator app",
+    "waHelp": "We'll send a 6-digit code on WhatsApp to your registered number {{phone}}",
+    "sendWa": "Send me the code on WhatsApp",
+    "resend": "Send a new code",
+    "waSent": "Sent to {{to}}",
+    "testCode": "test environment — code {{code}}",
+    "remember": "Remember this device for 60 days (not on a shared device)"
   },
   "tenant": {
     "choose": "Choose a company",
@@ -191,7 +199,8 @@
     "account_role_unmapped": "The chart of accounts is incomplete — contact your accountant",
     "category_name_exists": "A category with this name already exists",
     "whatsapp_unavailable": "WhatsApp unavailable — connect the salon number or contact the Qassa team",
-    "whatsapp_gateway_error": "The WhatsApp gateway did not respond — try again"
+    "whatsapp_gateway_error": "The WhatsApp gateway did not respond — try again",
+    "mfa_no_phone": "No WhatsApp number on your account — contact the administrator"
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -329,7 +338,9 @@
     "editPlan": "Edit plan",
     "monthly": "Monthly price",
     "maxBranches": "Max branches",
-    "maxStaff": "Max staff"
+    "maxStaff": "Max staff",
+    "ownerPhone": "Owner's WhatsApp",
+    "ownerPhoneHelp": "Login codes are sent here from the platform number. Only changeable here (account security)."
   },
   "book": {
     "sub": "Book, move to the chair, and send to checkout when done",

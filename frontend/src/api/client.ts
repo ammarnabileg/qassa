@@ -50,7 +50,7 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
 
 export type Membership = { tenant_id: number; tenant_name: string; tenant_status: string; tenant_business_type: 'kids' | 'men' | 'women'; role: string; role_name: { ar: string; en: string }; permissions: string[]; all_branches: boolean; branch_ids: number[] }
 export type Me = { id: number; email: string; full_name: string; language: 'ar' | 'en'; is_platform_staff: boolean; mfa_required: boolean; memberships: Membership[] }
-export type LoginResult = Me | { mfa: 'setup' | 'verify' }
+export type LoginResult = Me | { mfa: 'setup' | 'verify'; methods: ('totp' | 'whatsapp')[]; phone: string }
 export type Branch = { id: number; legal_entity: number; name_ar: string; name_en: string; code: string; business_type: 'kids' | 'men' | 'women'; timezone: string; address: string; phone: string; latitude: string | null; longitude: string | null; opens_at: string; closes_at: string; online_booking: boolean; is_active: boolean }
 export type LegalEntity = { id: number; name_ar: string; name_en: string; commercial_registration: string; legal_form: string; base_currency: string; fiscal_year_start_month: number }
 export type Account = { id: number; code: string; name_ar: string; name_en: string; type: string; is_postable: boolean; is_control: boolean; is_active: boolean }
@@ -64,7 +64,7 @@ export type Beneficiary = { id: number; full_name: string; relation: 'self' | 'c
 export type Customer = { id: number; full_name: string; phone: string; email: string; preferred_language: 'ar' | 'en'; whatsapp_opt_in: boolean; marketing_opt_in: boolean; notes: string; is_active: boolean; created_at: string; beneficiaries: Beneficiary[] }
 export type Plan = { id: number; code: string; name_ar: string; name_en: string; monthly_price: string; max_branches: number; max_staff: number; custom_domain: boolean; is_active: boolean; sort: number }
 export type SubscriptionInfo = { plan: { code: string; name_ar: string; name_en: string; monthly_price: string; max_branches: number; max_staff: number } | null; current_period_end: string | null; hosts: string[]; usage: { branches?: number; staff?: number } }
-export type TenantRow = { id: number; name: string; slug: string; status: string; default_business_type: 'kids' | 'men' | 'women'; plan: string | null; branches: number; hosts: string[]; created_at: string }
+export type TenantRow = { id: number; name: string; slug: string; status: string; default_business_type: 'kids' | 'men' | 'women'; plan: string | null; branches: number; hosts: string[]; owner_phone: string; created_at: string }
 export type Domain = { id: number; host: string; kind: 'subdomain' | 'custom'; is_active: boolean; created_at: string; activated_at: string | null }
 
 export type ApptItem = { id: number; service_id: number; staff_id: number; service_name_ar: string; service_name_en: string; starts_at: string; ends_at: string }

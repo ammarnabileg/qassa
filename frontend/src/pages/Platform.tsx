@@ -67,7 +67,7 @@ function ManageDialog({ tenant, onClose }: { tenant: TenantRow; onClose: () => v
   const toast = useToast()
   const plans = usePlans()
   const domains = useQuery({ queryKey: ['domains', tenant.id], queryFn: () => api<Domain[]>(`/platform/tenants/${tenant.id}/domains`) })
-  const [f, setF] = useState({ status: tenant.status, plan_code: tenant.plan ?? 'basic', reason: '' })
+  const [f, setF] = useState({ status: tenant.status, plan_code: tenant.plan ?? 'basic', owner_phone: tenant.owner_phone ? tenant.owner_phone.replace(/^965/, '') : '', reason: '' })
   const [host, setHost] = useState('')
   const change = useSave<TenantRow>([['tenants']], () => { toast(t('common.saved')); onClose() })
   const addDomain = useSave<Domain>([['domains', tenant.id]], () => { setHost(''); toast(t('common.saved')) })
@@ -82,6 +82,8 @@ function ManageDialog({ tenant, onClose }: { tenant: TenantRow; onClose: () => v
         <label className="field">{t('platform.plan')}<select className="input" value={f.plan_code} onChange={(e) => setF({ ...f, plan_code: e.target.value })}>
           {plans.data?.map((p) => <option key={p.code} value={p.code}>{nameOf(p, i18n.language)}</option>)}</select></label>
       </div>
+      <label className="field">{t('platform.ownerPhone')}<input className="input" dir="ltr" inputMode="tel" placeholder="5xxxxxxx" value={f.owner_phone} onChange={(e) => setF({ ...f, owner_phone: e.target.value })} /></label>
+      <div className="small muted">{t('platform.ownerPhoneHelp')}</div>
       <label className="field">{t('platform.reason')}<input className="input" value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} required /></label>
       <ErrorText error={change.error} />
       <h3>{t('platform.domains')}</h3>

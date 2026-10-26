@@ -21,6 +21,9 @@ class Command(BaseCommand):
             raise CommandError("staging requires SEED_PASSWORD (12+ characters)")
         if Tenant.objects.filter(slug="my-kids").exists():
             self.stdout.write("Companies already seeded.")
+            if os.environ.get("SEED_STAFF_PHONE"):  # demo accounts receive login codes on this WhatsApp number
+                User.objects.filter(email__in=["support@qassa.dev", "owner@mykids.dev", "owner@gentle.dev", "owner@lamsa.dev"],
+                                    phone="").update(phone=os.environ["SEED_STAFF_PHONE"])
             self.seed_catalog()
             return
         specs = [("My Kids", "My Kids", "ماي كيدز", "kids", "mykids"), ("Gentleman Cut", "Gentleman Cut", "جنتلمان كت", "men", "gentle"),
@@ -36,7 +39,8 @@ class Command(BaseCommand):
                     m = Membership.objects.create(user=u, tenant=t, role=Role.objects.get(key=key), all_branches=branch is None)
                     if branch:
                         MembershipBranch.objects.create(tenant=t, membership=m, branch=Branch.objects.get(code=branch))
-        User.objects.create_user("support@qassa.dev", password, is_platform_staff=True, mfa_required=True)
+        User.objects.create_user("support@qassa.dev", password, is_platform_staff=True, mfa_required=True,
+                                 phone=os.environ.get("SEED_STAFF_PHONE", ""))
         self.stdout.write(self.style.SUCCESS(f"Seeded 3 companies. Password for all dev users: {password if settings.ENVIRONMENT != 'staging' else '(SEED_PASSWORD)'}"))
         self.seed_catalog()
 

@@ -82,7 +82,7 @@ def test_login_rejects_bad_password_and_requires_mfa_for_owner(company_a):
     c = APIClient()
     assert c.post("/api/v1/auth/login", {"email": "owner@mykids.test", "password": "nope"}, format="json").status_code == 401
     r = c.post("/api/v1/auth/login", {"email": "owner@mykids.test", "password": "Owner-Pass-2026!"}, format="json")
-    assert r.status_code == 200 and r.json() == {"mfa": "setup"}
+    assert r.status_code == 200 and r.json()["mfa"] == "setup" and r.json()["methods"] == ["totp"]  # no phone on account
     assert c.get("/api/v1/auth/me").status_code == 403  # not logged in until MFA verified
     url = c.post("/api/v1/auth/mfa/setup").json()["otpauth_url"]
     assert url.startswith("otpauth://totp/")

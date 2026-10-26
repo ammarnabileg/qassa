@@ -37,6 +37,8 @@ urlpatterns = [
     path(api + "auth/login", auth.LoginView.as_view()),
     path(api + "auth/mfa/setup", auth.MfaSetupView.as_view()),
     path(api + "auth/mfa/verify", auth.MfaVerifyView.as_view()),
+    path(api + "auth/mfa/whatsapp", auth.MfaWhatsAppView.as_view()),
+    path(api + "auth/devices", auth.TrustedDevicesView.as_view()),
     path(api + "auth/logout", auth.LogoutView.as_view()),
     path(api + "auth/me", auth.MeView.as_view()),
     # tenant-scoped (X-Tenant header)

@@ -53,11 +53,16 @@ class PlanSerializer(serializers.ModelSerializer):
 class TenantOut(serializers.ModelSerializer):
     plan = serializers.CharField(source="subscription.plan.code", default=None)
     hosts = serializers.SerializerMethodField()
+    owner_phone = serializers.SerializerMethodField()
     branches = serializers.IntegerField(source="branch_count")
 
     class Meta:
         model = Tenant
-        fields = ["id", "name", "slug", "status", "default_business_type", "plan", "branches", "hosts", "created_at"]
+        fields = ["id", "name", "slug", "status", "default_business_type", "plan", "branches", "hosts", "owner_phone", "created_at"]
+
+    def get_owner_phone(self, obj) -> str:
+        m = obj.memberships.filter(role__key="owner").select_related("user").first()
+        return m.user.phone if m else ""
 
     def get_hosts(self, obj) -> list[str]:
         return [d.host for d in obj.domains.all() if d.is_active]
@@ -79,6 +84,7 @@ class TenantsListView(APIView):
 
 class TenantAdminIn(serializers.Serializer):
     status = serializers.ChoiceField(choices=Tenant.Status.choices, required=False)
+    owner_phone = serializers.CharField(required=False, allow_blank=True, max_length=20)  # receives login codes on WhatsApp
     plan_code = serializers.SlugField(required=False)
     reason = serializers.CharField(max_length=300)
 
@@ -111,8 +117,13 @@ class TenantAdminView(APIView):
             if "status" in v:
                 tenant.status = v["status"]
                 tenant.save(update_fields=["status"])
+            if "owner_phone" in v:
+                from apps.customers.services.phone import normalize_phone
+                from apps.identity.models import User
+                phone = normalize_phone(v["owner_phone"]) if v["owner_phone"].strip() else ""
+                User.objects.filter(memberships__tenant=tenant, memberships__role__key="owner").update(phone=phone)
             audit("platform.tenant.changed", tenant_id=tenant.id, actor=request.user, obj=tenant, reason=v["reason"],
-                  data={k: v[k] for k in ("status", "plan_code") if k in v})
+                  data={k: v[k] for k in ("status", "plan_code", "owner_phone") if k in v})
         tenant.branch_count = Branch.unscoped.filter(tenant_id=tenant.id).count()
         return Response(TenantOut(tenant).data)
 

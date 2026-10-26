@@ -168,6 +168,9 @@ QASSA = {
     # Show the login code in the API response — ONLY for testing environments without a WhatsApp channel.
     "OTP_ECHO": env_bool("QASSA_OTP_ECHO", ENVIRONMENT in {"development", "test"}) and ENVIRONMENT != "production",
     "OTP_TTL_SECONDS": 300,
+    # the platform's own WhatsApp number (Evolution instance) — staff login codes, platform notices
+    "PLATFORM_WA_INSTANCE": env("QASSA_PLATFORM_WA_INSTANCE", ""),
+    "TRUSTED_DEVICE_DAYS": int(env("QASSA_TRUSTED_DEVICE_DAYS", "60")),
     "CUSTOMER_TOKEN_DAYS": 30,
 }
 

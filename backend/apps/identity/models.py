@@ -35,3 +35,25 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+class StaffOtp(models.Model):
+    """Second factor sent over the platform's WhatsApp number (alternative to an authenticator app). Hash only."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="+")
+    code_hash = models.CharField(max_length=128)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    consumed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class TrustedDevice(models.Model):
+    """"Remember this device": skips the second factor on this browser until it expires or is revoked.
+    The browser holds a random token in an HttpOnly cookie; only its SHA-256 is stored."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="trusted_devices")
+    token_hash = models.CharField(max_length=64, unique=True)
+    label = models.CharField(max_length=200, blank=True)  # browser user agent, for the user's device list
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField()
+    revoked_at = models.DateTimeField(null=True, blank=True)

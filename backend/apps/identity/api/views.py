@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.audit.services.log import record as audit
+from apps.identity.services import second_factor as f2
 from apps.tenancy.models import Membership
 
 PENDING = "mfa_pending_user_id"
@@ -26,6 +27,8 @@ class LoginSerializer(serializers.Serializer):
 
 class MfaSerializer(serializers.Serializer):
     token = serializers.RegexField(r"^\d{6}$")
+    method = serializers.ChoiceField(choices=["totp", "whatsapp"], default="totp")
+    remember = serializers.BooleanField(default=False)  # trust this browser for TRUSTED_DEVICE_DAYS
 
 
 def me_payload(user):
@@ -50,7 +53,9 @@ MeOut = inline_serializer("MeOut", {
     "id": serializers.IntegerField(), "email": serializers.EmailField(), "full_name": serializers.CharField(),
     "language": serializers.CharField(), "is_platform_staff": serializers.BooleanField(), "mfa_required": serializers.BooleanField(),
     "memberships": MembershipOut})
-MfaStep = inline_serializer("MfaStep", {"mfa": serializers.ChoiceField(choices=["setup", "verify"])})
+MfaStep = inline_serializer("MfaStep", {"mfa": serializers.ChoiceField(choices=["setup", "verify"]),
+                                        "methods": serializers.ListField(child=serializers.CharField()),
+                                        "phone": serializers.CharField()})
 
 
 class CsrfView(APIView):
@@ -77,10 +82,16 @@ class LoginView(APIView):
             return Response({"error": {"code": "invalid_credentials", "message": "", "details": {}}},
                             status=status.HTTP_401_UNAUTHORIZED)
         if user.mfa_required:
+            if f2.trusted(request, user):  # "remember this device"
+                login(request, user)
+                audit("auth.login", actor=user, data={"mfa": "trusted_device"}, ip=request.META.get("REMOTE_ADDR"))
+                return Response(me_payload(user))
             request.session.flush()
             request.session[PENDING] = user.id
             has_device = TOTPDevice.objects.filter(user=user, confirmed=True).exists()
-            return Response({"mfa": "verify" if has_device else "setup"}, status=status.HTTP_200_OK)
+            methods = ["totp"] + (["whatsapp"] if f2.whatsapp_available(user) else [])
+            return Response({"mfa": "verify" if has_device else "setup", "methods": methods,
+                             "phone": f2.mask(user.phone) if "whatsapp" in methods else ""}, status=status.HTTP_200_OK)
         login(request, user)
         audit("auth.login", actor=user, ip=request.META.get("REMOTE_ADDR"))
         return Response(me_payload(user))
@@ -125,6 +136,14 @@ class MfaVerifyView(APIView):
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         s = MfaSerializer(data=request.data)
         s.is_valid(raise_exception=True)
+        if s.validated_data["method"] == "whatsapp":
+            if not f2.verify_code(user, s.validated_data["token"]):
+                audit("auth.mfa_failed", actor=user, data={"method": "whatsapp"}, ip=request.META.get("REMOTE_ADDR"))
+                return Response({"error": {"code": "invalid_mfa_token", "message": "", "details": {}}}, status=401)
+            del request.session[PENDING]
+            login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+            audit("auth.login", actor=user, data={"mfa": "whatsapp"}, ip=request.META.get("REMOTE_ADDR"))
+            return self._done(request, user, s.validated_data["remember"])
         devices = list(TOTPDevice.objects.filter(user=user))
         for device in devices:
             allowed, info = device.verify_is_allowed()
@@ -139,10 +158,53 @@ class MfaVerifyView(APIView):
                 del request.session[PENDING]
                 login(request, user, backend="django.contrib.auth.backends.ModelBackend")
                 otp_login(request, device)
-                audit("auth.login", actor=user, data={"mfa": True}, ip=request.META.get("REMOTE_ADDR"))
-                return Response(me_payload(user))
+                audit("auth.login", actor=user, data={"mfa": "totp"}, ip=request.META.get("REMOTE_ADDR"))
+                return self._done(request, user, s.validated_data["remember"])
         audit("auth.mfa_failed", actor=user, ip=request.META.get("REMOTE_ADDR"))
         return Response({"error": {"code": "invalid_mfa_token", "message": "", "details": {}}}, status=401)
+
+
+    def _done(self, request, user, remember):
+        response = Response(me_payload(user))
+        if remember:
+            f2.remember(response, user, request.META.get("HTTP_USER_AGENT", ""))
+            audit("auth.device_trusted", actor=user, ip=request.META.get("REMOTE_ADDR"))
+        return response
+
+
+class MfaWhatsAppView(APIView):
+    """Send the second-factor code over the platform's WhatsApp number to the phone on the account."""
+    permission_classes = [AllowAny]
+    throttle_scope = "mfa"
+    from rest_framework.throttling import ScopedRateThrottle
+    throttle_classes = [ScopedRateThrottle]
+
+    @extend_schema(request=None, responses=inline_serializer("MfaWhatsAppSent", {"sent": serializers.BooleanField(), "to": serializers.CharField()}))
+    def post(self, request):
+        user = _pending_user(request)
+        if user is None:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        return Response(f2.send_code(user))
+
+
+class TrustedDevicesView(APIView):
+    """List this user's remembered browsers, or forget all of them (e.g. after losing a laptop)."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=inline_serializer("TrustedDevices", {"devices": serializers.ListField(child=serializers.DictField())}))
+    def get(self, request):
+        from django.utils import timezone
+        rows = request.user.trusted_devices.filter(revoked_at__isnull=True, expires_at__gt=timezone.now()).order_by("-created_at")
+        return Response({"devices": [{"id": d.id, "label": d.label, "created_at": d.created_at, "last_used_at": d.last_used_at,
+                                      "expires_at": d.expires_at} for d in rows]})
+
+    @extend_schema(request=None, responses={204: None})
+    def delete(self, request):
+        f2.revoke_all(request.user)
+        audit("auth.devices_revoked", actor=request.user, ip=request.META.get("REMOTE_ADDR"))
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        response.delete_cookie(f2.COOKIE)
+        return response
 
 
 class LogoutView(APIView):

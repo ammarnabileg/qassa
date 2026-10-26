@@ -29,6 +29,8 @@ services:
       QASSA_WHATSAPP_URL: ${QASSA_WHATSAPP_URL:-}
       QASSA_WHATSAPP_TOKEN: ${QASSA_WHATSAPP_TOKEN:-}
       QASSA_OTP_ECHO: ${QASSA_OTP_ECHO:-0}  # staging only; ignored in production
+      QASSA_PLATFORM_WA_INSTANCE: ${QASSA_PLATFORM_WA_INSTANCE:-}
+      SEED_STAFF_PHONE: ${SEED_STAFF_PHONE:-}
     depends_on: { db: { condition: service_healthy }, redis: { condition: service_healthy } }
     healthcheck: { test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/api/v1/version')"], interval: 10s, retries: 10, start_period: 90s }
   worker:
