@@ -10,7 +10,7 @@ from apps.loyalty.services import points
 from apps.tenancy.api.base import TenantAPIView
 
 
-class PlanSerializer(serializers.ModelSerializer):
+class PackagePlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = PackagePlan
         fields = ["id", "name_ar", "name_en", "service", "sessions", "price", "validity_days", "is_active"]
@@ -25,26 +25,26 @@ class PlanSerializer(serializers.ModelSerializer):
 class PlansView(TenantAPIView):
     required_permissions = {"GET": "catalog.view", "POST": "marketing.manage"}
 
-    @extend_schema(responses=PlanSerializer(many=True))
+    @extend_schema(responses=PackagePlanSerializer(many=True))
     def get(self, request):
-        return Response(PlanSerializer(PackagePlan.objects.order_by("-is_active", "name_ar"), many=True).data)
+        return Response(PackagePlanSerializer(PackagePlan.objects.order_by("-is_active", "name_ar"), many=True).data)
 
-    @extend_schema(request=PlanSerializer, responses={201: PlanSerializer})
+    @extend_schema(request=PackagePlanSerializer, responses={201: PackagePlanSerializer})
     def post(self, request):
-        s = PlanSerializer(data=request.data)
+        s = PackagePlanSerializer(data=request.data)
         s.is_valid(raise_exception=True)
-        return Response(PlanSerializer(s.save()).data, status=status.HTTP_201_CREATED)
+        return Response(PackagePlanSerializer(s.save()).data, status=status.HTTP_201_CREATED)
 
 
 class PlanDetailView(TenantAPIView):
     required_permissions = {"PATCH": "marketing.manage"}
 
-    @extend_schema(request=PlanSerializer, responses=PlanSerializer)
+    @extend_schema(request=PackagePlanSerializer, responses=PackagePlanSerializer)
     def patch(self, request, pk):
         plan = get_object_or_404(PackagePlan.objects.all(), pk=pk)
-        s = PlanSerializer(plan, data=request.data, partial=True)
+        s = PackagePlanSerializer(plan, data=request.data, partial=True)
         s.is_valid(raise_exception=True)
-        return Response(PlanSerializer(s.save()).data)
+        return Response(PackagePlanSerializer(s.save()).data)
 
 
 class CustomerWalletView(TenantAPIView):

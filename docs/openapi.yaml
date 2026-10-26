@@ -314,6 +314,35 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/app/login-link:
+    post:
+      operationId: v1_app_login_link_create
+      description: Exchange a one-time front-desk link (D-003 fallback) for a customer
+        session.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginLinkIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginLinkIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginLinkIn'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/app/me:
     get:
       operationId: v1_app_me_retrieve
@@ -631,6 +660,60 @@ paths:
               schema:
                 $ref: '#/components/schemas/MfaWhatsAppSent'
           description: ''
+  /api/v1/auth/password/forgot:
+    post:
+      operationId: v1_auth_password_forgot_create
+      description: Always answers the same, whether or not the email exists (no account
+        discovery).
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ForgotIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ForgotIn'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/auth/password/set:
+    post:
+      operationId: v1_auth_password_set_create
+      description: Accept an invitation or finish a reset. The link works once.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPasswordIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetPasswordIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetPasswordIn'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
   /api/v1/beneficiaries/{id}:
     patch:
       operationId: v1_beneficiaries_partial_update
@@ -1114,6 +1197,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/Beneficiary'
           description: ''
+  /api/v1/customers/{id}/login-link:
+    post:
+      operationId: v1_customers_login_link_create
+      description: 'Front desk: after checking the customer in person, issue a one-time
+        app login link (15 minutes).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/customers/{id}/wallet:
     get:
       operationId: v1_customers_wallet_retrieve
@@ -1498,7 +1604,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Plan'
+                  $ref: '#/components/schemas/PackagePlan'
           description: ''
     post:
       operationId: v1_loyalty_plans_create
@@ -1508,13 +1614,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Plan'
+              $ref: '#/components/schemas/PackagePlan'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Plan'
+              $ref: '#/components/schemas/PackagePlan'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Plan'
+              $ref: '#/components/schemas/PackagePlan'
         required: true
       security:
       - cookieAuth: []
@@ -1523,7 +1629,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Plan'
+                $ref: '#/components/schemas/PackagePlan'
           description: ''
   /api/v1/loyalty/plans/{id}:
     patch:
@@ -1540,13 +1646,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedPlan'
+              $ref: '#/components/schemas/PatchedPackagePlan'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedPlan'
+              $ref: '#/components/schemas/PatchedPackagePlan'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedPlan'
+              $ref: '#/components/schemas/PatchedPackagePlan'
       security:
       - cookieAuth: []
       responses:
@@ -1554,7 +1660,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Plan'
+                $ref: '#/components/schemas/PackagePlan'
           description: ''
   /api/v1/loyalty/settings:
     get:
@@ -2347,61 +2453,9 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/staff/{id}/time-off/{off_id}:
     delete:
       operationId: v1_staff_time_off_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - v1
-      security:
-      - cookieAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/v1/staff/{id}/time-off/{off_id}:
-    post:
-      operationId: v1_staff_time_off_create_2
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      - in: path
-        name: off_id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TimeOffIn'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TimeOffIn'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TimeOffIn'
-        required: true
-      security:
-      - cookieAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-    delete:
-      operationId: v1_staff_time_off_destroy_2
       parameters:
       - in: path
         name: id
@@ -2435,6 +2489,101 @@ paths:
               schema:
                 $ref: '#/components/schemas/SubscriptionOut'
           description: ''
+  /api/v1/users:
+    get:
+      operationId: v1_users_retrieve
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    post:
+      operationId: v1_users_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InviteIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InviteIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/users/{id}:
+    patch:
+      operationId: v1_users_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMemberIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMemberIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMemberIn'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/users/{id}/resend:
+    post:
+      operationId: v1_users_resend_create
+      description: Re-send the invitation (only for users who never set a password).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/whatsapp:
     get:
       operationId: v1_whatsapp_retrieve
@@ -2452,49 +2601,9 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/whatsapp/{action}:
     post:
       operationId: v1_whatsapp_create
-      description: 'The company''s own WhatsApp number (D-002): status, connect by
-        QR, disconnect, recent messages.'
-      tags:
-      - v1
-      security:
-      - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /api/v1/whatsapp/{action}:
-    get:
-      operationId: v1_whatsapp_retrieve_2
-      description: 'The company''s own WhatsApp number (D-002): status, connect by
-        QR, disconnect, recent messages.'
-      parameters:
-      - in: path
-        name: action
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-    post:
-      operationId: v1_whatsapp_create_2
-      description: 'The company''s own WhatsApp number (D-002): status, connect by
-        QR, disconnect, recent messages.'
       parameters:
       - in: path
         name: action
@@ -3154,7 +3263,7 @@ components:
           - type: string
             maxLength: 0
         preferred_language:
-          $ref: '#/components/schemas/PreferredLanguageEnum'
+          $ref: '#/components/schemas/LangEnum'
         whatsapp_opt_in:
           type: boolean
         marketing_opt_in:
@@ -3307,6 +3416,14 @@ components:
       description: |-
         * `draft` - Draft
         * `posted` - Posted
+    ForgotIn:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
     GenderEnum:
       enum:
       - m
@@ -3417,6 +3534,38 @@ components:
       - ends_at
       - starts_at
       - weekday
+    InviteIn:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        full_name:
+          type: string
+          maxLength: 150
+        phone:
+          type: string
+          default: ''
+          maxLength: 20
+        role:
+          type: string
+          pattern: ^[-a-zA-Z0-9_]+$
+        all_branches:
+          type: boolean
+          default: false
+        branch_ids:
+          type: array
+          items:
+            type: integer
+        discount_limit_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          default: '0.00'
+      required:
+      - email
+      - full_name
+      - role
     InvoiceLineOut:
       type: object
       properties:
@@ -3676,6 +3825,14 @@ components:
       required:
       - email
       - password
+    LoginLinkIn:
+      type: object
+      properties:
+        token:
+          type: string
+          maxLength: 100
+      required:
+      - token
     MeOut:
       type: object
       properties:
@@ -3804,6 +3961,40 @@ components:
       required:
       - branches
       - legal_entities
+    PackagePlan:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name_ar:
+          type: string
+          maxLength: 120
+        name_en:
+          type: string
+          maxLength: 120
+        service:
+          type: integer
+        sessions:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        validity_days:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        is_active:
+          type: boolean
+      required:
+      - id
+      - name_ar
+      - price
+      - service
+      - sessions
     PatchedBeneficiary:
       type: object
       properties:
@@ -3926,7 +4117,7 @@ components:
           - type: string
             maxLength: 0
         preferred_language:
-          $ref: '#/components/schemas/PreferredLanguageEnum'
+          $ref: '#/components/schemas/LangEnum'
         whatsapp_opt_in:
           type: boolean
         marketing_opt_in:
@@ -3956,7 +4147,25 @@ components:
         reason:
           type: string
           maxLength: 300
-    PatchedPlan:
+    PatchedMemberIn:
+      type: object
+      properties:
+        role:
+          type: string
+          pattern: ^[-a-zA-Z0-9_]+$
+        all_branches:
+          type: boolean
+        branch_ids:
+          type: array
+          items:
+            type: integer
+        discount_limit_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        is_active:
+          type: boolean
+    PatchedPackagePlan:
       type: object
       properties:
         id:
@@ -3984,6 +4193,42 @@ components:
           minimum: 0
         is_active:
           type: boolean
+    PatchedPlan:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 30
+          pattern: ^[-a-zA-Z0-9_]+$
+        name_ar:
+          type: string
+          maxLength: 60
+        name_en:
+          type: string
+          maxLength: 60
+        monthly_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        max_branches:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        max_staff:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        custom_domain:
+          type: boolean
+        is_active:
+          type: boolean
+        sort:
+          type: integer
+          maximum: 32767
+          minimum: 0
     PatchedProduct:
       type: object
       properties:
@@ -4197,42 +4442,44 @@ components:
         id:
           type: integer
           readOnly: true
+        code:
+          type: string
+          maxLength: 30
+          pattern: ^[-a-zA-Z0-9_]+$
         name_ar:
           type: string
-          maxLength: 120
+          maxLength: 60
         name_en:
           type: string
-          maxLength: 120
-        service:
-          type: integer
-        sessions:
-          type: integer
-          maximum: 32767
-          minimum: 0
-        price:
+          maxLength: 60
+        monthly_price:
           type: string
           format: decimal
           pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
-        validity_days:
+        max_branches:
           type: integer
           maximum: 32767
           minimum: 0
+        max_staff:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        custom_domain:
+          type: boolean
         is_active:
           type: boolean
+        sort:
+          type: integer
+          maximum: 32767
+          minimum: 0
       required:
+      - code
       - id
+      - max_branches
+      - max_staff
+      - monthly_price
       - name_ar
-      - price
-      - service
-      - sessions
-    PreferredLanguageEnum:
-      enum:
-      - ar
-      - en
-      type: string
-      description: |-
-        * `ar` - ar
-        * `en` - en
+      - name_en
     Price:
       type: object
       properties:
@@ -4628,6 +4875,20 @@ components:
       - opened_at
       - opened_by
       - opening_float
+    SetPasswordIn:
+      type: object
+      properties:
+        uid:
+          type: string
+        token:
+          type: string
+        password:
+          type: string
+          minLength: 10
+      required:
+      - password
+      - token
+      - uid
     Settings:
       type: object
       properties:

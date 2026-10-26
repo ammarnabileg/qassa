@@ -21,7 +21,7 @@ def status_payload(request, ch: WhatsAppChannel | None) -> dict:
 
 class WhatsAppView(TenantAPIView):
     """The company's own WhatsApp number (D-002): status, connect by QR, disconnect, recent messages."""
-    required_permissions = {"GET": "org.manage", "POST": "org.manage"}
+    required_permissions = {"GET": "org.manage"}
 
     @extend_schema(responses=dict)
     def get(self, request):
@@ -29,6 +29,11 @@ class WhatsAppView(TenantAPIView):
         if ch is not None:
             whatsapp.refresh(ch)
         return Response(status_payload(request, ch))
+
+
+
+class WhatsAppActionView(TenantAPIView):
+    required_permissions = {"POST": "org.manage"}
 
     @extend_schema(request=None, responses=dict)
     def post(self, request, action):

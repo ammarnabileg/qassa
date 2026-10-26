@@ -183,7 +183,7 @@ class TimeOffIn(serializers.Serializer):
 
 
 class StaffTimeOffView(TenantAPIView):
-    required_permissions = {"POST": "staff.manage", "DELETE": "staff.manage"}
+    required_permissions = {"POST": "staff.manage"}
 
     @extend_schema(request=TimeOffIn, responses={201: dict})
     def post(self, request, pk):
@@ -195,6 +195,11 @@ class StaffTimeOffView(TenantAPIView):
             raise DomainError(code="hours_invalid")
         TimeOff.objects.create(staff=staff, **s.validated_data)
         return Response(StaffScheduleView()._out(staff), status=status.HTTP_201_CREATED)
+
+
+
+class StaffTimeOffDetailView(TenantAPIView):
+    required_permissions = {"DELETE": "staff.manage"}
 
     @extend_schema(responses={204: None})
     def delete(self, request, pk, off_id):

@@ -152,7 +152,8 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {"TenantStatusEnum": "apps.tenancy.models.Tenant.Status",
                             "BusinessTypeEnum": "apps.tenancy.models.BusinessType",
                             "AppointmentStatusEnum": "apps.booking.models.Appointment.Status",
-                            "CashSessionStatusEnum": "apps.pos.models.CashSession.Status"},
+                            "CashSessionStatusEnum": "apps.pos.models.CashSession.Status",
+                            "LangEnum": [("ar", "ar"), ("en", "en")]},
     "TITLE": "Qassa POS API",
     "VERSION": "0.1.0",
     "DESCRIPTION": "Multi-tenant salon POS & accounting API. Tenant-scoped endpoints require the X-Tenant header.",
@@ -198,3 +199,17 @@ def _version():
 
 
 QASSA_VERSION, QASSA_CHANNEL = _version()
+
+# ---------- email (invitations, password reset) ----------
+# Without SMTP the platform falls back to the platform WhatsApp number, then to showing the link to the admin.
+EMAIL_HOST = env("QASSA_SMTP_HOST", "")
+EMAIL_PORT = int(env("QASSA_SMTP_PORT", "587"))
+EMAIL_HOST_USER = env("QASSA_SMTP_USER", "")
+EMAIL_HOST_PASSWORD = env("QASSA_SMTP_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("QASSA_SMTP_TLS", True)
+DEFAULT_FROM_EMAIL = env("QASSA_MAIL_FROM", "Qassa POS <no-reply@qassa.app>")
+EMAIL_BACKEND = ("django.core.mail.backends.smtp.EmailBackend" if EMAIL_HOST
+                 else "django.core.mail.backends.locmem.EmailBackend")
+QASSA["EMAIL_CONFIGURED"] = bool(EMAIL_HOST)
+QASSA["PUBLIC_ADMIN_URL"] = env("QASSA_PUBLIC_ADMIN_URL", "http://localhost:5173")
+PASSWORD_RESET_TIMEOUT = 72 * 3600  # invitation / reset links

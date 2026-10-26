@@ -288,3 +288,29 @@ class MyBookingCancelView(AppView):
         set_status(a, Appointment.Status.CANCELLED, reason="cancelled by customer (app)")
         a = Appointment.objects.select_related("beneficiary").prefetch_related("items__service", "items__staff").get(id=pk)
         return Response(booking_payload(a))
+
+
+class LoginLinkIn(serializers.Serializer):
+    token = serializers.CharField(max_length=100)
+
+
+class LoginLinkView(AppView):
+    """Exchange a one-time front-desk link (D-003 fallback) for a customer session."""
+    customer_required = False
+
+    @extend_schema(request=LoginLinkIn, responses=dict)
+    def post(self, request):
+        import hashlib
+
+        from apps.customers.models import CustomerLoginLink
+        s = LoginLinkIn(data=request.data)
+        s.is_valid(raise_exception=True)
+        h = hashlib.sha256(s.validated_data["token"].encode()).hexdigest()
+        with transaction.atomic():
+            link = CustomerLoginLink.objects.select_for_update().filter(token_hash=h).first()
+            if link is None or link.used_at or link.expires_at < timezone.now():
+                raise DomainError(code="link_invalid")
+            link.used_at = timezone.now()
+            link.save(update_fields=["used_at"])
+        audit("customer.login", tenant_id=request.tenant.id, obj=link.customer, data={"channel": "front_desk_link"})
+        return Response({"token": otp.issue_token(request.tenant, link.customer)})

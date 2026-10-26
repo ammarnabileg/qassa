@@ -111,3 +111,28 @@ class BeneficiaryDetailView(TenantAPIView):
         s = BeneficiarySerializer(b, data=request.data, partial=True)
         s.is_valid(raise_exception=True)
         return Response(BeneficiarySerializer(s.save()).data)
+
+
+class CustomerLoginLinkView(TenantAPIView):
+    """Front desk: after checking the customer in person, issue a one-time app login link (15 minutes)."""
+    required_permissions = {"POST": "customers.manage"}
+
+    @extend_schema(request=None, responses={201: dict})
+    def post(self, request, pk):
+        import hashlib
+        import secrets
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.audit.services.log import record as audit
+        from apps.customers.models import CustomerLoginLink
+        from apps.platform.models import TenantDomain
+        customer = get_object_or_404(Customer.objects.all(), pk=pk)
+        raw = secrets.token_urlsafe(24)
+        CustomerLoginLink.objects.create(customer=customer, token_hash=hashlib.sha256(raw.encode()).hexdigest(),
+                                         issued_by=request.user, expires_at=timezone.now() + timedelta(minutes=15))
+        host = (TenantDomain.objects.filter(tenant_id=request.tenant_id, is_active=True).order_by("-kind").values_list("host", flat=True).first())
+        audit("customer.login_link_issued", tenant_id=request.tenant_id, actor=request.user, obj=customer)
+        return Response({"url": f"https://{host}/?login={raw}" if host else None, "token": raw, "expires_in": 900},
+                        status=status.HTTP_201_CREATED)

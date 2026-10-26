@@ -8,12 +8,13 @@ from apps.accounting.api import views as acc
 from apps.identity.api import views as auth
 from apps.platform.api import views as plat
 from apps.tenancy.api import views as org
+from apps.tenancy.api import users as usr
 from apps.tenancy.api.public import PublicManifestView, PublicSalonView
 from apps.booking.api import views as bk
 from apps.catalog.api import views as cat
 from apps.inventory.api import views as inv
 from apps.loyalty.api import views as loy
-from apps.notifications.api.views import WhatsAppView
+from apps.notifications.api.views import WhatsAppActionView, WhatsAppView
 from apps.pos.api import views as pos
 from apps.customers.api import app as capp
 from apps.customers.api import views as cust
@@ -41,6 +42,8 @@ urlpatterns = [
     path(api + "auth/mfa/verify", auth.MfaVerifyView.as_view()),
     path(api + "auth/mfa/whatsapp", auth.MfaWhatsAppView.as_view()),
     path(api + "auth/devices", auth.TrustedDevicesView.as_view()),
+    path(api + "auth/password/set", auth.SetPasswordView.as_view()),
+    path(api + "auth/password/forgot", auth.ForgotPasswordView.as_view()),
     path(api + "auth/logout", auth.LogoutView.as_view()),
     path(api + "auth/me", auth.MeView.as_view()),
     # tenant-scoped (X-Tenant header)
@@ -84,8 +87,12 @@ urlpatterns = [
     path(api + "pos/invoices/<int:pk>/payments", pos.InvoicePaymentsView.as_view()),
     path(api + "pos/invoices/<int:pk>/credit-notes", pos.InvoiceCreditNotesView.as_view()),
     path(api + "whatsapp", WhatsAppView.as_view()),
-    path(api + "whatsapp/<str:action>", WhatsAppView.as_view()),
+    path(api + "whatsapp/<str:action>", WhatsAppActionView.as_view()),
     # phase 4
+    path(api + "users", usr.UsersView.as_view()),
+    path(api + "users/<int:pk>", usr.UserDetailView.as_view()),
+    path(api + "users/<int:pk>/resend", usr.UserResendView.as_view()),
+    path(api + "customers/<int:pk>/login-link", cust.CustomerLoginLinkView.as_view()),
     path(api + "inventory/products", inv.ProductsView.as_view()),
     path(api + "inventory/products/<int:pk>", inv.ProductDetailView.as_view()),
     path(api + "inventory/suppliers", inv.SuppliersView.as_view()),
@@ -104,12 +111,13 @@ urlpatterns = [
     path(api + "staff/<int:pk>/payout", stf.CommissionPayoutView.as_view()),
     path(api + "staff/<int:pk>/schedule", stf.StaffScheduleView.as_view()),
     path(api + "staff/<int:pk>/time-off", stf.StaffTimeOffView.as_view()),
-    path(api + "staff/<int:pk>/time-off/<int:off_id>", stf.StaffTimeOffView.as_view()),
+    path(api + "staff/<int:pk>/time-off/<int:off_id>", stf.StaffTimeOffDetailView.as_view()),
     # customer app
     path(api + "app/otp/request", capp.OtpRequestView.as_view()),
     path(api + "app/otp/verify", capp.OtpVerifyView.as_view()),
     path(api + "app/register", capp.RegisterView.as_view()),
     path(api + "app/me", capp.MeView.as_view()),
+    path(api + "app/login-link", capp.LoginLinkView.as_view()),
     path(api + "app/me/beneficiaries", capp.MyBeneficiariesView.as_view()),
     path(api + "app/catalog", capp.CatalogView.as_view()),
     path(api + "app/slots", capp.SlotsView.as_view()),

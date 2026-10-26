@@ -207,6 +207,54 @@ class TrustedDevicesView(APIView):
         return response
 
 
+class SetPasswordIn(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    password = serializers.CharField(trim_whitespace=False, min_length=10)
+
+
+class SetPasswordView(APIView):
+    """Accept an invitation or finish a reset. The link works once."""
+    permission_classes = [AllowAny]
+    throttle_scope = "login"
+    from rest_framework.throttling import ScopedRateThrottle
+    throttle_classes = [ScopedRateThrottle]
+
+    @extend_schema(request=SetPasswordIn, responses={204: None})
+    def post(self, request):
+        from apps.identity.services import accounts
+        s = SetPasswordIn(data=request.data)
+        s.is_valid(raise_exception=True)
+        user = accounts.set_password(s.validated_data["uid"], s.validated_data["token"], s.validated_data["password"])
+        audit("auth.password_set", actor=user, ip=request.META.get("REMOTE_ADDR"))
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ForgotIn(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class ForgotPasswordView(APIView):
+    """Always answers the same, whether or not the email exists (no account discovery)."""
+    permission_classes = [AllowAny]
+    throttle_scope = "login"
+    from rest_framework.throttling import ScopedRateThrottle
+    throttle_classes = [ScopedRateThrottle]
+
+    @extend_schema(request=ForgotIn, responses={200: dict})
+    def post(self, request):
+        from apps.identity.models import User
+        from apps.identity.services import accounts
+        s = ForgotIn(data=request.data)
+        s.is_valid(raise_exception=True)
+        user = User.objects.filter(email=s.validated_data["email"].lower(), is_active=True).first()
+        if user is not None and user.has_usable_password():
+            out = accounts.deliver(user, "reset")
+            audit("auth.reset_requested", actor=user, data={"channel": out["channel"]}, ip=request.META.get("REMOTE_ADDR"))
+            # a reset link is never shown to an anonymous caller; without email/WhatsApp an administrator must help
+        return Response({"ok": True})
+
+
 class LogoutView(APIView):
     @extend_schema(request=None, responses={204: None})
     def post(self, request):
