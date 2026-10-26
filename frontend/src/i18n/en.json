@@ -32,7 +32,7 @@
     "password": "Password",
     "submit": "Sign in",
     "mfaSetupTitle": "Set up two-step verification",
-    "mfaSetupHelp": "Add this account in an authenticator app (Google Authenticator or Microsoft Authenticator), then enter the code.",
+    "mfaSetupHelp": "Open your authenticator app (Google or Microsoft Authenticator), tap + and scan the code, then enter the 6 digits.",
     "mfaVerifyTitle": "Two-step verification",
     "mfaCode": "6-digit code",
     "verify": "Verify",
@@ -42,7 +42,8 @@
     "f3": "Many salons and branches under one account",
     "f4": "Reports and proper accounting",
     "welcome": "Welcome 👋",
-    "sub": "Sign in to continue"
+    "sub": "Sign in to continue",
+    "mfaManual": "Or enter the key manually (do not share it):"
   },
   "tenant": {
     "choose": "Choose a company",

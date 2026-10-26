@@ -32,7 +32,7 @@
     "password": "كلمة المرور",
     "submit": "دخول",
     "mfaSetupTitle": "إعداد التحقق بخطوتين",
-    "mfaSetupHelp": "أضف هذا الحساب في تطبيق المصادقة (Google Authenticator أو Microsoft Authenticator) ثم أدخل الرمز.",
+    "mfaSetupHelp": "افتح تطبيق المصادقة (Google Authenticator أو Microsoft Authenticator)، اضغط + وامسح الكود، ثم اكتب الأرقام الستة اللي ظهرت.",
     "mfaVerifyTitle": "التحقق بخطوتين",
     "mfaCode": "رمز من 6 أرقام",
     "verify": "تحقق",
@@ -42,7 +42,8 @@
     "f3": "أكتر من محل وفرع تحت حساب واحد",
     "f4": "تقارير ومحاسبة مضبوطة",
     "welcome": "أهلاً بيك 👋",
-    "sub": "سجّل دخولك عشان تكمل"
+    "sub": "سجّل دخولك عشان تكمل",
+    "mfaManual": "أو أدخل المفتاح يدويًا (لا تشاركه مع أحد):"
   },
   "tenant": {
     "choose": "اختر الشركة",

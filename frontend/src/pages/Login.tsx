@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react'
+import QRCode from 'qrcode'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, type LoginResult, type Me } from '../api/client'
 import { useAuth } from '../auth'
@@ -15,6 +16,10 @@ export default function Login() {
   const [otpUrl, setOtpUrl] = useState('')
   const [err, setErr] = useState<unknown>(null)
   const [busy, setBusy] = useState(false)
+  const [qr, setQr] = useState('')
+  // the otpauth:// URL is drawn as a QR locally — the secret never goes to a third-party QR service
+  useEffect(() => { if (otpUrl) QRCode.toDataURL(otpUrl, { width: 220, margin: 1 }).then(setQr).catch(() => setQr('')) }, [otpUrl])
+  const secret = otpUrl ? new URL(otpUrl).searchParams.get('secret') ?? '' : ''
 
   async function run(fn: () => Promise<void>) {
     setBusy(true); setErr(null)
@@ -63,7 +68,11 @@ export default function Login() {
             <div style={{ alignSelf: 'flex-end' }}><LangToggle className="btn sm" /></div>
             <div><h1>{t(step === 'setup' ? 'auth.mfaSetupTitle' : 'auth.mfaVerifyTitle')}</h1>
               {step === 'setup' && <div className="small muted">{t('auth.mfaSetupHelp')}</div>}</div>
-            {step === 'setup' && <code className="code" style={{ wordBreak: 'break-all', fontSize: 12, padding: 8, letterSpacing: 0 }}>{otpUrl}</code>}
+            {step === 'setup' && <>
+              {qr && <img src={qr} alt="QR" width={220} height={220} style={{ alignSelf: 'center', borderRadius: 12, border: '1px solid var(--line)' }} />}
+              <div className="small muted">{t('auth.mfaManual')}</div>
+              <code className="code" style={{ alignSelf: 'center', fontSize: 13 }}>{secret.match(/.{1,4}/g)?.join(' ')}</code>
+            </>}
             <label className="field">{t('auth.mfaCode')}<input className="input" inputMode="numeric" pattern="\d{6}" maxLength={6} dir="ltr" autoComplete="one-time-code" value={token} onChange={(e) => setToken(e.target.value)} required /></label>
             <ErrorText error={err} />
             <button className="btn primary lg" disabled={busy}>{t('auth.verify')}</button>
