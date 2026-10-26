@@ -147,7 +147,9 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {"TenantStatusEnum": "apps.tenancy.models.Tenant.Status",
-                            "BusinessTypeEnum": "apps.tenancy.models.BusinessType"},
+                            "BusinessTypeEnum": "apps.tenancy.models.BusinessType",
+                            "AppointmentStatusEnum": "apps.booking.models.Appointment.Status",
+                            "CashSessionStatusEnum": "apps.pos.models.CashSession.Status"},
     "TITLE": "Qassa POS API",
     "VERSION": "0.1.0",
     "DESCRIPTION": "Multi-tenant salon POS & accounting API. Tenant-scoped endpoints require the X-Tenant header.",

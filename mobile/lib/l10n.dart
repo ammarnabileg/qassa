@@ -2,6 +2,11 @@
 const strings = <String, Map<String, String>>{
   'ar': {
     'app_name': 'قصّة',
+    'app_tagline': 'احجز في صالونك',
+    'pick_sub': 'اكتب رمز الصالون أو افتح الرابط اللي وصلك',
+    'biz_kids': 'صالون أطفال',
+    'biz_men': 'صالون رجالي',
+    'biz_women': 'صالون نسائي',
     'pick_title': 'اختر صالونك',
     'pick_hint': 'رمز الصالون (من الرابط أو الـQR)',
     'pick_go': 'متابعة',
@@ -18,6 +23,11 @@ const strings = <String, Map<String, String>>{
   },
   'en': {
     'app_name': 'Qassa',
+    'app_tagline': 'Book your salon',
+    'pick_sub': 'Enter the salon code or open the link you received',
+    'biz_kids': 'Kids salon',
+    'biz_men': "Men's salon",
+    'biz_women': "Women's salon",
     'pick_title': 'Choose your salon',
     'pick_hint': 'Salon code (from the link or QR)',
     'pick_go': 'Continue',

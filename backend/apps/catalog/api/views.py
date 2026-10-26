@@ -20,6 +20,7 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceCategory
         fields = ["id", "name_ar", "name_en", "business_type", "sort"]
+        validators = []  # duplicate names are reported as category_name_exists by the view
 
 
 class PriceSerializer(serializers.ModelSerializer):
@@ -76,7 +77,12 @@ class CategoriesView(TenantAPIView):
     def post(self, request):
         s = CategorySerializer(data=request.data)
         s.is_valid(raise_exception=True)
-        return Response(CategorySerializer(s.save()).data, status=status.HTTP_201_CREATED)
+        try:
+            with transaction.atomic():
+                cat = s.save()
+        except IntegrityError:
+            raise DomainError(code="category_name_exists")
+        return Response(CategorySerializer(cat).data, status=status.HTTP_201_CREATED)
 
 
 def _services():

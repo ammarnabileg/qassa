@@ -1558,7 +1558,7 @@ components:
           type: string
           readOnly: true
         status:
-          $ref: '#/components/schemas/Status569Enum'
+          $ref: '#/components/schemas/AppointmentStatusEnum'
         source:
           $ref: '#/components/schemas/AppointmentOutSourceEnum'
         starts_at:
@@ -1606,6 +1606,24 @@ components:
         * `reception` - Reception
         * `walk_in` - Walk In
         * `online` - Online
+    AppointmentStatusEnum:
+      enum:
+      - booked
+      - arrived
+      - in_service
+      - completed
+      - invoiced
+      - cancelled
+      - no_show
+      type: string
+      description: |-
+        * `booked` - Booked
+        * `arrived` - Arrived
+        * `in_service` - In Service
+        * `completed` - Completed
+        * `invoiced` - Invoiced
+        * `cancelled` - Cancelled
+        * `no_show` - No Show
     Beneficiary:
       type: object
       properties:
@@ -1733,6 +1751,14 @@ components:
         * `kids` - Kids
         * `men` - Men
         * `women` - Women
+    CashSessionStatusEnum:
+      enum:
+      - open
+      - closed
+      type: string
+      description: |-
+        * `open` - Open
+        * `closed` - Closed
     Category:
       type: object
       properties:
@@ -1763,11 +1789,11 @@ components:
         lines:
           type: array
           items:
-            $ref: '#/components/schemas/LineIn'
+            $ref: '#/components/schemas/SaleLineIn'
         payments:
           type: array
           items:
-            $ref: '#/components/schemas/PaymentIn'
+            $ref: '#/components/schemas/SalePaymentIn'
         customer_id:
           type: integer
           nullable: true
@@ -1803,7 +1829,7 @@ components:
         payments:
           type: array
           items:
-            $ref: '#/components/schemas/PaymentIn'
+            $ref: '#/components/schemas/SalePaymentIn'
       required:
       - payments
     CreditNoteIn:
@@ -1818,7 +1844,7 @@ components:
           maxLength: 300
         refund:
           allOf:
-          - $ref: '#/components/schemas/PaymentIn'
+          - $ref: '#/components/schemas/SalePaymentIn'
           nullable: true
       required:
       - lines
@@ -2589,22 +2615,6 @@ components:
         reason:
           type: string
           maxLength: 300
-    PaymentIn:
-      type: object
-      properties:
-        method:
-          $ref: '#/components/schemas/MethodEnum'
-        amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
-        reference:
-          type: string
-          default: ''
-          maxLength: 60
-      required:
-      - amount
-      - method
     PaymentOut:
       type: object
       properties:
@@ -2818,6 +2828,42 @@ components:
           minLength: 3
       required:
       - reason
+    SaleLineIn:
+      type: object
+      properties:
+        service_id:
+          type: integer
+        qty:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 1
+        discount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+          default: '0.000'
+        staff_id:
+          type: integer
+          nullable: true
+      required:
+      - service_id
+    SalePaymentIn:
+      type: object
+      properties:
+        method:
+          $ref: '#/components/schemas/MethodEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        reference:
+          type: string
+          default: ''
+          maxLength: 60
+      required:
+      - amount
+      - method
     Service:
       type: object
       properties:
@@ -2909,7 +2955,7 @@ components:
           type: integer
         status:
           allOf:
-          - $ref: '#/components/schemas/SessionOutStatusEnum'
+          - $ref: '#/components/schemas/CashSessionStatusEnum'
           default: open
         opened_by:
           type: integer
@@ -2961,14 +3007,6 @@ components:
       - opened_at
       - opened_by
       - opening_float
-    SessionOutStatusEnum:
-      enum:
-      - open
-      - closed
-      type: string
-      description: |-
-        * `open` - Open
-        * `closed` - Closed
     Staff:
       type: object
       properties:
@@ -2997,29 +3035,11 @@ components:
       required:
       - full_name_ar
       - id
-    Status569Enum:
-      enum:
-      - booked
-      - arrived
-      - in_service
-      - completed
-      - invoiced
-      - cancelled
-      - no_show
-      type: string
-      description: |-
-        * `booked` - Booked
-        * `arrived` - Arrived
-        * `in_service` - In Service
-        * `completed` - Completed
-        * `invoiced` - Invoiced
-        * `cancelled` - Cancelled
-        * `no_show` - No Show
     StatusIn:
       type: object
       properties:
         status:
-          $ref: '#/components/schemas/Status569Enum'
+          $ref: '#/components/schemas/AppointmentStatusEnum'
         reason:
           type: string
           default: ''

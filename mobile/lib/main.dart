@@ -114,21 +114,40 @@ class _PickerScreenState extends State<PickerScreen> {
     final t = widget.t;
     void submit() { if (ctrl.text.trim().isNotEmpty && !widget.loading) widget.onSubmit(ctrl.text); }
     return Scaffold(
-      appBar: AppBar(title: Text(t('app_name')), actions: [TextButton(onPressed: widget.onLang, child: Text(t('language')))]),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: ListView(padding: const EdgeInsets.all(24), shrinkWrap: true, children: [
-            Text(t('pick_title'), style: Theme.of(context).textTheme.headlineSmall),
+      body: Container(
+        // the design's login background: brand-soft glow on the page colour
+        decoration: BoxDecoration(gradient: RadialGradient(center: const Alignment(-0.6, -0.8), radius: 0.9,
+            colors: [Brand.kids.soft, Tokens.bg])),
+        child: SafeArea(child: Center(child: SingleChildScrollView(padding: const EdgeInsets.all(16), child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Card(child: Padding(padding: const EdgeInsets.all(28), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [
+              const LogoMark(biz: 'kids'),
+              const SizedBox(width: 10),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(t('app_name'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                Text(t('app_tagline'), style: const TextStyle(fontSize: 11, color: Tokens.muted)),
+              ])),
+              TextButton(onPressed: widget.onLang, child: Text(t('language'))),
+            ]),
+            const SizedBox(height: 20),
+            Text(t('pick_title'), style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w700, letterSpacing: -.5)),
+            Text(t('pick_sub'), style: const TextStyle(fontSize: 13, color: Tokens.muted)),
             const SizedBox(height: 16),
-            TextField(key: const Key('slug'), controller: ctrl, decoration: InputDecoration(labelText: t('pick_hint'), border: const OutlineInputBorder()), onSubmitted: (_) => submit()),
-            if (widget.error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(t(widget.error!), style: TextStyle(color: Theme.of(context).colorScheme.error))),
+            Text(t('pick_hint'), style: const TextStyle(fontSize: 13, color: Tokens.muted, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 4),
+            TextField(key: const Key('slug'), controller: ctrl, textDirection: TextDirection.ltr, onSubmitted: (_) => submit()),
+            if (widget.error != null) Container(
+              margin: const EdgeInsets.only(top: 12), padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: const Color(0xFFFCECEF), borderRadius: BorderRadius.circular(Tokens.rMd)),
+              child: Text(t(widget.error!), style: const TextStyle(color: Color(0xFFA52E3B), fontSize: 13))),
             const SizedBox(height: 16),
-            FilledButton(onPressed: widget.loading ? null : submit, child: widget.loading ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Text(t('pick_go'))),
-            const SizedBox(height: 32),
-            Text('${t('version')} ${Config.version} (${Config.channel})', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
-          ]),
-        ),
+            FilledButton(onPressed: widget.loading ? null : submit,
+                child: widget.loading ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Text(t('pick_go'))),
+            const SizedBox(height: 16),
+            Text('${t('version')} \u2066${Config.version} (${Config.channel})\u2069', textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: Tokens.muted)),
+          ]))),
+        )))),
       ),
     );
   }
@@ -150,28 +169,57 @@ class SalonScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final b = Brand.of(salon.businessType);
     return Scaffold(
-      appBar: AppBar(title: Text(salon.name), actions: [
-        TextButton(onPressed: onLang, child: Text(t('language'))),
-        if (onChange != null) IconButton(tooltip: t('change_salon'), onPressed: onChange, icon: const Icon(Icons.swap_horiz)),
-      ]),
+      appBar: AppBar(
+        titleSpacing: 16,
+        title: Row(children: [
+          LogoMark(biz: salon.businessType, size: 36),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(salon.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            Text(t('biz_${salon.businessType}'), style: const TextStyle(fontSize: 11, color: Tokens.muted)),
+          ])),
+        ]),
+        actions: [
+          TextButton(onPressed: onLang, child: Text(t('language'))),
+          if (onChange != null) IconButton(tooltip: t('change_salon'), onPressed: onChange, icon: const Icon(Icons.swap_horiz)),
+          const SizedBox(width: 4),
+        ],
+      ),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        Card(child: Padding(padding: const EdgeInsets.all(16), child: Text(t('booking_soon')))),
-        const SizedBox(height: 8),
-        Text(t('branches'), style: Theme.of(context).textTheme.titleMedium),
-        for (final b in salon.branches)
-          Card(
-            child: ListTile(
-              title: Text(b.name(lang)),
-              subtitle: b.address.isEmpty ? null : Text(b.address),
-              trailing: b.phone.isEmpty
-                  ? null
-                  : Wrap(children: [
-                      IconButton(tooltip: t('call'), icon: const Icon(Icons.call), onPressed: () => launchUrl(Uri.parse('tel:+${intl(b.phone)}'))),
-                      IconButton(tooltip: t('whatsapp'), icon: const Icon(Icons.chat), onPressed: () => launchUrl(Uri.parse('https://wa.me/${intl(b.phone)}'), mode: LaunchMode.externalApplication)),
-                    ]),
-            ),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: Tokens.infoBg, borderRadius: BorderRadius.circular(Tokens.rMd)),
+          child: Row(children: [
+            const Icon(Icons.info_outline, size: 20, color: Tokens.infoInk),
+            const SizedBox(width: 10),
+            Expanded(child: Text(t('booking_soon'), style: const TextStyle(color: Tokens.infoInk, fontSize: 13))),
+          ]),
+        ),
+        const SizedBox(height: 18),
+        Text(t('branches'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 10),
+        Card(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 18), child: Column(children: [
+          for (final (i, br) in salon.branches.indexed) Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(border: i == salon.branches.length - 1 ? null : const Border(bottom: BorderSide(color: Tokens.line))),
+            child: Row(children: [
+              CircleAvatar(radius: 17, backgroundColor: b.soft, child: Icon(Icons.storefront_outlined, size: 18, color: b.dark)),
+              const SizedBox(width: 10),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(br.name(lang), style: const TextStyle(fontWeight: FontWeight.w700)),
+                if (br.address.isNotEmpty) Text(br.address, style: const TextStyle(fontSize: 12, color: Tokens.muted)),
+              ])),
+              if (br.phone.isNotEmpty) ...[
+                OutlinedButton.icon(onPressed: () => launchUrl(Uri.parse('tel:+${intl(br.phone)}')), icon: const Icon(Icons.call_outlined, size: 16), label: Text(t('call'))),
+                const SizedBox(width: 6),
+                OutlinedButton.icon(onPressed: () => launchUrl(Uri.parse('https://wa.me/${intl(br.phone)}'), mode: LaunchMode.externalApplication),
+                    icon: const Icon(Icons.chat_outlined, size: 16), label: Text(t('whatsapp'))),
+              ],
+            ]),
           ),
+        ]))),
       ]),
     );
   }

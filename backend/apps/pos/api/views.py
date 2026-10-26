@@ -78,14 +78,14 @@ class SessionApproveView(TenantAPIView):
         return Response(SessionOut(sales.approve_variance(session, request.user, request.membership)).data)
 
 
-class LineIn(serializers.Serializer):
+class SaleLineIn(serializers.Serializer):
     service_id = serializers.IntegerField()
     qty = serializers.IntegerField(min_value=1, max_value=50, default=1)
     discount = serializers.DecimalField(**AMOUNT, min_value=0, default="0")
     staff_id = serializers.IntegerField(required=False, allow_null=True)
 
 
-class PaymentIn(serializers.Serializer):
+class SalePaymentIn(serializers.Serializer):
     method = serializers.ChoiceField(choices=["cash", "knet", "transfer"])
     amount = serializers.DecimalField(**AMOUNT, min_value=0)
     reference = serializers.CharField(required=False, allow_blank=True, default="", max_length=60)
@@ -93,8 +93,8 @@ class PaymentIn(serializers.Serializer):
 
 class CheckoutIn(serializers.Serializer):
     branch_id = serializers.IntegerField()
-    lines = LineIn(many=True)
-    payments = PaymentIn(many=True, required=False, default=list)
+    lines = SaleLineIn(many=True)
+    payments = SalePaymentIn(many=True, required=False, default=list)
     customer_id = serializers.IntegerField(required=False, allow_null=True)
     beneficiary_id = serializers.IntegerField(required=False, allow_null=True)
     appointment_id = serializers.IntegerField(required=False, allow_null=True)
@@ -227,7 +227,7 @@ class InvoiceDetailView(TenantAPIView):
 
 
 class CollectIn(serializers.Serializer):
-    payments = PaymentIn(many=True)
+    payments = SalePaymentIn(many=True)
 
 
 class InvoicePaymentsView(TenantAPIView):
@@ -251,7 +251,7 @@ class ReturnLineIn(serializers.Serializer):
 class CreditNoteIn(serializers.Serializer):
     lines = ReturnLineIn(many=True)
     reason = serializers.CharField(max_length=300)
-    refund = PaymentIn(required=False, allow_null=True)
+    refund = SalePaymentIn(required=False, allow_null=True)
 
 
 class InvoiceCreditNotesView(TenantAPIView):

@@ -2,9 +2,14 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './auth'
+import { BranchProvider, useBranch } from './branch'
 import { LangToggle } from './components/ErrorText'
 import { Icon, Logo, useBizTheme, type Biz } from './components/ui'
+import Bookings from './pages/Bookings'
+import Cash from './pages/Cash'
 import Customers from './pages/Customers'
+import Invoices from './pages/Invoices'
+import POS from './pages/POS'
 import JournalEntry from './pages/JournalEntry'
 import Login from './pages/Login'
 import Org from './pages/Org'
@@ -32,6 +37,7 @@ function Shell({ biz, plat, title, sub, groups, children }: {
     <div className="app">
       <aside className={`nav${plat ? ' plat' : ''}${open ? ' open' : ''}`}>
         <Logo biz={biz} title={title} sub={sub} />
+        {!plat && <BranchSelect />}
         {groups.map(([g, items]) => {
           const vis = items.filter((x) => x.show)
           return vis.length ? <div key={g}>
@@ -54,6 +60,16 @@ function Shell({ biz, plat, title, sub, groups, children }: {
       </div>
     </div>
   )
+}
+
+function BranchSelect() {
+  const { t, i18n } = useTranslation()
+  const { branch, branches, setBranchId } = useBranch()
+  if (branches.length < 2) return null
+  return <select className="input" style={{ margin: '0 4px 6px', width: 'auto' }} aria-label={t('nav.branch')} value={branch?.id ?? ''}
+    onChange={(e) => setBranchId(Number(e.target.value))}>
+    {branches.map((b) => <option key={b.id} value={b.id}>{t('nav.branchOf', { name: i18n.language === 'en' && b.name_en ? b.name_en : b.name_ar })}</option>)}
+  </select>
 }
 
 function TenantPicker() {
@@ -95,6 +111,12 @@ export default function App() {
 
   if (!membership) return <TenantPicker />
   const groups: [string, NavItem[]][] = [
+    [t('nav.operations'), [
+      { path: '/pos', label: t('nav.pos'), icon: 'cart', show: can('pos.sell') },
+      { path: '/bookings', label: t('nav.bookings'), icon: 'calendar', show: can('booking.view') },
+      { path: '/invoices', label: t('nav.invoices'), icon: 'receipt', show: can('pos.invoices.view') },
+      { path: '/cash', label: t('nav.cash'), icon: 'wallet', show: can('cash.session.open') },
+    ]],
     [t('nav.setup'), [
       { path: '/org', label: t('nav.org'), icon: 'store', show: true },
       { path: '/services', label: t('nav.services'), icon: 'tag', show: can('catalog.view') },
@@ -106,12 +128,18 @@ export default function App() {
       { path: '/accounting/trial-balance', label: t('nav.trialBalance'), icon: 'chart', show: can('accounting.view') },
     ]],
     [t('nav.account'), [
-      { path: '/subscription', label: t('nav.subscription'), icon: 'wallet', show: can('org.manage') },
+      { path: '/subscription', label: t('nav.subscription'), icon: 'award', show: can('org.manage') },
     ]],
   ]
+  const home = can('pos.sell') ? '/pos' : can('booking.view') ? '/bookings' : '/org'
   return (
+    <BranchProvider>
     <Shell biz={membership.tenant_business_type} title={membership.tenant_name} sub={t(`biz.${membership.tenant_business_type}`)} groups={groups}>
       <Routes>
+        <Route path="/pos" element={<POS />} />
+        <Route path="/bookings" element={<Bookings />} />
+        <Route path="/invoices" element={<Invoices />} />
+        <Route path="/cash" element={<Cash />} />
         <Route path="/org" element={<Org />} />
         <Route path="/services" element={<Services />} />
         <Route path="/staff" element={<Staff />} />
@@ -119,8 +147,9 @@ export default function App() {
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/accounting/journal" element={<JournalEntry />} />
         <Route path="/accounting/trial-balance" element={<TrialBalance />} />
-        <Route path="*" element={<Navigate to="/org" replace />} />
+        <Route path="*" element={<Navigate to={home} replace />} />
       </Routes>
     </Shell>
+    </BranchProvider>
   )
 }

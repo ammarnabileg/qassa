@@ -4,6 +4,14 @@ Release versions follow `MAJOR.MINOR.PATCH` and are tagged `vX.Y.Z` on `main`.
 Builds between releases are **debug** builds: `X.(Y+1).0-dev.N+sha` (see `scripts/version.py`).
 
 ## [Unreleased]
+### Added — Phase 3 (operations)
+- Bookings and walk-in queue on one board (waiting / on the chair / done), multi-service visits, PostgreSQL exclusion constraint against double-booking a staff member.
+- Checkout (POS) priced by the server's price list, line discounts within the role limit, cash / KNET / transfer / split, credit sales with permission, printable receipt and WhatsApp link.
+- Invoices list, collections on credit invoices, returns as credit notes with optional refund.
+- Cash drawer shifts: one open drawer per branch, expected vs counted, variance approved by a second person.
+- Automatic journal entries (proposed matrix, pending the accountant's review): invoice, receipts, refunds, credit notes, cash over/short.
+- Issued invoices, payments and credit notes are immutable in the database.
+- Customer app restyled on the approved design (Alexandria font, tokens, per-type logo).
 ### Added — Phase 2 (setup)
 - Services and categories per business type; prices as dated rows (no backdating, DB constraint against overlaps, branch overrides).
 - Staff with branches and skills (services they deliver).

@@ -222,3 +222,12 @@ def test_duplicate_service_name_in_category_is_a_clear_error(company_a):
     r = client_for(owner(t), t).post("/api/v1/catalog/services", {"category": svc["category"], "name_ar": "قص شعر",
                                                                   "duration_minutes": 30}, format="json")
     assert r.status_code == 422 and r.json()["error"]["code"] == "service_name_exists"
+
+
+def test_duplicate_category_name_is_a_clear_error(company_a):
+    t, _, _ = company_a
+    c = client_for(owner(t), t)
+    assert c.post("/api/v1/catalog/categories", {"name_ar": "قصات", "business_type": "kids"}, format="json").status_code == 201
+    r = c.post("/api/v1/catalog/categories", {"name_ar": "قصات", "business_type": "kids"}, format="json")
+    assert r.status_code == 422 and r.json()["error"]["code"] == "category_name_exists"
+    assert c.post("/api/v1/catalog/categories", {"name_ar": "قصات", "business_type": "men"}, format="json").status_code == 201

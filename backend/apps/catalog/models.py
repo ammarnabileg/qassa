@@ -13,7 +13,8 @@ class ServiceCategory(TenantScopedModel):
     sort = models.PositiveSmallIntegerField(default=0)
 
     class Meta(TenantScopedModel.Meta):
-        constraints = [models.UniqueConstraint(fields=["tenant", "id"], name="uniq_svccat_tenant_id")]
+        constraints = [models.UniqueConstraint(fields=["tenant", "id"], name="uniq_svccat_tenant_id"),
+                       models.UniqueConstraint(fields=["tenant", "business_type", "name_ar"], name="uniq_svccat_name")]
 
 
 class Service(TenantScopedModel):
