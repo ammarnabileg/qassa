@@ -35,7 +35,7 @@ def request_code(tenant, phone: str, *, lang="ar", ip=None) -> dict:
     code = f"{secrets.randbelow(10**6):06d}"
     text = (f"كود الدخول لـ {tenant.name}: {code}\nصالح لمدة 5 دقائق. لا تشاركه مع أحد." if lang == "ar"
             else f"Your {tenant.name} login code: {code}\nValid for 5 minutes. Do not share it.")
-    channel = whatsapp.send_text(phone, text)  # raises whatsapp_unavailable when no channel can deliver
+    channel = whatsapp.send_text(phone, text, kind="otp")  # raises whatsapp_unavailable; code text is never logged
     OtpChallenge.objects.create(phone=phone, code_hash=make_password(code), channel=channel, ip=ip,
                                 expires_at=now + timedelta(seconds=settings.QASSA["OTP_TTL_SECONDS"]))
     out = {"sent": True, "channel": channel, "expires_in": settings.QASSA["OTP_TTL_SECONDS"]}

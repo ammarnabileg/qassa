@@ -18,6 +18,7 @@ import Services from './pages/Services'
 import Staff from './pages/Staff'
 import Subscription from './pages/Subscription'
 import TrialBalance from './pages/TrialBalance'
+import WhatsApp from './pages/WhatsApp'
 
 const ellipsis = { display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } as const
 
@@ -128,6 +129,7 @@ export default function App() {
       { path: '/accounting/trial-balance', label: t('nav.trialBalance'), icon: 'chart', show: can('accounting.view') },
     ]],
     [t('nav.account'), [
+      { path: '/whatsapp', label: t('nav.whatsapp'), icon: 'whatsapp', show: can('org.manage') },
       { path: '/subscription', label: t('nav.subscription'), icon: 'award', show: can('org.manage') },
     ]],
   ]
@@ -144,6 +146,7 @@ export default function App() {
         <Route path="/services" element={<Services />} />
         <Route path="/staff" element={<Staff />} />
         <Route path="/customers" element={<Customers />} />
+        <Route path="/whatsapp" element={<WhatsApp />} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/accounting/journal" element={<JournalEntry />} />
         <Route path="/accounting/trial-balance" element={<TrialBalance />} />

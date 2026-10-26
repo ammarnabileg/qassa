@@ -11,6 +11,7 @@ from apps.tenancy.api import views as org
 from apps.tenancy.api.public import PublicManifestView, PublicSalonView
 from apps.booking.api import views as bk
 from apps.catalog.api import views as cat
+from apps.notifications.api.views import WhatsAppView
 from apps.pos.api import views as pos
 from apps.customers.api import app as capp
 from apps.customers.api import views as cust
@@ -78,6 +79,8 @@ urlpatterns = [
     path(api + "pos/invoices/<int:pk>", pos.InvoiceDetailView.as_view()),
     path(api + "pos/invoices/<int:pk>/payments", pos.InvoicePaymentsView.as_view()),
     path(api + "pos/invoices/<int:pk>/credit-notes", pos.InvoiceCreditNotesView.as_view()),
+    path(api + "whatsapp", WhatsAppView.as_view()),
+    path(api + "whatsapp/<str:action>", WhatsAppView.as_view()),
     # customer app
     path(api + "app/otp/request", capp.OtpRequestView.as_view()),
     path(api + "app/otp/verify", capp.OtpVerifyView.as_view()),

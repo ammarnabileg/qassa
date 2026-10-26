@@ -65,7 +65,8 @@
     "invoices": "Invoices",
     "cash": "Cash drawer",
     "branch": "Branch",
-    "branchOf": "📍 {{name}} branch"
+    "branchOf": "📍 {{name}} branch",
+    "whatsapp": "Salon WhatsApp"
   },
   "org": {
     "entities": "Legal entities",
@@ -187,7 +188,9 @@
     "session_not_open": "The drawer is not open",
     "payment_empty": "Enter an amount",
     "account_role_unmapped": "The chart of accounts is incomplete — contact your accountant",
-    "category_name_exists": "A category with this name already exists"
+    "category_name_exists": "A category with this name already exists",
+    "whatsapp_unavailable": "WhatsApp unavailable — connect the salon number or contact the Qassa team",
+    "whatsapp_gateway_error": "The WhatsApp gateway did not respond — try again"
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -451,5 +454,39 @@
     "closedNotice": "No open drawer in this branch",
     "floatHelp": "Opening float in the drawer",
     "countHelp": "Count the cash and enter it. The system computes the variance, which someone else approves."
+  },
+  "wa": {
+    "sub": "Your company's WhatsApp number for login codes and customer messages",
+    "connect": "Connect number",
+    "disconnect": "Disconnect",
+    "state": "Status",
+    "number": "Connected number",
+    "sent": "Sent",
+    "failed": "Failed",
+    "st": {
+      "new": "Not connected",
+      "connecting": "Waiting for scan",
+      "open": "Connected",
+      "close": "Disconnected"
+    },
+    "noGateway": "The platform's WhatsApp gateway is not configured yet — contact the Qassa team",
+    "scanTitle": "Scan from the salon's phone",
+    "step1": "Open WhatsApp on the salon's phone",
+    "step2": "Settings → Linked devices → Link a device",
+    "step3": "Point the camera at the code",
+    "qrExpires": "The code refreshes — press “Connect number” again if it expires",
+    "risk": "Unofficial WhatsApp link: Meta may ban the number. Use a dedicated salon number and message only customers who agreed.",
+    "log": "Recent messages",
+    "to": "To",
+    "kind": "Type",
+    "detail": "Detail",
+    "k": {
+      "otp": "Login code",
+      "test": "Test"
+    },
+    "ms": {
+      "sent": "Sent",
+      "failed": "Failed"
+    }
   }
 }
