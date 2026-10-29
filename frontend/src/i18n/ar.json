@@ -623,10 +623,12 @@
     "k": {
       "otp": "كود دخول",
       "test": "تجربة",
-      "booking.confirmed": "تأكيد حجز",
-      "booking.changed": "تغيير ميعاد",
-      "booking.reminder": "تذكير",
-      "receipt": "فاتورة"
+      "receipt": "فاتورة",
+      "booking": {
+        "confirmed": "تأكيد حجز",
+        "changed": "تغيير ميعاد",
+        "reminder": "تذكير"
+      }
     },
     "ms": {
       "sent": "اتبعتت",

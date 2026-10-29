@@ -623,10 +623,12 @@
     "k": {
       "otp": "Login code",
       "test": "Test",
-      "booking.confirmed": "Booking confirmed",
-      "booking.changed": "Booking changed",
-      "booking.reminder": "Reminder",
-      "receipt": "Receipt"
+      "receipt": "Receipt",
+      "booking": {
+        "confirmed": "Booking confirmed",
+        "changed": "Booking changed",
+        "reminder": "Reminder"
+      }
     },
     "ms": {
       "sent": "Sent",
