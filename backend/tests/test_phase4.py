@@ -6,6 +6,8 @@ from decimal import Decimal
 import pytest
 from django.utils import timezone
 
+from apps.core.dates import business_date
+
 from apps.loyalty.models import LoyaltySettings
 from apps.staff.models import StaffMember, TimeOff, WorkingHours
 from apps.tenancy.context import tenant_context
@@ -132,7 +134,7 @@ def test_package_sale_and_use_example_5(salon):
 
 def test_coupon_discount_and_max_uses(salon):
     s = salon
-    today = timezone.localdate()
+    today = business_date()
     owner(s).post("/api/v1/loyalty/coupons", {"code": "eid20", "kind": "percent", "value": "20", "valid_from": str(today),
                                               "valid_to": str(today + timedelta(days=5)), "max_uses": 1}, format="json")
     open_drawer(s)
@@ -215,7 +217,7 @@ def test_working_hours_and_time_off_limit_bookings(salon):
 
 def test_quote_matches_checkout_and_writes_nothing(salon):
     s = salon
-    today = timezone.localdate()
+    today = business_date()
     owner(s).post("/api/v1/loyalty/coupons", {"code": "Q15", "kind": "percent", "value": "15", "valid_from": str(today),
                                               "valid_to": str(today), "max_uses": 1}, format="json")
     body = {"branch_id": s["b"]["HAW"].id, "lines": [{"service_id": s["wash"].id}, {"service_id": s["cut"].id}], "coupon_code": "Q15"}

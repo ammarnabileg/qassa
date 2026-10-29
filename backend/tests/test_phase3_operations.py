@@ -9,6 +9,7 @@ from django.db import connection, transaction
 from django.db.models import Sum
 from django.utils import timezone
 
+from apps.core.dates import business_date
 from apps.accounting.models import JournalEntry, JournalLine
 from apps.accounting.services.posting import resolve_role
 from apps.catalog.models import Service, ServiceCategory
@@ -249,8 +250,8 @@ def test_prices_come_from_the_server_and_old_invoices_keep_their_price(salon):
     inv = checkout(s, s["cashier"], [{"service_id": s["cut"].id}], [{"method": "cash", "amount": "5.000"}], key="k2").json()
     with tenant_context(s["t"].id):
         from apps.catalog.models import ServicePrice
-        ServicePrice.objects.filter(service=s["cut"]).update(valid_from=timezone.localdate() - timedelta(days=5))
-        set_price(s["cut"], price="7.000", valid_from=timezone.localdate() + timedelta(days=1))
+        ServicePrice.objects.filter(service=s["cut"]).update(valid_from=business_date() - timedelta(days=5))
+        set_price(s["cut"], price="7.000", valid_from=business_date() + timedelta(days=1))
     again = client_for(s["cashier"], s["t"]).get(f"/api/v1/pos/invoices/{inv['id']}").json()
     assert again["lines"][0]["unit_price"] == "5.000"
 

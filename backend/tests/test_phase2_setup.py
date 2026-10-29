@@ -7,6 +7,7 @@ import pytest
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
+from apps.core.dates import business_date
 from apps.catalog.models import Service, ServiceCategory, ServicePrice
 from apps.catalog.services.pricing import price_on, set_price
 from apps.core.errors import DomainError
@@ -16,7 +17,7 @@ from apps.tenancy.context import tenant_context
 from tests.conftest import add_member, client_for, ensure_plans
 
 pytestmark = pytest.mark.django_db
-TODAY = timezone.localdate()
+TODAY = business_date()  # the day prices and sales go by
 
 
 def owner(t):

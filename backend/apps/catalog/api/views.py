@@ -2,7 +2,6 @@ from datetime import date
 
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, Q
-from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers, status
 from rest_framework.generics import get_object_or_404
@@ -10,6 +9,7 @@ from rest_framework.response import Response
 
 from apps.catalog.models import Service, ServiceCategory, ServicePrice
 from apps.catalog.services.pricing import set_price
+from apps.core.dates import business_date
 from apps.core.errors import DomainError
 from apps.core.services.infra import idempotent
 from apps.tenancy.api.base import TenantAPIView
@@ -101,11 +101,11 @@ class ServicesView(TenantAPIView):
             qs = qs.filter(category__business_type=bt)
         if q := request.query_params.get("q"):
             qs = qs.filter(Q(name_ar__icontains=q) | Q(name_en__icontains=q))
-        return Response(ServiceSerializer(qs, many=True, context={"today": timezone.localdate()}).data)
+        return Response(ServiceSerializer(qs, many=True, context={"today": business_date()}).data)
 
     @extend_schema(request=ServiceIn, responses={201: ServiceSerializer})
     def post(self, request):
-        s = ServiceIn(data=request.data, context={"today": timezone.localdate()})
+        s = ServiceIn(data=request.data, context={"today": business_date()})
         s.is_valid(raise_exception=True)
         price = s.validated_data.pop("price", None)
         try:
@@ -117,7 +117,7 @@ class ServicesView(TenantAPIView):
             if not request.membership.has_perm("catalog.price.change"):
                 raise DomainError(code="permission_price_change")
             set_price(service, price=price, user=request.user)
-        return Response(ServiceSerializer(_services().get(id=service.id), context={"today": timezone.localdate()}).data,
+        return Response(ServiceSerializer(_services().get(id=service.id), context={"today": business_date()}).data,
                         status=status.HTTP_201_CREATED)
 
 
@@ -127,14 +127,14 @@ class ServiceDetailView(TenantAPIView):
     @extend_schema(request=ServiceSerializer, responses=ServiceSerializer)
     def patch(self, request, pk):
         service = get_object_or_404(Service.objects.all(), pk=pk)
-        s = ServiceSerializer(service, data=request.data, partial=True, context={"today": timezone.localdate()})
+        s = ServiceSerializer(service, data=request.data, partial=True, context={"today": business_date()})
         s.is_valid(raise_exception=True)
         try:
             with transaction.atomic():
                 s.save()
         except IntegrityError:
             raise DomainError(code="service_name_exists")
-        return Response(ServiceSerializer(_services().get(id=pk), context={"today": timezone.localdate()}).data)
+        return Response(ServiceSerializer(_services().get(id=pk), context={"today": business_date()}).data)
 
 
 class ServicePricesView(TenantAPIView):

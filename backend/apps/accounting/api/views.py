@@ -1,5 +1,7 @@
 from datetime import date
 
+from django.utils import timezone
+
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.generics import get_object_or_404
@@ -128,7 +130,7 @@ class JournalEntryReverseView(TenantAPIView):
         entry = get_object_or_404(JournalEntry.objects.all(), pk=pk)
         s = ReverseIn(data=request.data)
         s.is_valid(raise_exception=True)
-        rev = reverse_entry(entry, on=s.validated_data.get("on") or date.today(), user=request.user,
+        rev = reverse_entry(entry, on=s.validated_data.get("on") or timezone.localdate(), user=request.user,
                             reason=s.validated_data["reason"])
         return Response(EntryOut(rev).data, status=status.HTTP_201_CREATED)
 

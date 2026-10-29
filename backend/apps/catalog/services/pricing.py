@@ -3,10 +3,10 @@ from datetime import date
 
 from django.db import transaction
 from django.db.models import Q
-from django.utils import timezone
 
 from apps.audit.services.log import record as audit
 from apps.catalog.models import Service, ServicePrice
+from apps.core.dates import business_date
 from apps.core.errors import DomainError
 from apps.core.money import money
 
@@ -23,7 +23,7 @@ def price_on(service: Service, branch_id, on: date):
 
 
 def set_price(service: Service, *, price, branch_id=None, valid_from: date | None = None, user=None) -> ServicePrice:
-    today = timezone.localdate()
+    today = business_date()  # the same day the till and the app price by (starts 04:00)
     valid_from = valid_from or today
     if valid_from < today:
         raise DomainError(code="price_backdated", message="A price change cannot start in the past")
