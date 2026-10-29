@@ -4,6 +4,22 @@ Release versions follow `MAJOR.MINOR.PATCH` and are tagged `vX.Y.Z` on `main`.
 Builds between releases are **debug** builds: `X.(Y+1).0-dev.N+sha` (see `scripts/version.py`).
 
 ## [Unreleased]
+### Added — Platform console and public site (D-010)
+- Platform home with real figures (active/trial/past-due salons, MRR, invoiced per month, plan mix, renewals, open tickets).
+- Monthly subscription invoices issued nightly (one per period), manual payment with reference, void with reason; overdue → past_due (never auto-suspended).
+- Support tickets between salons and the platform team; owner notified on WhatsApp from the platform number when available.
+- Leads from the public site's contact form (honeypot, 5/hour per IP); public site per the approved design with pricing from the live plans.
+- Read-only, one-hour, audited "view as support" access with a written reason.
+### Added — Phase 5 (accounting, D-011)
+- Expenses paid or accrued, with later payment; fixed assets with monthly straight-line depreciation (example 12); KNET / gateway settlements (example 11).
+- Income statement, balance sheet, period close (blocked by open drawers), reopen with reason, year-end closing entry.
+- Frozen report versions with a SHA-256 fingerprint, immutable in the database.
+### Added — Phase 6 (D-012)
+- Automatic WhatsApp service messages from the salon's number: booking confirmation/change, reminder (1–48 h), receipt — opt-in customers only.
+### Fixed
+- Prices set between 00:00 and 04:00 Kuwait time were not sellable until the next business day.
+- 50+ server error codes showed "unknown error"; every code now has a message (enforced by a test).
+- Public site scrolled sideways on phones.
 ### Added — Phase 4 (stock, purchasing, loyalty, commissions)
 - Products and stock per branch at weighted-average cost, never negative; adjustments with reason; stock moves log.
 - Purchasing: goods receipt → supplier bill (must equal the receipt) → bank payment, with proposed journal entries.
