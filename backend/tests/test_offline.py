@@ -122,3 +122,16 @@ def test_stock_conflict_then_retry_and_missing_sequence(salon):
     assert again["status"] == "synced" and again["invoice_id"]
     with tenant_context(s["t"].id):
         assert OfflineSale.objects.filter(status="conflict").count() == 0
+
+
+def test_reused_number_or_malformed_receipt_creates_no_invoice(salon):
+    s = salon
+    drawer(s)
+    dev = device(s)
+    sync(s, dev, receipt(dev, 1, [{"service_id": s["cut"].id, "unit_price": "5.000"}], "5.000"))
+    again = receipt(dev, 1, [{"service_id": s["wash"].id, "unit_price": "15.000"}], "15.000")      # new uuid, same number
+    bad_qty = receipt(dev, 2, [{"service_id": s["cut"].id, "unit_price": "abc"}], "5.000")
+    r = sync(s, dev, again, bad_qty, {"payload": "not-a-dict", "signature": "x"})
+    assert sorted(x.get("rejected") or x["status"] for x in r) == ["offline_payload_invalid", "offline_seq_reused", "offline_signature_invalid"]
+    with tenant_context(s["t"].id):
+        assert Invoice.objects.count() == 1 and OfflineSale.objects.filter(invoice__isnull=False).count() == 1

@@ -20,7 +20,7 @@ import uuid as uuidlib
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from django.db import IntegrityError, transaction
+from django.db import transaction
 from django.utils import timezone
 
 from apps.audit.services.log import record as audit
@@ -158,38 +158,46 @@ def receive(device: PosDevice, item: dict, *, user, membership) -> OfflineSale:
     if not hmac.compare_digest(sign(device.secret, payload), str(item.get("signature", ""))):
         raise DomainError(code="offline_signature_invalid")
     sale_uuid = uuidlib.UUID(str(payload["uuid"]))
-    existing = OfflineSale.objects.filter(uuid=sale_uuid).first()
-    if existing:
-        return existing
+    seq = int(payload["seq"])
     at = datetime.fromisoformat(payload["created_at"])
     if timezone.is_naive(at):
         raise DomainError(code="offline_time_invalid")
     now = timezone.now()
     if at > now + timedelta(minutes=5) or at < now - MAX_AGE:
         raise DomainError(code="offline_time_invalid")
-    ref = f"OFF-{device.id}-{int(payload['seq'])}"
-    status, flags, error, inv = OfflineSale.Status.SYNCED, [], "", None
-    try:
-        inv, flags = _post(device, payload, at, ref, user, membership)
-        if flags:
-            status = OfflineSale.Status.REVIEW
-    except DomainError as e:
-        status, error = OfflineSale.Status.CONFLICT, (e.code or "error")[:60]
-    try:
-        with transaction.atomic():
-            sale = OfflineSale.objects.create(device=device, uuid=sale_uuid, seq=int(payload["seq"]), created_at_client=at,
-                                              payload=payload, signature=item["signature"], status=status, flags=flags,
-                                              error=error, invoice=inv, cashier=user)
-    except IntegrityError:
-        raise DomainError(code="offline_seq_reused")
+    ref = f"OFF-{device.id}-{seq}"
+    # One transaction, device row locked: concurrent syncs of the same receipt wait, then find it posted.
+    # If anything below fails, the invoice is rolled back with it — never an invoice without its receipt row.
+    with transaction.atomic():
+        PosDevice.objects.select_for_update().get(id=device.id)
+        existing = OfflineSale.objects.filter(uuid=sale_uuid).first()
+        if existing:
+            return existing
+        if OfflineSale.objects.filter(device=device, seq=seq).exists():
+            raise DomainError(code="offline_seq_reused")
+        status, flags, error, inv = OfflineSale.Status.SYNCED, [], "", None
+        try:
+            inv, flags = _post(device, payload, at, ref, user, membership)
+            if flags:
+                status = OfflineSale.Status.REVIEW
+        except DomainError as e:
+            status, error = OfflineSale.Status.CONFLICT, (e.code or "error")[:60]
+        sale = OfflineSale.objects.create(device=device, uuid=sale_uuid, seq=seq, created_at_client=at, payload=payload,
+                                          signature=item["signature"], status=status, flags=flags, error=error, invoice=inv, cashier=user)
     audit("pos.offline_sale", tenant_id=sale.tenant_id, actor=user, obj=sale,
           data={"ref": ref, "status": status, "flags": flags, "error": error, "invoice": inv.number if inv else None})
     return sale
 
 
 def retry(sale: OfflineSale, *, user, membership) -> OfflineSale:
-    if sale.status != OfflineSale.Status.CONFLICT:
-        raise DomainError(code="offline_not_conflict")
+    with transaction.atomic():
+        sale = OfflineSale.objects.select_for_update().select_related("device__branch").get(id=sale.id)   # double click = one invoice
+        if sale.status != OfflineSale.Status.CONFLICT:
+            raise DomainError(code="offline_not_conflict")
+        return _retry_locked(sale, user, membership)
+
+
+def _retry_locked(sale, user, membership):
     try:
         inv, flags = _post(sale.device, sale.payload, sale.created_at_client, f"OFF-{sale.device_id}-{sale.seq}", user, membership)
     except DomainError as e:

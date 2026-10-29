@@ -17,9 +17,10 @@ GRACE_DAYS = 7
 BILLABLE = {Tenant.Status.TRIAL, Tenant.Status.ACTIVE, Tenant.Status.PAST_DUE}
 
 
-def add_month(d: datetime.date) -> datetime.date:
+def add_month(d: datetime.date, anchor_day: int | None = None) -> datetime.date:
+    """Next month on the anchor day (clamped to the month's length), so a 31st does not drift to the 28th forever."""
     y, m = (d.year + 1, 1) if d.month == 12 else (d.year, d.month + 1)
-    return d.replace(year=y, month=m, day=min(d.day, calendar.monthrange(y, m)[1]))
+    return datetime.date(y, m, min(anchor_day or d.day, calendar.monthrange(y, m)[1]))
 
 
 def issue_due(today: datetime.date | None = None) -> list[PlatformInvoice]:
@@ -32,10 +33,12 @@ def issue_due(today: datetime.date | None = None) -> list[PlatformInvoice]:
             sub = Subscription.objects.select_for_update().select_related("tenant", "plan").get(id=sub.id)
             while sub.current_period_end <= today:
                 start = sub.current_period_end + datetime.timedelta(days=1)
-                end = add_month(sub.current_period_end)
+                anchor = (sub.started_on + datetime.timedelta(days=30)).day   # day the first period ended (onboarding)
+                end = add_month(sub.current_period_end, anchor_day=anchor)
                 inv, created = PlatformInvoice.objects.get_or_create(
                     tenant=sub.tenant, period_start=start,
-                    defaults={"number": f"SUB-{start:%Y%m}-{sub.tenant_id:05d}", "plan": sub.plan, "period_end": end,
+                    # number = tenant + period start: unique even when two periods start in the same month
+                    defaults={"number": f"SUB-{start:%Y%m%d}-{sub.tenant_id:05d}", "plan": sub.plan, "period_end": end,
                               "amount": sub.plan.monthly_price, "due_on": start + datetime.timedelta(days=GRACE_DAYS)})
                 sub.current_period_end = end
                 if created:
@@ -82,9 +85,11 @@ def record_payment(inv: PlatformInvoice, *, method: str, reference: str, user) -
 def void(inv: PlatformInvoice, *, reason: str, user) -> PlatformInvoice:
     if not reason.strip():
         raise DomainError(code="reason_required")
-    if inv.status != PlatformInvoice.Status.ISSUED:
-        raise DomainError(code="invoice_not_open", details={"status": inv.status})
-    inv.status = PlatformInvoice.Status.VOID
-    inv.save(update_fields=["status"])
+    with transaction.atomic():
+        inv = PlatformInvoice.objects.select_for_update().get(id=inv.id)   # not voiding an invoice paid a moment ago
+        if inv.status != PlatformInvoice.Status.ISSUED:
+            raise DomainError(code="invoice_not_open", details={"status": inv.status})
+        inv.status = PlatformInvoice.Status.VOID
+        inv.save(update_fields=["status"])
     audit("platform.invoice_void", tenant_id=inv.tenant_id, actor=user, obj=inv, data={"number": inv.number}, reason=reason)
     return inv

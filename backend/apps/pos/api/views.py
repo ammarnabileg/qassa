@@ -373,14 +373,20 @@ class OfflineSyncView(TenantAPIView):
         device = get_object_or_404(PosDevice.objects.select_related("branch").filter(is_active=True), pk=s.validated_data["device_id"])
         branch_for(request, device.branch_id)
         results = []
-        for item in sorted(s.validated_data["sales"], key=lambda i: int(i.get("payload", {}).get("seq", 0))):
+        def seq_of(i):
+            try:
+                return int(i["payload"]["seq"])
+            except (KeyError, TypeError, ValueError):
+                return 0
+        for item in sorted(s.validated_data["sales"], key=seq_of):
+            uid = str(item["payload"].get("uuid")) if isinstance(item.get("payload"), dict) else None
             try:
                 sale = offline.receive(device, item, user=request.user, membership=request.membership)
                 results.append(_sale_out(sale))
             except DomainError as e:
-                results.append({"uuid": str(item.get("payload", {}).get("uuid")), "rejected": e.code})
-            except (KeyError, ValueError, TypeError):
-                results.append({"uuid": str(item.get("payload", {}).get("uuid")), "rejected": "offline_payload_invalid"})
+                results.append({"uuid": uid, "rejected": e.code})
+            except (KeyError, ValueError, TypeError, AttributeError, ArithmeticError):   # malformed receipt: refuse it, keep going
+                results.append({"uuid": uid, "rejected": "offline_payload_invalid"})
         PosDevice.objects.filter(id=device.id).update(last_sync_at=timezone.now())
         return Response({"results": results})
 

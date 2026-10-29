@@ -104,3 +104,15 @@ def test_dashboard_uses_real_figures(company_a, company_b):
     assert d["tenants"]["active"] == 1 and d["tenants"]["trial"] == 1
     assert d["mrr"] == str(Subscription.objects.get(tenant=company_a[0]).plan.monthly_price)
     assert len(d["history"]) == 6 and PlatformInvoice.objects.count() == 0
+
+
+def test_month_end_billing_keeps_its_day_and_unique_numbers(company_a):
+    t, _, _ = company_a
+    sub = Subscription.objects.get(tenant=t)
+    sub.started_on, sub.current_period_end = datetime.date(2025, 12, 1), datetime.date(2025, 12, 31)
+    sub.save()
+    issued = billing.issue_due(datetime.date(2026, 5, 2))
+    assert [(i.period_start.isoformat(), i.period_end.isoformat()) for i in issued] == [
+        ("2026-01-01", "2026-01-31"), ("2026-02-01", "2026-02-28"), ("2026-03-01", "2026-03-31"), ("2026-04-01", "2026-04-30"),
+        ("2026-05-01", "2026-05-31")]
+    assert len({i.number for i in issued}) == 5
