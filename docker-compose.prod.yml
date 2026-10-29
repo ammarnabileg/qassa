@@ -13,7 +13,7 @@ services:
     healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, retries: 20 }
   backend:
     build: { context: ., dockerfile: deploy/backend.Dockerfile }
-    command: sh -c "python manage.py migrate --noinput && if [ -n \"$$SEED_PASSWORD\" ]; then python manage.py seed_dev; fi && exec gunicorn qassa.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
+    command: sh -c "python manage.py migrate --noinput && if [ -n \"$$SEED_PASSWORD\" ]; then python manage.py seed_dev; fi && python manage.py e2e_users && exec gunicorn qassa.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
     environment: &env
       QASSA_ENV: ${QASSA_ENV:-staging}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?}
@@ -31,6 +31,7 @@ services:
       QASSA_OTP_ECHO: ${QASSA_OTP_ECHO:-0}  # staging only; ignored in production
       QASSA_PLATFORM_WA_INSTANCE: ${QASSA_PLATFORM_WA_INSTANCE:-}
       SEED_STAFF_PHONE: ${SEED_STAFF_PHONE:-}
+      E2E_PASSWORD: ${E2E_PASSWORD:-}  # staging-only test accounts without MFA; unset = deactivated
     depends_on: { db: { condition: service_healthy }, redis: { condition: service_healthy } }
     healthcheck: { test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/api/v1/version')"], interval: 10s, retries: 10, start_period: 90s }
   worker:
