@@ -34,3 +34,18 @@ class WhatsAppMessage(TenantScopedModel):
     status = models.CharField(max_length=8, choices=Status.choices)
     error = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+
+class MessagingSettings(TenantScopedModel):
+    """Which automatic service messages a salon sends from its own WhatsApp number (D-012).
+    Only to customers with whatsapp_opt_in; never marketing."""
+    booking_confirmation = models.BooleanField(default=True)
+    reminder = models.BooleanField(default=True)
+    reminder_hours = models.PositiveSmallIntegerField(default=3)
+    receipt = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta(TenantScopedModel.Meta):
+        constraints = [models.UniqueConstraint(fields=["tenant"], name="uniq_messaging_settings"),
+                       models.CheckConstraint(condition=models.Q(reminder_hours__gte=1) & models.Q(reminder_hours__lte=48),
+                                              name="reminder_hours_range")]

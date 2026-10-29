@@ -15,7 +15,7 @@ from apps.booking.api import views as bk
 from apps.catalog.api import views as cat
 from apps.inventory.api import views as inv
 from apps.loyalty.api import views as loy
-from apps.notifications.api.views import WhatsAppActionView, WhatsAppView
+from apps.notifications.api.views import WhatsAppActionView, WhatsAppView, MessagingSettingsView
 from apps.pos.api import views as pos
 from apps.customers.api import app as capp
 from apps.platform.api import console as con
@@ -116,6 +116,7 @@ urlpatterns = [
     path(api + "pos/invoices/<int:pk>/payments", pos.InvoicePaymentsView.as_view()),
     path(api + "pos/invoices/<int:pk>/credit-notes", pos.InvoiceCreditNotesView.as_view()),
     path(api + "whatsapp", WhatsAppView.as_view()),
+    path(api + "whatsapp/auto-settings", MessagingSettingsView.as_view()),
     path(api + "whatsapp/<str:action>", WhatsAppActionView.as_view()),
     # phase 4
     path(api + "users", usr.UsersView.as_view()),

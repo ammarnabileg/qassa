@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../api/client'
 import { ErrorText } from '../components/ErrorText'
 import { useSave } from '../components/hooks'
-import { Head, Icon, Stat } from '../components/ui'
+import { Head, Icon, Stat, useToast } from '../components/ui'
 
 type Msg = { id: number; to: string; kind: string; preview: string; status: 'sent' | 'failed'; error: string; created_at: string }
 type St = { gateway: string; state: 'new' | 'connecting' | 'open' | 'close'; phone: string; checked_at: string | null; connected_at: string | null; messages: Msg[]; qr?: string | null }
@@ -45,6 +45,7 @@ export default function WhatsApp() {
         </div>
       </div>}
       <div className="notice info"><Icon name="info" />{t('wa.risk')}</div>
+      <AutoMessages />
       <h2 style={{ margin: '18px 0 10px' }}>{t('wa.log')}</h2>
       <div className="tw"><table><thead><tr><th>{t('inv.time')}</th><th>{t('wa.to')}</th><th>{t('wa.kind')}</th><th>{t('org.status')}</th><th>{t('wa.detail')}</th></tr></thead>
         <tbody>{s?.messages.map((m) => <tr key={m.id}><td className="num">{dt(m.created_at, i18n.language)}</td><td className="num" dir="ltr" style={{ textAlign: 'start' }}>+{m.to}</td>
@@ -53,5 +54,29 @@ export default function WhatsApp() {
           <td className="small muted">{m.error || m.preview}</td></tr>)}
           {s?.messages.length === 0 && <tr><td colSpan={5} className="empty">{t('common.empty')}</td></tr>}</tbody></table></div>
     </>
+  )
+}
+
+type Auto = { booking_confirmation: boolean; reminder: boolean; reminder_hours: number; receipt: boolean }
+
+/** Automatic service messages from the salon's own number (D-012). */
+function AutoMessages() {
+  const { t } = useTranslation()
+  const toast = useToast()
+  const q = useQuery({ queryKey: ['wa-auto'], queryFn: () => api<Auto>('/whatsapp/auto-settings') })
+  const s = useSave<Auto>([['wa-auto']], () => toast(t('common.saved')))
+  const set = (patch: Partial<Auto>) => s.save({ path: '/whatsapp/auto-settings', method: 'PATCH', body: patch })
+  const d = q.data
+  if (!d) return null
+  return (
+    <div className="card" style={{ marginBottom: 14 }}>
+      <h2>{t('wa.auto.title')}</h2><div className="small muted">{t('wa.auto.sub')}</div>
+      <label className="chk"><span>{t('wa.auto.confirm')}<small>{t('wa.auto.confirmHelp')}</small></span><input type="checkbox" className="sw" checked={d.booking_confirmation} disabled={s.busy} onChange={(e) => set({ booking_confirmation: e.target.checked })} /></label>
+      <label className="chk"><span>{t('wa.auto.reminder')}<small>{t('wa.auto.reminderHelp', { n: d.reminder_hours })}</small></span><input type="checkbox" className="sw" checked={d.reminder} disabled={s.busy} onChange={(e) => set({ reminder: e.target.checked })} /></label>
+      {d.reminder && <label className="field" style={{ maxWidth: 220 }}>{t('wa.auto.hours')}<select className="input" value={d.reminder_hours} onChange={(e) => set({ reminder_hours: Number(e.target.value) })}>
+        {[1, 2, 3, 6, 12, 24].map((h) => <option key={h} value={h}>{t('wa.auto.hoursN', { n: h })}</option>)}</select></label>}
+      <label className="chk"><span>{t('wa.auto.receipt')}<small>{t('wa.auto.receiptHelp')}</small></span><input type="checkbox" className="sw" checked={d.receipt} disabled={s.busy} onChange={(e) => set({ receipt: e.target.checked })} /></label>
+      <ErrorText error={s.error} />
+    </div>
   )
 }

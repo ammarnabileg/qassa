@@ -49,3 +49,33 @@ class WhatsAppActionView(TenantAPIView):
             audit("whatsapp.disconnected", tenant_id=tenant.id, actor=request.user)
             return Response(status_payload(request, WhatsAppChannel.objects.first()))
         return Response(status=404)
+
+
+class MessagingSettingsSerializer(serializers.Serializer):
+    booking_confirmation = serializers.BooleanField(required=False)
+    reminder = serializers.BooleanField(required=False)
+    reminder_hours = serializers.IntegerField(min_value=1, max_value=48, required=False)
+    receipt = serializers.BooleanField(required=False)
+
+
+class MessagingSettingsView(TenantAPIView):
+    """Automatic service messages (D-012)."""
+    required_permissions = {"GET": "org.manage", "PATCH": "org.manage"}
+
+    @extend_schema(responses=MessagingSettingsSerializer)
+    def get(self, request):
+        from apps.notifications.auto import settings_for
+        return Response(MessagingSettingsSerializer(settings_for(request.tenant_id)).data)
+
+    @extend_schema(request=MessagingSettingsSerializer, responses=MessagingSettingsSerializer)
+    def patch(self, request):
+        from apps.audit.services.log import record as audit
+        from apps.notifications.auto import settings_for
+        s = MessagingSettingsSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        obj = settings_for(request.tenant_id)
+        for k, v in s.validated_data.items():
+            setattr(obj, k, v)
+        obj.save()
+        audit("whatsapp.auto_settings", tenant_id=request.tenant_id, actor=request.user, obj=obj, data=s.validated_data)
+        return Response(MessagingSettingsSerializer(obj).data)

@@ -622,11 +622,27 @@
     "detail": "Detail",
     "k": {
       "otp": "Login code",
-      "test": "Test"
+      "test": "Test",
+      "booking.confirmed": "Booking confirmed",
+      "booking.changed": "Booking changed",
+      "booking.reminder": "Reminder",
+      "receipt": "Receipt"
     },
     "ms": {
       "sent": "Sent",
       "failed": "Failed"
+    },
+    "auto": {
+      "title": "Automatic messages",
+      "sub": "Sent from the salon's number, only to customers who accepted service messages — never marketing.",
+      "confirm": "Booking confirmation and changes",
+      "confirmHelp": "When a registered customer's booking is made or moved",
+      "reminder": "Reminder before the appointment",
+      "reminderHelp": "Sent {{n}} hours before",
+      "hours": "How long before",
+      "hoursN": "{{n}} hours",
+      "receipt": "Receipt summary",
+      "receiptHelp": "Invoice number, total and points balance after payment"
     }
   },
   "pkg": {

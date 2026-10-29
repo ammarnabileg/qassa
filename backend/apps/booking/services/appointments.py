@@ -12,6 +12,7 @@ from apps.catalog.models import Service
 from apps.core.dates import business_date
 from apps.core.errors import ConflictError, DomainError
 from apps.customers.models import Beneficiary, Customer
+from apps.notifications import auto
 from apps.staff.models import StaffBranch, StaffMember, StaffSkill
 from apps.tenancy.models import Branch
 
@@ -100,6 +101,7 @@ def create_appointment(*, branch: Branch, starts_at: datetime, items: list[ItemS
         _write_items(appt, plan)
         audit("booking.created", tenant_id=appt.tenant_id, actor=user, obj=appt,
               data={"branch": branch.id, "starts_at": starts_at.isoformat(), "items": len(plan)})
+        auto.booking_created(appt)
     return appt
 
 
@@ -114,6 +116,7 @@ def reschedule(appt: Appointment, *, starts_at: datetime, items: list[ItemSpec],
         appt.starts_at, appt.ends_at, appt.business_date = starts_at, plan[-1][3], business_date(starts_at)
         appt.save(update_fields=["starts_at", "ends_at", "business_date", "updated_at"])
         audit("booking.rescheduled", tenant_id=appt.tenant_id, actor=user, obj=appt, data={"starts_at": starts_at.isoformat()})
+        auto.booking_rescheduled(appt)
     return appt
 
 

@@ -361,6 +361,8 @@ def checkout(data: CheckoutIn, *, user, membership) -> Invoice:
         audit("pos.invoice.issued", tenant_id=inv.tenant_id, actor=user, obj=inv,
               data={"number": inv.number, "total": str(total), "paid": str(paying), "credit": is_credit, "tip": str(tip),
                     "coupon": coupon.code if coupon else "", "points": points})
+        from apps.notifications import auto
+        auto.invoice_issued(inv)
     return inv
 
 
