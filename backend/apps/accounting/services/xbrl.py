@@ -53,8 +53,10 @@ def mapping(entity_id) -> dict[int, str | None]:
 
 
 def _sums(entity_id, **flt):
-    q = (JournalLine.objects.filter(entry__legal_entity_id=entity_id, entry__status=JournalEntry.Status.POSTED, **flt)
-         .values("account_id").annotate(d=Sum("debit"), c=Sum("credit")))
+    q = JournalLine.objects.filter(entry__legal_entity_id=entity_id, entry__status=JournalEntry.Status.POSTED, **flt)
+    if "entry__entry_date__gte" in flt:   # activity of a year: leave out its year-end closing entry
+        q = q.exclude(entry__source_type="fiscal_year")
+    q = q.values("account_id").annotate(d=Sum("debit"), c=Sum("credit"))
     return {r["account_id"]: (r["d"] or ZERO) - (r["c"] or ZERO) for r in q}
 
 

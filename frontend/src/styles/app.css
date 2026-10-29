@@ -13,3 +13,8 @@ td.n,th.n{text-align:end}
 
 /* pricing badge text follows the page language (the design hard-codes it in Arabic) */
 .prices .plan.hl[data-hl]::before{content:attr(data-hl)}
+
+/* financial statements: receipt-style rows inside a card */
+.stmt{max-width:680px;display:flex;flex-direction:column;gap:4px}
+.stmt .r{display:flex;justify-content:space-between;gap:12px;padding:3px 0}
+.stmt hr{border:0;border-top:1px dashed var(--line-strong);margin:8px 0}

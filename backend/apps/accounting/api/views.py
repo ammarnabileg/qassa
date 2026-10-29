@@ -171,6 +171,20 @@ class PeriodActionIn(serializers.Serializer):
     reason = serializers.CharField(required=False, allow_blank=True, default="")
 
 
+def _open_drawers(period):
+    """A period cannot close while a cash drawer opened in it is still open or awaiting variance approval."""
+    import datetime
+
+    from django.utils import timezone
+
+    from apps.pos.models import CashSession
+    end = timezone.make_aware(datetime.datetime.combine(period.end_date + datetime.timedelta(days=1), datetime.time(4)))
+    from django.db.models import Q
+    n = (CashSession.objects.filter(branch__legal_entity_id=period.legal_entity_id, opened_at__lt=end)
+         .filter(Q(status="open") | Q(variance_status="pending")).count())
+    return f"{n} cash drawer(s) still open or awaiting approval" if n else None
+
+
 class PeriodCloseView(TenantAPIView):
     required_permissions = {"POST": "accounting.period.close"}
 
@@ -180,7 +194,7 @@ class PeriodCloseView(TenantAPIView):
         s = PeriodActionIn(data=request.data)
         s.is_valid(raise_exception=True)
         if action == "close":
-            p = close_period(period, request.user)
+            p = close_period(period, request.user, pending_checks=[_open_drawers])
         elif action == "reopen":
             p = reopen_period(period, request.user, s.validated_data["reason"])
         else:

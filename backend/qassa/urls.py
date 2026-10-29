@@ -5,6 +5,7 @@ from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
 
 from apps.accounting.api import views as acc
+from apps.accounting.api import finance_views as fin
 from apps.identity.api import views as auth
 from apps.platform.api import views as plat
 from apps.tenancy.api import views as org
@@ -54,6 +55,17 @@ urlpatterns = [
     path(api + "accounting/journal-entries/<int:pk>/reverse", acc.JournalEntryReverseView.as_view()),
     path(api + "accounting/trial-balance", acc.TrialBalanceView.as_view()),
     path(api + "accounting/xbrl", acc.XbrlReportView.as_view()),
+    path(api + "accounting/expenses", fin.ExpensesView.as_view()),
+    path(api + "accounting/expenses/<int:pk>/pay", fin.ExpensePayView.as_view()),
+    path(api + "accounting/assets", fin.AssetsView.as_view()),
+    path(api + "accounting/depreciation", fin.DepreciationView.as_view()),
+    path(api + "accounting/settlements", fin.SettlementsView.as_view()),
+    path(api + "accounting/income-statement", fin.IncomeStatementView.as_view()),
+    path(api + "accounting/balance-sheet", fin.BalanceSheetView.as_view()),
+    path(api + "accounting/periods", fin.PeriodsView.as_view()),
+    path(api + "accounting/years/<int:pk>/close", fin.YearCloseView.as_view()),
+    path(api + "accounting/report-versions", fin.ReportVersionsView.as_view()),
+    path(api + "accounting/report-versions/<int:pk>", fin.ReportVersionDetailView.as_view()),
     path(api + "accounting/xbrl/mapping", acc.XbrlMappingView.as_view()),
     path(api + "accounting/periods/<int:pk>/<str:action>", acc.PeriodCloseView.as_view()),
     # platform

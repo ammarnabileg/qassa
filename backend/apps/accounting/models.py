@@ -142,3 +142,87 @@ class XbrlMapping(TenantScopedModel):
 
     class Meta(TenantScopedModel.Meta):
         constraints = [models.UniqueConstraint(fields=["legal_entity", "account"], name="uniq_xbrl_account")]
+
+
+EXPENSE_ROLES = ["RENT", "UTILITIES", "SALARIES", "MARKETING", "PAYMENT_FEES", "OTHER_EXPENSES", "COST_OF_SERVICES_SUPPLIES"]
+
+
+class Expense(TenantScopedModel):
+    """An operating expense: paid now (bank / branch cash) or accrued and paid later (ACCRUED_EXPENSES)."""
+    class PaidFrom(models.TextChoices):
+        BANK = "bank"
+        CASH = "cash"          # the branch cash drawer
+        ACCRUED = "accrued"    # owed; settled later with pay_accrued()
+
+    legal_entity = models.ForeignKey("tenancy.LegalEntity", on_delete=models.PROTECT)
+    branch = models.ForeignKey("tenancy.Branch", null=True, blank=True, on_delete=models.PROTECT)
+    expense_date = models.DateField()
+    account = models.ForeignKey(Account, on_delete=models.PROTECT)
+    description = models.CharField(max_length=200)
+    amount = models.DecimalField(max_digits=18, decimal_places=3)
+    paid_from = models.CharField(max_length=8, choices=PaidFrom.choices)
+    reference = models.CharField(max_length=80, blank=True)
+    paid_on = models.DateField(null=True, blank=True)        # for accrued: when settled
+    paid_reference = models.CharField(max_length=80, blank=True)
+    created_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta(TenantScopedModel.Meta):
+        constraints = [models.CheckConstraint(condition=models.Q(amount__gt=0), name="expense_amount_gt_0"),
+                       models.UniqueConstraint(fields=["tenant", "id"], name="uniq_expense_tenant_id")]
+        ordering = ["-expense_date", "-id"]
+
+
+class FixedAsset(TenantScopedModel):
+    """Straight-line depreciation, monthly, from the month after acquisition (accountant policy, D-011)."""
+    legal_entity = models.ForeignKey("tenancy.LegalEntity", on_delete=models.PROTECT)
+    branch = models.ForeignKey("tenancy.Branch", null=True, blank=True, on_delete=models.PROTECT)
+    name = models.CharField(max_length=150)
+    acquired_on = models.DateField()
+    cost = models.DecimalField(max_digits=18, decimal_places=3)
+    residual_value = models.DecimalField(max_digits=18, decimal_places=3, default=0)
+    life_months = models.PositiveSmallIntegerField()
+    paid_from = models.CharField(max_length=8, choices=[("bank", "bank"), ("payable", "payable")])
+    reference = models.CharField(max_length=80, blank=True)
+    disposed_on = models.DateField(null=True, blank=True)
+    created_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta(TenantScopedModel.Meta):
+        constraints = [models.CheckConstraint(condition=models.Q(cost__gt=0) & models.Q(residual_value__gte=0) &
+                                              models.Q(life_months__gt=0), name="asset_values_valid"),
+                       models.UniqueConstraint(fields=["tenant", "id"], name="uniq_asset_tenant_id")]
+        ordering = ["-acquired_on", "-id"]
+
+
+class ClearingSettlement(TenantScopedModel):
+    """KNET / gateway settlement per the provider's report (example 11): bank receives net, fees expensed."""
+    legal_entity = models.ForeignKey("tenancy.LegalEntity", on_delete=models.PROTECT)
+    channel = models.CharField(max_length=8, choices=[("knet", "knet"), ("gateway", "gateway")])
+    settled_on = models.DateField()
+    gross = models.DecimalField(max_digits=18, decimal_places=3)
+    fees = models.DecimalField(max_digits=18, decimal_places=3, default=0)
+    reference = models.CharField(max_length=80)
+    created_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta(TenantScopedModel.Meta):
+        constraints = [models.CheckConstraint(condition=models.Q(gross__gt=0) & models.Q(fees__gte=0) &
+                                              models.Q(fees__lt=models.F("gross")), name="settlement_values_valid"),
+                       models.UniqueConstraint(fields=["legal_entity", "channel", "reference"], name="uniq_settlement_ref")]
+        ordering = ["-settled_on", "-id"]
+
+
+class ReportVersion(TenantScopedModel):
+    """A frozen copy of a statement as issued (with a content hash), so a past version can be shown exactly."""
+    legal_entity = models.ForeignKey("tenancy.LegalEntity", on_delete=models.PROTECT)
+    kind = models.CharField(max_length=30)          # income_statement | balance_sheet | trial_balance | xbrl
+    params = models.JSONField()
+    data = models.JSONField()
+    sha256 = models.CharField(max_length=64)
+    note = models.CharField(max_length=200, blank=True)
+    created_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta(TenantScopedModel.Meta):
+        ordering = ["-id"]

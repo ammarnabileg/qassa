@@ -29,6 +29,7 @@ import Commissions from './pages/Commissions'
 import Users from './pages/Users'
 import SetPassword from './pages/SetPassword'
 import XbrlReport from './pages/XbrlReport'
+import { Assets, Expenses, Periods, Settlements, Statements } from './pages/Finance'
 
 const ellipsis = { display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } as const
 
@@ -162,8 +163,13 @@ export default function App() {
       { path: '/users', label: t('nav.users'), icon: 'user-plus', show: can('org.manage') },
     ]],
     [t('nav.accounting'), [
+      { path: '/accounting/statements', label: t('nav.statements'), icon: 'chart', show: can('accounting.view') && !!membership.all_branches },
+      { path: '/accounting/expenses', label: t('nav.expenses'), icon: 'wallet', show: can('accounting.view') },
+      { path: '/accounting/assets', label: t('nav.assets'), icon: 'box', show: can('accounting.view') },
+      { path: '/accounting/settlements', label: t('nav.settlements'), icon: 'bank', show: can('accounting.view') },
       { path: '/accounting/journal', label: t('nav.journal'), icon: 'book', show: can('accounting.journal.post') },
       { path: '/accounting/trial-balance', label: t('nav.trialBalance'), icon: 'chart', show: can('accounting.view') },
+      { path: '/accounting/periods', label: t('nav.periods'), icon: 'calendar', show: can('accounting.view') },
       { path: '/accounting/xbrl', label: t('nav.xbrl'), icon: 'file', show: can('accounting.view') && !!membership.all_branches },
     ]],
     [t('nav.account'), [
@@ -195,6 +201,11 @@ export default function App() {
         <Route path="/accounting/journal" element={<JournalEntry />} />
         <Route path="/accounting/trial-balance" element={<TrialBalance />} />
         <Route path="/accounting/xbrl" element={<XbrlReport />} />
+        <Route path="/accounting/statements" element={<Statements />} />
+        <Route path="/accounting/expenses" element={<Expenses />} />
+        <Route path="/accounting/assets" element={<Assets />} />
+        <Route path="/accounting/settlements" element={<Settlements />} />
+        <Route path="/accounting/periods" element={<Periods />} />
         <Route path="*" element={<Navigate to={home} replace />} />
       </Routes>
     </Shell>
