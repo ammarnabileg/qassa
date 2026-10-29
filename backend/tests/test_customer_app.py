@@ -97,7 +97,7 @@ def test_book_a_free_slot_then_it_disappears_and_cancel(app):
     token = login(app)
     c = authed(app, token)
     me = c.get("/api/v1/app/me").json()
-    day = (timezone.localtime() + timedelta(days=1)).date().isoformat()
+    day = (timezone.localtime() + timedelta(days=2)).date().isoformat()
     q = {"branch_id": app["b"]["HAW"].id, "service_id": app["cut"].id, "date": day}
     slots = c.get("/api/v1/app/slots", q).json()["slots"]
     first = slots[0]

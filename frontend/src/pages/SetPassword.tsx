@@ -25,7 +25,7 @@ export default function SetPassword() {
       <div className="row sb"><Logo biz="kids" title={t('app.name')} sub={t('app.tagline')} /><LangToggle className="btn sm" /></div>
       {done ? <>
         <h1>{t('pw.doneTitle')}</h1><div className="small muted">{t('pw.doneSub')}</div>
-        <a className="btn primary lg" href="/">{t('auth.submit')}</a>
+        <a className="btn primary lg" href="/login">{t('auth.submit')}</a>
       </> : <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div><h1>{t(p.get('p') === 'reset' ? 'pw.resetTitle' : 'pw.inviteTitle')}</h1><div className="small muted">{t('pw.rules')}</div></div>
         <label className="field">{t('pw.new')}<input className="input" type="password" dir="ltr" autoComplete="new-password" minLength={10} value={pw} onChange={(e) => setPw(e.target.value)} required /></label>

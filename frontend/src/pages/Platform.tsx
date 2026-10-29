@@ -6,6 +6,7 @@ import { ErrorText } from '../components/ErrorText'
 import { useSave } from '../components/hooks'
 import { Dialog, Head, Icon, nameOf, Stat, useToast } from '../components/ui'
 import { formatKWD } from '../money'
+import { SupportAccessDialog } from './PlatformConsole'
 
 type BizT = 'kids' | 'men' | 'women'
 const STATUS_PILL: Record<string, string> = { trial: 'info', active: 'good', past_due: 'warn', read_only: 'warn', suspended: 'bad' }
@@ -110,6 +111,7 @@ export function PlatformTenants() {
   const q = useQuery({ queryKey: ['tenants'], queryFn: () => api<TenantRow[]>('/platform/tenants') })
   const [onboard, setOnboard] = useState(false)
   const [manage, setManage] = useState<TenantRow | null>(null)
+  const [support, setSupport] = useState<TenantRow | null>(null)
   const rows = q.data ?? []
   const plans = usePlans()
   const planName = (code: string | null) => { const p = plans.data?.find((x) => x.code === code); return p ? nameOf(p, i18n.language) : code ?? '—' }
@@ -132,10 +134,12 @@ export function PlatformTenants() {
           <td>{planName(r.plan)}</td><td><bdi>{r.branches}</bdi></td>
           <td>{r.hosts.map((h) => <div key={h}><a className="small" href={`https://${h}`} target="_blank" rel="noreferrer" dir="ltr">{h}</a></div>)}</td>
           <td><span className={`pill ${STATUS_PILL[r.status]}`}>{t(`platform.st.${r.status}`)}</span></td>
-          <td><button className="btn sm" onClick={() => setManage(r)}>{t('platform.manage')}</button></td></tr>)}
+          <td className="row" style={{ flexWrap: 'nowrap' }}><button className="btn sm" onClick={() => setManage(r)}>{t('platform.manage')}</button>
+            <button className="btn sm ghost" onClick={() => setSupport(r)}><Icon name="eye" />{t('pc.viewAs')}</button></td></tr>)}
           {q.isPending && <tr><td colSpan={7} className="empty">{t('common.loading')}</td></tr>}</tbody></table></div>
       {onboard && <OnboardDialog onClose={() => setOnboard(false)} />}
       {manage && <ManageDialog tenant={manage} onClose={() => setManage(null)} />}
+      <SupportAccessDialog tenant={support} onClose={() => setSupport(null)} />
     </>
   )
 }
@@ -160,7 +164,7 @@ export function PlatformPlans() {
         </ul>
       </div>)}</div>
       <Dialog open={!!edit} title={t('platform.editPlan')} onClose={() => setEdit(null)} busy={busy}
-        onSubmit={() => { const { id, code, ...body } = edit!; void code; save({ path: `/platform/plans/${id}`, method: 'PATCH', body }) }}>
+        onSubmit={() => { const { id, code, ...body } = edit!; void code; save({ path: `/platform/plans/${id}`, method: 'PATCH', body: { ...body, features_ar: body.features_ar?.map((x) => x.trim()).filter(Boolean), features_en: body.features_en?.map((x) => x.trim()).filter(Boolean) } }) }}>
         {edit && <>
           <div className="two">
             <label className="field">{t('common.nameAr')}<input className="input" value={edit.name_ar} onChange={(e) => setEdit({ ...edit, name_ar: e.target.value })} required /></label>
@@ -172,6 +176,12 @@ export function PlatformPlans() {
             <label className="field">{t('platform.maxStaff')}<input className="input" type="number" min={1} value={edit.max_staff} onChange={(e) => setEdit({ ...edit, max_staff: Number(e.target.value) })} /></label>
           </div>
           <label className="chk">{t('plan.customDomain')}<input type="checkbox" className="sw" checked={edit.custom_domain} onChange={(e) => setEdit({ ...edit, custom_domain: e.target.checked })} /></label>
+          <label className="chk">{t('site.popular')}<input type="checkbox" className="sw" checked={!!edit.highlight} onChange={(e) => setEdit({ ...edit, highlight: e.target.checked })} /></label>
+          <div className="two">
+            <label className="field">{t('pc.featuresAr')}<textarea className="input" rows={5} value={(edit.features_ar ?? []).join('\n')} onChange={(e) => setEdit({ ...edit, features_ar: e.target.value.split('\n') })} /></label>
+            <label className="field">{t('pc.featuresEn')}<textarea className="input" dir="ltr" rows={5} value={(edit.features_en ?? []).join('\n')} onChange={(e) => setEdit({ ...edit, features_en: e.target.value.split('\n') })} /></label>
+          </div>
+          <div className="cap muted">{t('pc.featuresHelp')}</div>
           <ErrorText error={error} />
         </>}
       </Dialog>

@@ -14,6 +14,10 @@ import JournalEntry from './pages/JournalEntry'
 import Login from './pages/Login'
 import Org from './pages/Org'
 import { PlatformPlans, PlatformTenants } from './pages/Platform'
+import { PlatformBilling, PlatformHome, PlatformLeads, PlatformSupport } from './pages/PlatformConsole'
+import Landing from './pages/Landing'
+import Support from './pages/Support'
+import { api } from './api/client'
 import Services from './pages/Services'
 import Staff from './pages/Staff'
 import Subscription from './pages/Subscription'
@@ -63,10 +67,24 @@ function Shell({ biz, plat, title, sub, groups, children }: {
       <div>
         <div className="topbar"><Logo biz={biz} title={title} sub={sub} />
           <button className="btn sm" onClick={() => setOpen(!open)} aria-label={t('common.menu')}><Icon name="menu" /></button></div>
+        {membership?.support && <SupportBanner />}
         <main>{children}</main>
       </div>
     </div>
   )
+}
+
+function SupportBanner() {
+  const { t } = useTranslation()
+  const { membership } = useAuth()
+  const end = async () => {
+    await api(`/platform/tenants/${membership!.tenant_id}/support`, { method: 'DELETE' }).catch(() => undefined)
+    sessionStorage.removeItem('qassa.tenant')
+    window.location.assign('/platform/tenants')
+  }
+  return <div className="notice bad" style={{ margin: '12px 16px 0' }}><Icon name="shield" />
+    <span className="grow">{t('pc.supportBanner', { name: membership!.tenant_name, until: new Date(membership!.expires_at!).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kuwait' }) })}</span>
+    <button className="btn sm" onClick={end}>{t('pc.endSupport')}</button></div>
 }
 
 function BranchSelect() {
@@ -100,18 +118,26 @@ export default function App() {
   const { me, loading, membership, can } = useAuth()
   if (loading) return <div className="center muted">{t('common.loading')}</div>
   if (window.location.pathname === '/set-password') return <SetPassword />
-  if (!me) return <Login />
+  if (!me) return window.location.pathname === '/login' ? <Login /> : <Landing />
 
-  if (me.is_platform_staff && me.memberships.length === 0) {
+  if (me.is_platform_staff && !membership?.support) {
     return (
       <Shell biz="" plat title={t('app.name')} sub={t('platform.sub')} groups={[[t('platform.group'), [
+        { path: '/platform/home', label: t('pc.home'), icon: 'home', show: true },
         { path: '/platform/tenants', label: t('platform.tenants'), icon: 'store', show: true },
+        { path: '/platform/billing', label: t('pc.billing'), icon: 'receipt', show: true },
+        { path: '/platform/support', label: t('pc.support'), icon: 'support', show: true },
+        { path: '/platform/leads', label: t('pc.leads'), icon: 'user-plus', show: true },
         { path: '/platform/plans', label: t('platform.plans'), icon: 'layers', show: true },
       ]]]}>
         <Routes>
+          <Route path="/platform/home" element={<PlatformHome />} />
           <Route path="/platform/tenants" element={<PlatformTenants />} />
+          <Route path="/platform/billing" element={<PlatformBilling />} />
+          <Route path="/platform/support" element={<PlatformSupport />} />
+          <Route path="/platform/leads" element={<PlatformLeads />} />
           <Route path="/platform/plans" element={<PlatformPlans />} />
-          <Route path="*" element={<Navigate to="/platform/tenants" replace />} />
+          <Route path="*" element={<Navigate to="/platform/home" replace />} />
         </Routes>
       </Shell>
     )
@@ -143,6 +169,7 @@ export default function App() {
     [t('nav.account'), [
       { path: '/whatsapp', label: t('nav.whatsapp'), icon: 'whatsapp', show: can('org.manage') },
       { path: '/subscription', label: t('nav.subscription'), icon: 'award', show: can('org.manage') },
+      { path: '/support', label: t('nav.support'), icon: 'support', show: can('org.manage') && !membership.support },
     ]],
   ]
   const home = can('pos.sell') ? '/pos' : can('booking.view') ? '/bookings' : '/org'
@@ -162,6 +189,7 @@ export default function App() {
         <Route path="/marketing" element={<Marketing />} />
         <Route path="/commissions" element={<Commissions />} />
         <Route path="/users" element={<Users />} />
+        <Route path="/support" element={<Support />} />
         <Route path="/whatsapp" element={<WhatsApp />} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/accounting/journal" element={<JournalEntry />} />

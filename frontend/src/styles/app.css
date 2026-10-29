@@ -10,3 +10,6 @@ td.n,th.n{text-align:end}
 .chips label:has(input:checked){border-color:var(--brand-700);background:var(--brand-soft);color:var(--brand-700);font-weight:600}
 .chips input{accent-color:var(--brand-700)}
 .nav .me button{width:auto;flex:none}
+
+/* pricing badge text follows the page language (the design hard-codes it in Arabic) */
+.prices .plan.hl[data-hl]::before{content:attr(data-hl)}

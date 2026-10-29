@@ -224,6 +224,91 @@ paths:
               schema:
                 $ref: '#/components/schemas/TrialBalance'
           description: ''
+  /api/v1/accounting/xbrl:
+    get:
+      operationId: v1_accounting_xbrl_retrieve
+      description: MOCI annual statements in the template's order (draft from the
+        ledger, for the accountant to transfer).
+      parameters:
+      - in: query
+        name: legal_entity_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: year_end
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/accounting/xbrl/mapping:
+    get:
+      operationId: v1_accounting_xbrl_mapping_retrieve
+      description: Which MOCI line each account goes to. PUT with an empty tag returns
+        the account to its default.
+      parameters:
+      - in: query
+        name: legal_entity_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    put:
+      operationId: v1_accounting_xbrl_mapping_update
+      description: Which MOCI line each account goes to. PUT with an empty tag returns
+        the account to its default.
+      parameters:
+      - in: query
+        name: legal_entity_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/XbrlMappingIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/XbrlMappingIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/XbrlMappingIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/app/bookings:
     get:
       operationId: v1_app_bookings_retrieve
@@ -304,35 +389,6 @@ paths:
           format: double
       tags:
       - v1
-      security:
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-  /api/v1/app/login-link:
-    post:
-      operationId: v1_app_login_link_create
-      description: Exchange a one-time front-desk link (D-003 fallback) for a customer
-        session.
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginLinkIn'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/LoginLinkIn'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/LoginLinkIn'
-        required: true
       security:
       - {}
       responses:
@@ -1197,29 +1253,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Beneficiary'
           description: ''
-  /api/v1/customers/{id}/login-link:
-    post:
-      operationId: v1_customers_login_link_create
-      description: 'Front desk: after checking the customer in person, issue a one-time
-        app login link (15 minutes).'
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - v1
-      security:
-      - cookieAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
   /api/v1/customers/{id}/wallet:
     get:
       operationId: v1_customers_wallet_retrieve
@@ -1772,6 +1805,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/BranchWrite'
           description: ''
+  /api/v1/platform/dashboard:
+    get:
+      operationId: v1_platform_dashboard_retrieve
+      description: Real figures only (no sample data).
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/platform/domains/{id}:
     patch:
       operationId: v1_platform_domains_partial_update
@@ -1802,6 +1851,125 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Domain'
+          description: ''
+  /api/v1/platform/invoices:
+    get:
+      operationId: v1_platform_invoices_list
+      parameters:
+      - in: query
+        name: status
+        schema:
+          type: string
+      - in: query
+        name: tenant_id
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubInvoiceOut'
+          description: ''
+    post:
+      operationId: v1_platform_invoices_create
+      description: Run billing now (the same job runs every night).
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/platform/invoices/{id}/action:
+    post:
+      operationId: v1_platform_invoices_action_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvoiceActionIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InvoiceActionIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InvoiceActionIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubInvoiceOut'
+          description: ''
+  /api/v1/platform/leads:
+    get:
+      operationId: v1_platform_leads_list
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeadOut'
+          description: ''
+  /api/v1/platform/leads/{id}:
+    patch:
+      operationId: v1_platform_leads_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLeadOut'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLeadOut'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLeadOut'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadOut'
           description: ''
   /api/v1/platform/plans:
     get:
@@ -1984,6 +2152,112 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Domain'
+          description: ''
+  /api/v1/platform/tenants/{id}/support:
+    post:
+      operationId: v1_platform_tenants_support_create
+      description: Platform staff open a read-only, time-limited view of one company,
+        with a written reason; audited.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupportIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupportIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    delete:
+      operationId: v1_platform_tenants_support_destroy
+      description: Platform staff open a read-only, time-limited view of one company,
+        with a written reason; audited.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/platform/tickets:
+    get:
+      operationId: v1_platform_tickets_list
+      parameters:
+      - in: query
+        name: status
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TicketOut'
+          description: ''
+  /api/v1/platform/tickets/{id}/reply:
+    post:
+      operationId: v1_platform_tickets_reply_create
+      description: Platform answers; the salon owner is notified on WhatsApp from
+        the platform number when available.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplyIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReplyIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReplyIn'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketOut'
           description: ''
   /api/v1/pos/checkout:
     post:
@@ -2253,6 +2527,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/SessionOut'
           description: ''
+  /api/v1/public/leads:
+    post:
+      operationId: v1_public_leads_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeadIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeadIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeadIn'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/public/salon:
     get:
       operationId: v1_public_salon_retrieve
@@ -2286,6 +2587,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PublicSalon'
+          description: ''
+  /api/v1/public/site:
+    get:
+      operationId: v1_public_site_retrieve
+      description: Contact details and trial length for the public site (no secrets).
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /api/v1/staff:
     get:
@@ -2516,6 +2833,96 @@ paths:
               schema:
                 $ref: '#/components/schemas/SubscriptionOut'
           description: ''
+  /api/v1/subscription/invoices:
+    get:
+      operationId: v1_subscription_invoices_list
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubInvoiceOut'
+          description: ''
+  /api/v1/support/tickets:
+    get:
+      operationId: v1_support_tickets_list
+      description: The salon's own tickets (owner / managers).
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TicketOut'
+          description: ''
+    post:
+      operationId: v1_support_tickets_create
+      description: The salon's own tickets (owner / managers).
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TicketIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TicketIn'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketOut'
+          description: ''
+  /api/v1/support/tickets/{id}/reply:
+    post:
+      operationId: v1_support_tickets_reply_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplyIn'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReplyIn'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReplyIn'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketOut'
+          description: ''
   /api/v1/users:
     get:
       operationId: v1_users_retrieve
@@ -2686,6 +3093,14 @@ components:
       - name_ar
       - name_en
       - type
+    ActionEnum:
+      enum:
+      - pay
+      - void
+      type: string
+      description: |-
+        * `pay` - pay
+        * `void` - void
     AdjustIn:
       type: object
       properties:
@@ -3593,6 +4008,37 @@ components:
       - email
       - full_name
       - role
+    InvoiceActionIn:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/ActionEnum'
+        method:
+          allOf:
+          - $ref: '#/components/schemas/InvoiceActionInMethodEnum'
+          default: bank
+        reference:
+          type: string
+          default: ''
+          maxLength: 80
+        reason:
+          type: string
+          default: ''
+          maxLength: 300
+      required:
+      - action
+    InvoiceActionInMethodEnum:
+      enum:
+      - bank
+      - knet
+      - cash
+      - other
+      type: string
+      description: |-
+        * `bank` - bank
+        * `knet` - knet
+        * `cash` - cash
+        * `other` - other
     InvoiceLineOut:
       type: object
       properties:
@@ -3759,6 +4205,114 @@ components:
       description: |-
         * `ar` - ar
         * `en` - en
+    LeadIn:
+      type: object
+      properties:
+        salon_name:
+          type: string
+          maxLength: 120
+        contact_name:
+          type: string
+          maxLength: 120
+        phone:
+          type: string
+          maxLength: 20
+        email:
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        business_type:
+          type: string
+          maxLength: 8
+        branches:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        plan_code:
+          type: string
+          maxLength: 30
+        city:
+          type: string
+          maxLength: 60
+        message:
+          type: string
+          maxLength: 2000
+        website:
+          type: string
+          writeOnly: true
+      required:
+      - contact_name
+      - phone
+      - salon_name
+    LeadOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        salon_name:
+          type: string
+          readOnly: true
+        contact_name:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        business_type:
+          type: string
+          readOnly: true
+        branches:
+          type: integer
+          readOnly: true
+        plan_code:
+          type: string
+          readOnly: true
+        city:
+          type: string
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/LeadStatusEnum'
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - branches
+      - business_type
+      - city
+      - contact_name
+      - created_at
+      - email
+      - id
+      - message
+      - phone
+      - plan_code
+      - salon_name
+    LeadStatusEnum:
+      enum:
+      - new
+      - contacted
+      - converted
+      - rejected
+      type: string
+      description: |-
+        * `new` - New
+        * `contacted` - Contacted
+        * `converted` - Converted
+        * `rejected` - Rejected
     LegalEntity:
       type: object
       properties:
@@ -3852,14 +4406,6 @@ components:
       required:
       - email
       - password
-    LoginLinkIn:
-      type: object
-      properties:
-        token:
-          type: string
-          maxLength: 100
-      required:
-      - token
     MeOut:
       type: object
       properties:
@@ -3912,16 +4458,44 @@ components:
           type: array
           items:
             type: integer
+        support:
+          type: boolean
+        expires_at:
+          type: string
       required:
       - all_branches
       - branch_ids
       - permissions
       - role
       - role_name
+      - support
       - tenant_business_type
       - tenant_id
       - tenant_name
       - tenant_status
+    MessageOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        from_platform:
+          type: boolean
+        author_name:
+          type: string
+          readOnly: true
+        body:
+          type: string
+          maxLength: 5000
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author_name
+      - body
+      - created_at
+      - id
     Mfa:
       type: object
       properties:
@@ -4174,6 +4748,48 @@ components:
         reason:
           type: string
           maxLength: 300
+    PatchedLeadOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        salon_name:
+          type: string
+          readOnly: true
+        contact_name:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        business_type:
+          type: string
+          readOnly: true
+        branches:
+          type: integer
+          readOnly: true
+        plan_code:
+          type: string
+          readOnly: true
+        city:
+          type: string
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/LeadStatusEnum'
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
     PatchedMemberIn:
       type: object
       properties:
@@ -4256,6 +4872,10 @@ components:
           type: integer
           maximum: 32767
           minimum: 0
+        highlight:
+          type: boolean
+        features_ar: {}
+        features_en: {}
     PatchedProduct:
       type: object
       properties:
@@ -4499,6 +5119,10 @@ components:
           type: integer
           maximum: 32767
           minimum: 0
+        highlight:
+          type: boolean
+        features_ar: {}
+        features_en: {}
       required:
       - code
       - id
@@ -4546,6 +5170,16 @@ components:
           format: date
       required:
       - price
+    PriorityEnum:
+      enum:
+      - low
+      - mid
+      - high
+      type: string
+      description: |-
+        * `low` - Low
+        * `mid` - Mid
+        * `high` - High
     Product:
       type: object
       properties:
@@ -4668,6 +5302,15 @@ components:
         * `self` - Self
         * `child` - Child
         * `other` - Other
+    ReplyIn:
+      type: object
+      properties:
+        body:
+          type: string
+          default: ''
+          maxLength: 5000
+        status:
+          $ref: '#/components/schemas/TicketStatusEnum'
     ReturnLineIn:
       type: object
       properties:
@@ -4975,6 +5618,73 @@ components:
           default: ''
       required:
       - status
+    SubInvoiceOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        number:
+          type: string
+          maxLength: 30
+        tenant:
+          type: integer
+        tenant_name:
+          type: string
+        plan_name_ar:
+          type: string
+        plan_name_en:
+          type: string
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,3})?$
+        due_on:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/SubInvoiceStatusEnum'
+        overdue:
+          type: boolean
+          readOnly: true
+        paid_at:
+          type: string
+          format: date-time
+          nullable: true
+        paid_method:
+          type: string
+          maxLength: 20
+        paid_reference:
+          type: string
+          maxLength: 80
+      required:
+      - amount
+      - due_on
+      - id
+      - number
+      - overdue
+      - period_end
+      - period_start
+      - plan_name_ar
+      - plan_name_en
+      - tenant
+      - tenant_name
+    SubInvoiceStatusEnum:
+      enum:
+      - issued
+      - paid
+      - void
+      type: string
+      description: |-
+        * `issued` - Issued
+        * `paid` - Paid
+        * `void` - Void
     SubscriptionOut:
       type: object
       properties:
@@ -5014,6 +5724,15 @@ components:
       required:
       - id
       - name
+    SupportIn:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 300
+          minLength: 10
+      required:
+      - reason
     TBRow:
       type: object
       properties:
@@ -5163,6 +5882,69 @@ components:
         * `past_due` - Past Due
         * `read_only` - Read Only
         * `suspended` - Suspended
+    TicketIn:
+      type: object
+      properties:
+        subject:
+          type: string
+          maxLength: 200
+        body:
+          type: string
+          maxLength: 5000
+        priority:
+          allOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          default: mid
+      required:
+      - body
+      - subject
+    TicketOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        tenant:
+          type: integer
+        tenant_name:
+          type: string
+        subject:
+          type: string
+          maxLength: 200
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        status:
+          $ref: '#/components/schemas/TicketStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageOut'
+      required:
+      - created_at
+      - id
+      - messages
+      - subject
+      - tenant
+      - tenant_name
+      - updated_at
+    TicketStatusEnum:
+      enum:
+      - open
+      - pending
+      - closed
+      type: string
+      description: |-
+        * `open` - Open
+        * `pending` - Pending
+        * `closed` - Closed
     TimeOffIn:
       type: object
       properties:
@@ -5251,6 +6033,17 @@ components:
       required:
       - code
       - phone
+    XbrlMappingIn:
+      type: object
+      properties:
+        account_id:
+          type: integer
+        tag:
+          type: string
+          maxLength: 200
+      required:
+      - account_id
+      - tag
   securitySchemes:
     cookieAuth:
       type: apiKey

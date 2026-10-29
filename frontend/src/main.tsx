@@ -8,6 +8,7 @@ import { AuthProvider } from './auth'
 import { ToastProvider } from './components/ui'
 import './i18n'
 import './styles/design.css'
+import './styles/site.css'
 import './styles/app.css'
 
 console.info(`Qassa ${__APP_VERSION__} (${__APP_CHANNEL__})`)

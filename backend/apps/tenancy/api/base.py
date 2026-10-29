@@ -23,8 +23,14 @@ class TenantAPIView(APIView):
             raise PermissionDenied("X-Tenant header is required")
         membership = (Membership.objects.select_related("role", "tenant")
                       .filter(user=request.user, tenant_id=int(raw), is_active=True).first())
+        support = False
+        if membership is None:
+            membership = support_membership(request.user, int(raw))
+            support = membership is not None
         if membership is None:
             raise PermissionDenied("No access to this tenant")
+        if support and request.method in WRITE_METHODS:
+            raise PermissionDenied("Support access is read-only")
         tenant = membership.tenant
         if tenant.status == tenant.Status.SUSPENDED:
             raise PermissionDenied("Tenant is suspended")
@@ -35,7 +41,22 @@ class TenantAPIView(APIView):
             raise PermissionDenied(f"Missing permission: {perm}")
         request.tenant_id = tenant.id
         request.membership = membership
+        request.support_access = support
         set_context(tenant.id, membership)
+
+
+def support_membership(user, tenant_id):
+    """An unsaved, read-only membership (every *view* permission, all branches) for platform staff with an
+    active support access to this tenant. Writes are refused before any view code runs."""
+    from apps.platform.api.console import active_support
+    from apps.tenancy.models import Role
+    from apps.tenancy.permissions_catalog import ALL
+    acc = active_support(user, tenant_id).first()
+    if acc is None:
+        return None
+    role = Role(tenant_id=tenant_id, key="support", name_ar="دعم فني (قراءة فقط)", name_en="Support (read-only)",
+                permissions=sorted(p for p in ALL if ".view" in p))
+    return Membership(user=user, tenant=acc.tenant, role=role, all_branches=True, is_active=True)
 
 
 class IsPlatformStaff(permissions.BasePermission):

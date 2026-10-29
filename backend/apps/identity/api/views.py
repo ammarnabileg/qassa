@@ -40,15 +40,31 @@ def me_payload(user):
                          "tenant_business_type": m.tenant.default_business_type,
                          "role": m.role.key, "role_name": {"ar": m.role.name_ar, "en": m.role.name_en},
                          "permissions": sorted(m.role.permissions), "all_branches": m.all_branches,
-                         "branch_ids": sorted(m.branch_ids() or [])} for m in ms],
+                         "branch_ids": sorted(m.branch_ids() or []), "support": False} for m in ms] + _support(user),
     }
+
+
+def _support(user):
+    from apps.platform.api.console import active_support
+    from apps.tenancy.api.base import support_membership
+    out = []
+    for acc in active_support(user):
+        m = support_membership(user, acc.tenant_id)
+        if m:
+            out.append({"tenant_id": acc.tenant_id, "tenant_name": acc.tenant.name, "tenant_status": acc.tenant.status,
+                        "tenant_business_type": acc.tenant.default_business_type, "role": "support",
+                        "role_name": {"ar": "دعم فني (قراءة فقط)", "en": "Support (read-only)"},
+                        "permissions": sorted(m.role.permissions), "all_branches": True, "branch_ids": [],
+                        "support": True, "expires_at": acc.expires_at.isoformat()})
+    return out
 
 
 MembershipOut = inline_serializer("MembershipOut", {
     "tenant_id": serializers.IntegerField(), "tenant_name": serializers.CharField(), "tenant_status": serializers.CharField(),
     "tenant_business_type": serializers.CharField(),
     "role": serializers.CharField(), "role_name": serializers.DictField(), "permissions": serializers.ListField(child=serializers.CharField()),
-    "all_branches": serializers.BooleanField(), "branch_ids": serializers.ListField(child=serializers.IntegerField())})
+    "all_branches": serializers.BooleanField(), "branch_ids": serializers.ListField(child=serializers.IntegerField()),
+    "support": serializers.BooleanField(), "expires_at": serializers.CharField(required=False)})
 MeOut = inline_serializer("MeOut", {
     "id": serializers.IntegerField(), "email": serializers.EmailField(), "full_name": serializers.CharField(),
     "language": serializers.CharField(), "is_platform_staff": serializers.BooleanField(), "mfa_required": serializers.BooleanField(),

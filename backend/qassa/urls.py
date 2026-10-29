@@ -17,6 +17,7 @@ from apps.loyalty.api import views as loy
 from apps.notifications.api.views import WhatsAppActionView, WhatsAppView
 from apps.pos.api import views as pos
 from apps.customers.api import app as capp
+from apps.platform.api import console as con
 from apps.customers.api import views as cust
 from apps.staff.api import views as stf
 
@@ -75,6 +76,19 @@ urlpatterns = [
     path(api + "platform/tenants/<int:pk>/domains", plat.TenantDomainsView.as_view()),
     path(api + "platform/domains/<int:pk>", plat.DomainDetailView.as_view()),
     path(api + "platform/plans", plat.PlansView.as_view()),
+    path(api + "platform/dashboard", con.DashboardView.as_view()),
+    path(api + "platform/invoices", con.PlatformInvoicesView.as_view()),
+    path(api + "platform/invoices/<int:pk>/action", con.PlatformInvoiceActionView.as_view()),
+    path(api + "platform/tickets", con.PlatformTicketsView.as_view()),
+    path(api + "platform/tickets/<int:pk>/reply", con.PlatformTicketReplyView.as_view()),
+    path(api + "platform/leads", con.PlatformLeadsView.as_view()),
+    path(api + "platform/leads/<int:pk>", con.PlatformLeadDetailView.as_view()),
+    path(api + "platform/tenants/<int:pk>/support", con.SupportAccessView.as_view()),
+    path(api + "support/tickets", con.MyTicketsView.as_view()),
+    path(api + "support/tickets/<int:pk>/reply", con.MyTicketReplyView.as_view()),
+    path(api + "subscription/invoices", con.MyInvoicesView.as_view()),
+    path(api + "public/leads", con.PublicLeadView.as_view()),
+    path(api + "public/site", con.PublicSiteView.as_view()),
     path(api + "platform/plans/<int:pk>", plat.PlanDetailView.as_view()),
     # phase 3: operations
     path(api + "booking/appointments", bk.AppointmentsView.as_view()),

@@ -145,7 +145,7 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 50,
     "EXCEPTION_HANDLER": "apps.core.errors.exception_handler",
     "COERCE_DECIMAL_TO_STRING": True,
-    "DEFAULT_THROTTLE_RATES": {"login": env("THROTTLE_LOGIN", "10/min"), "mfa": "10/min", "public": env("THROTTLE_PUBLIC", "60/min")},
+    "DEFAULT_THROTTLE_RATES": {"login": env("THROTTLE_LOGIN", "10/min"), "mfa": "10/min", "public": env("THROTTLE_PUBLIC", "60/min"), "lead": env("THROTTLE_LEAD", "5/hour")},
 }
 
 SPECTACULAR_SETTINGS = {
@@ -153,7 +153,10 @@ SPECTACULAR_SETTINGS = {
                             "BusinessTypeEnum": "apps.tenancy.models.BusinessType",
                             "AppointmentStatusEnum": "apps.booking.models.Appointment.Status",
                             "CashSessionStatusEnum": "apps.pos.models.CashSession.Status",
-                            "LangEnum": [("ar", "ar"), ("en", "en")]},
+                            "LangEnum": [("ar", "ar"), ("en", "en")],
+                            "SubInvoiceStatusEnum": "apps.platform.models.PlatformInvoice.Status",
+                            "TicketStatusEnum": "apps.platform.models.SupportTicket.Status",
+                            "LeadStatusEnum": "apps.platform.models.Lead.Status"},
     "TITLE": "Qassa POS API",
     "VERSION": "0.1.0",
     "DESCRIPTION": "Multi-tenant salon POS & accounting API. Tenant-scoped endpoints require the X-Tenant header.",
@@ -212,4 +215,6 @@ EMAIL_BACKEND = ("django.core.mail.backends.smtp.EmailBackend" if EMAIL_HOST
                  else "django.core.mail.backends.locmem.EmailBackend")
 QASSA["EMAIL_CONFIGURED"] = bool(EMAIL_HOST)
 QASSA["PUBLIC_ADMIN_URL"] = env("QASSA_PUBLIC_ADMIN_URL", "http://localhost:5173")
+QASSA["SALES_WHATSAPP"] = env("QASSA_SALES_WHATSAPP", "")
+QASSA["SALES_EMAIL"] = env("QASSA_SALES_EMAIL", "")
 PASSWORD_RESET_TIMEOUT = 72 * 3600  # invitation / reset links

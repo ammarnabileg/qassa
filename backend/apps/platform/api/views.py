@@ -47,7 +47,7 @@ class PlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = Plan
         fields = ["id", "code", "name_ar", "name_en", "monthly_price", "max_branches", "max_staff", "custom_domain",
-                  "is_active", "sort"]
+                  "is_active", "sort", "highlight", "features_ar", "features_en"]
 
 
 class TenantOut(serializers.ModelSerializer):
@@ -150,6 +150,8 @@ class PlanDetailView(APIView):
         plan = get_object_or_404(Plan.objects.all(), pk=pk)
         s = PlanSerializer(plan, data=request.data, partial=True)
         s.is_valid(raise_exception=True)
+        if s.validated_data.get("highlight"):
+            Plan.objects.exclude(id=plan.id).update(highlight=False)   # one "most popular" plan
         s.save()
         audit("platform.plan.changed", actor=request.user, obj=plan, data={k: str(v) for k, v in s.validated_data.items()})
         return Response(s.data)

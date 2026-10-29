@@ -1,0 +1,35 @@
+/* Copied verbatim from the approved design (reference/salon-pos-demo/assets/css/site.css). Do not edit here. */
+/* Public pricing / marketing site */
+/* ---------- public site ---------- */
+.site{background:var(--bg);min-height:100vh}
+.site .wrap{max-width:1160px;margin:auto;padding:0 20px}
+.sh{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.sh .wrap{display:flex;align-items:center;justify-content:space-between;height:68px;gap:12px}
+.sh nav{display:flex;gap:4px;align-items:center}
+.sh nav a{color:var(--ink-2);text-decoration:none;font-weight:500;font-size:14px;padding:8px 12px;border-radius:10px}
+.sh nav a:hover{background:var(--surface-2)}
+.hero{padding:64px 0 40px;display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+.hero h1{font-size:44px;line-height:1.25;letter-spacing:-.03em}
+.hero p{font-size:17px;color:var(--muted);max-width:520px}
+.eyebrow{display:inline-block;background:var(--brand-soft);color:var(--brand-700);font-weight:700;font-size:13px;padding:4px 12px;border-radius:99px;margin-bottom:14px}
+.mock{background:var(--ink);border-radius:26px;padding:16px;box-shadow:var(--shadow-md);color:#fff}
+.mock .mrow{display:flex;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,.06);border-radius:12px;margin-top:8px;font-size:13px}
+.mock .big{font-size:26px;font-weight:700;color:var(--brand)}
+.sec{padding:56px 0}
+.sec h2.t{font-size:30px;text-align:center;letter-spacing:-.02em}
+.sec p.st{text-align:center;color:var(--muted);margin:6px auto 28px;max-width:560px}
+.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.feat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px}
+.feat .fi{width:42px;height:42px;border-radius:12px;background:var(--brand-soft);color:var(--brand-700);display:grid;place-items:center;margin-bottom:10px}
+.feat .fi .icon{width:22px;height:22px}
+.prices{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;align-items:stretch}
+.prices .plan.hl{position:relative}
+.prices .plan.hl::before{content:"الأكثر طلباً";position:absolute;top:-12px;inset-inline-start:20px;background:var(--brand);color:#081510;font-size:12px;font-weight:700;padding:2px 12px;border-radius:99px}
+.cmp td,.cmp th{text-align:center}.cmp td:first-child,.cmp th:first-child{text-align:start}
+.faq details{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px;margin-bottom:8px}
+.faq summary{cursor:pointer;font-weight:600}
+.sf{background:var(--ink);color:#fff;padding:28px 0;margin-top:40px;font-size:13px}
+.sf a{color:var(--brand)}
+/* Site breakpoints, verbatim from reference/salon-pos-demo/assets/css/customer-app.css lines 29-30 */
+@media (max-width:1000px){.hero{grid-template-columns:1fr}.feats{grid-template-columns:1fr 1fr}.capp{grid-template-columns:1fr}.capp .side{display:none}}
+@media (max-width:640px){.hero h1{font-size:32px}.feats{grid-template-columns:1fr}.sh nav a.hide{display:none}.capp{padding:0}.phone{width:100%;height:100vh;border:0;border-radius:0}}

@@ -5,7 +5,8 @@ import { ApiError } from '../api/client'
 export function ErrorText({ error }: { error: unknown }) {
   const { t, i18n } = useTranslation()
   if (!error) return null
-  const code = error instanceof ApiError ? error.code : 'unknown'
+  const code = error instanceof ApiError ? error.code
+    : typeof error === 'object' && 'code' in error && typeof error.code === 'string' ? error.code : 'unknown'  // client-side checks
   const key = `errors.${code}`
   return <div className="notice bad" role="alert">{i18n.exists(key) ? t(key) : t('errors.unknown')}</div>
 }
