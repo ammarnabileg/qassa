@@ -1,7 +1,7 @@
 """MOCI (Kuwait Ministry of Commerce) XBRL annual statements: a table in the template's order for the accountant
 to transfer into the official workbook. Figures are drafts from the posted ledger, never audited figures (D-009)."""
 import json
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -85,6 +85,97 @@ def _year(entity_id, start: date, end: date, tags, accounts):
     return fp, pl, unmapped
 
 
+# Working-capital line for a current asset / liability, by its balance-sheet line (indirect method).
+WC_TAG = {
+    "ifrs-full:Inventories": "ifrs-full:AdjustmentsForDecreaseIncreaseInInventories",
+    "ifrs-full:TradeAndOtherReceivables": "moci:ChangesInOtherOperatingReceivables",
+    "ifrs-full:Prepayments": "moci:AdjustmentsForDecreaseIncreaseInOtherOperatingAssets",
+    "ifrs-full:TradeAndOtherPayables": "moci:ChangesInOtherOperatingPayables",
+    "ifrs-full:CurrentContractLiabilities": "moci:AdjustmentsForIncreaseDecreaseInAdvancesFromCustomers",
+}
+CF_OTHER = {"current_assets": "moci:AdjustmentsForDecreaseIncreaseInOtherOperatingAssets",
+            "current_liabilities": "ifrs-full:AdjustmentsForIncreaseDecreaseInOtherOperatingPayables",
+            "noncurrent_assets": "ifrs-full:PurchaseOfOtherLongtermAssetsClassifiedAsInvestingActivities",
+            "noncurrent_liabilities": "ifrs-full:OtherInflowsOutflowsOfCashClassifiedAsFinancingActivities",
+            "Equity": "ifrs-full:OtherInflowsOutflowsOfCashClassifiedAsFinancingActivities"}
+FP_SECTION = {c["tag"]: c["section"] for c in CATALOG if c["statement"] == "fp"}
+CASH = "ifrs-full:CashAndCashEquivalents"
+DEP = "moci:AdjustmentsForDepreciationOnPropertyPlantAndEquipment"
+PPE_BUY = "ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities"
+
+
+def _bal_no_closing(entity_id, upto):
+    q = (JournalLine.objects.filter(entry__legal_entity_id=entity_id, entry__status=JournalEntry.Status.POSTED,
+                                    entry__entry_date__lte=upto).exclude(entry__source_type="fiscal_year")
+         .values("account_id").annotate(d=Sum("debit"), c=Sum("credit")))
+    return {r["account_id"]: (r["d"] or ZERO) - (r["c"] or ZERO) for r in q}
+
+
+def _cash_flow(entity_id, start, end, tags, accounts, profit):
+    """Indirect method from balance-sheet movements (closing entries left out). A draft: the accountant
+    checks the classification (e.g. an asset bought on credit is not an investing cash outflow)."""
+    from apps.accounting.models import AccountRoleMapping
+    dep_ids = set(AccountRoleMapping.objects.filter(legal_entity_id=entity_id, role="ACCUMULATED_DEPRECIATION")
+                  .values_list("account_id", flat=True))
+    before = _bal_no_closing(entity_id, start - timedelta(days=1))
+    after = _bal_no_closing(entity_id, end)
+    lines, cash_open, cash_close, unknown = {}, ZERO, ZERO, []
+    for a in accounts:
+        if a.type not in FP_TYPES:
+            continue
+        tag = tags.get(a.id)
+        delta = after.get(a.id, ZERO) - before.get(a.id, ZERO)       # debit-positive movement
+        if tag == CASH:
+            cash_open += before.get(a.id, ZERO)
+            cash_close += after.get(a.id, ZERO)
+            continue
+        if not delta:
+            continue
+        if a.id in dep_ids:
+            cf = DEP                                                   # non-cash: added back
+        elif tag == "ifrs-full:PropertyPlantAndEquipment":
+            cf = PPE_BUY
+        elif tag in WC_TAG:
+            cf = WC_TAG[tag]
+        elif tag in FP_SECTION:
+            cf = CF_OTHER[FP_SECTION[tag]]
+        else:
+            unknown.append(a)
+            continue
+        lines[cf] = lines.get(cf, ZERO) - delta                       # more assets = cash out; more liabilities = cash in
+    sections = {"operating": profit + sum((v for k, v in lines.items() if _cf_section(k) in ("adjustments", "working_capital", "operating_other")), ZERO),
+                "investing": sum((v for k, v in lines.items() if _cf_section(k) == "investing"), ZERO),
+                "financing": sum((v for k, v in lines.items() if _cf_section(k) == "financing"), ZERO)}
+    net = sections["operating"] + sections["investing"] + sections["financing"]
+    return lines, sections, net, cash_open, cash_close, unknown
+
+
+def _cf_section(tag):
+    return next((c["section"] for c in CATALOG if c["statement"] == "cf" and c["tag"] == tag), "")
+
+
+def _equity_changes(entity_id, start, end, tags, accounts, profit):
+    """Opening, profit for the year, other movements and closing per equity line (closing entries left out)."""
+    before = _bal_no_closing(entity_id, start - timedelta(days=1))
+    after = _bal_no_closing(entity_id, end)
+    rows = {}
+    pl_before = -sum((before.get(a.id, ZERO) for a in accounts if a.type in ("revenue", "expense")), ZERO)
+    for a in accounts:
+        if a.type != "equity":
+            continue
+        tag = tags.get(a.id) or "ifrs-full:OtherEquityInterest"
+        r = rows.setdefault(tag, {"opening": ZERO, "profit": ZERO, "other": ZERO, "closing": ZERO})
+        r["opening"] += -before.get(a.id, ZERO)
+        r["closing"] += -after.get(a.id, ZERO)
+    re = rows.setdefault("ifrs-full:RetainedEarnings", {"opening": ZERO, "profit": ZERO, "other": ZERO, "closing": ZERO})
+    re["opening"] += pl_before                                          # earlier years' unclosed results
+    re["profit"] = profit
+    re["closing"] += pl_before + profit
+    for r in rows.values():
+        r["other"] = r["closing"] - r["opening"] - r["profit"]
+    return rows
+
+
 def report(entity, year_end: date) -> dict:
     cy = (date(year_end.year - 1, year_end.month, year_end.day) if not (year_end.month == 2 and year_end.day == 29)
           else date(year_end.year - 1, 2, 28))
@@ -118,11 +209,33 @@ def report(entity, year_end: date) -> dict:
         t["ifrs-full:ProfitLoss"] = sum(pl_vals[k].values(), ZERO)
     pl_lines = [line(c, pl_vals) for c in CATALOG if c["statement"] == "pl"]
 
+    cf, soce = {}, {}
+    for k, (st, en) in periods.items():
+        cf[k] = _cash_flow(entity.id, st, en, tags, accounts, totals[k]["ifrs-full:ProfitLoss"])
+        soce[k] = _equity_changes(entity.id, st, en, tags, accounts, totals[k]["ifrs-full:ProfitLoss"])
+    cf_lines = [{"tag": "ifrs-full:ProfitLoss", "label_ar": "ربح (خسارة) السنة", "section": "profit",
+                 "cy": str(totals["cy"]["ifrs-full:ProfitLoss"]), "py": str(totals["py"]["ifrs-full:ProfitLoss"])}]
+    cf_lines += [{"tag": c["tag"], "label_ar": c["label_ar"], "section": c["section"],
+                  "cy": str(cf["cy"][0].get(c["tag"], ZERO)), "py": str(cf["py"][0].get(c["tag"], ZERO))}
+                 for c in CATALOG if c["statement"] == "cf" and (cf["cy"][0].get(c["tag"]) or cf["py"][0].get(c["tag"]))]
+    cf_totals = [{"tag": t, "cy": str(v_cy), "py": str(v_py)} for t, v_cy, v_py in (
+        ("ifrs-full:CashFlowsFromUsedInOperatingActivities", cf["cy"][1]["operating"], cf["py"][1]["operating"]),
+        ("ifrs-full:CashFlowsFromUsedInInvestingActivities", cf["cy"][1]["investing"], cf["py"][1]["investing"]),
+        ("ifrs-full:CashFlowsFromUsedInFinancingActivities", cf["cy"][1]["financing"], cf["py"][1]["financing"]),
+        ("ifrs-full:IncreaseDecreaseInCashAndCashEquivalents", cf["cy"][2], cf["py"][2]),
+        ("cash_start", cf["cy"][3], cf["py"][3]), ("cash_end", cf["cy"][4], cf["py"][4]))]
+    soce_out = {k: [{"tag": tg, "label_ar": next((c["label_ar"] for c in CATALOG if c["tag"] == tg), tg),
+                     **{f: str(v) for f, v in r.items()}} for tg, r in soce[k].items() if any(r.values())] for k in soce}
+
     checks = []
     for k in data:
         t = totals[k]
         checks.append({"id": f"VAL_BS_EQUATION_{k.upper()}", "ok": t["ifrs-full:Assets"] == t["ifrs-full:EquityAndLiabilities"],
                        "values": [str(t["ifrs-full:Assets"]), str(t["ifrs-full:EquityAndLiabilities"])]})
+    for k in data:
+        diff = cf[k][4] - cf[k][3] - cf[k][2]
+        checks.append({"id": f"VAL_CF_RECONCILES_{k.upper()}", "ok": diff == 0,
+                       "values": [str(cf[k][2]), str(cf[k][4] - cf[k][3])]})
     unmapped = {a.id: a for k in data for a in data[k][2]}
     checks.append({"id": "ALL_ACCOUNTS_MAPPED", "ok": not unmapped, "values": [f"{a.code} {a.name_ar}" for a in unmapped.values()]})
     return {
@@ -132,6 +245,7 @@ def report(entity, year_end: date) -> dict:
         "profit_or_loss": [x for x in pl_lines if x["cy"] != "0.000" or x["py"] != "0.000"],
         "totals": [{"tag": tg, "cy": str(totals["cy"][tg]), "py": str(totals["py"][tg])} for tg in totals["cy"]],
         "checks": checks,
-        "cash_flows": None,  # needs the accountant's classification of cash movements (D-009); not generated
+        "cash_flows": [x for x in cf_lines if x["cy"] != "0.000" or x["py"] != "0.000"], "cash_flow_totals": cf_totals,
+        "equity_changes": soce_out,
         "draft": True,
     }

@@ -4,6 +4,8 @@ Release versions follow `MAJOR.MINOR.PATCH` and are tagged `vX.Y.Z` on `main`.
 Builds between releases are **debug** builds: `X.(Y+1).0-dev.N+sha` (see `scripts/version.py`).
 
 ## [Unreleased]
+### Added — MOCI report
+- Cash flow statement (indirect method, reconciled to the change in cash) and statement of changes in equity.
 ### Added — Offline till (D-013)
 - The till keeps selling when the internet drops: catalogue snapshot in the browser, the app shell opens offline, every receipt numbered per device and HMAC-signed.
 - Automatic sync when the connection returns: posted once, at the real sale time and drawer; promotions no longer valid are kept as reviewed discounts; conflicts can be retried; missing receipt numbers are reported.
