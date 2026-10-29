@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
-import { api, setTenant, type Me, type Membership } from './api/client'
+import { api, ApiError, setTenant, type Me, type Membership } from './api/client'
 
 type AuthState = {
   me: Me | null
@@ -13,6 +13,7 @@ type AuthState = {
 
 const Ctx = createContext<AuthState | null>(null)
 const TENANT_KEY = 'qassa.tenant'
+const ME_KEY = 'qassa.me'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [me, setMeState] = useState<Me | null>(null)
@@ -22,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setMe = useCallback((m: Me | null) => {
     setMeState(m)
     if (!m) { setTenantId(null); setTenant(null); return }
+    try { localStorage.setItem(ME_KEY, JSON.stringify(m)) } catch { /* storage unavailable */ }
     const saved = Number(sessionStorage.getItem(TENANT_KEY))
     const pick = m.memberships.find((x) => x.tenant_id === saved) ?? (m.memberships.length === 1 ? m.memberships[0] : undefined)
     setTenantId(pick?.tenant_id ?? null)
@@ -29,7 +31,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    api<Me>('/auth/me').then(setMe).catch(() => setMe(null)).finally(() => setLoading(false))
+    // Without a connection, keep the last signed-in profile so the till can sell offline (D-013).
+    // The server still checks the session when the receipts are sent.
+    api<Me>('/auth/me')
+      .then(setMe)
+      .catch((e) => {
+        let cached: Me | null = null
+        try { cached = e instanceof ApiError && e.status === 0 ? JSON.parse(localStorage.getItem(ME_KEY) ?? 'null') : null } catch { cached = null }
+        setMe(cached)
+      })
+      .finally(() => setLoading(false))
   }, [setMe])
 
   const chooseTenant = (id: number) => {
@@ -39,7 +50,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
   const membership = me?.memberships.find((x) => x.tenant_id === tenantId) ?? null
   const can = (perm: string) => !!membership?.permissions.includes(perm)  // UI hint only; the server enforces
-  const logout = async () => { await api('/auth/logout', { method: 'POST' }).catch(() => undefined); sessionStorage.removeItem(TENANT_KEY); setMe(null) }
+  const logout = async () => {
+    await api('/auth/logout', { method: 'POST' }).catch(() => undefined)
+    sessionStorage.removeItem(TENANT_KEY)
+    try { localStorage.removeItem(ME_KEY) } catch { /* storage unavailable */ }
+    setMe(null)
+  }
 
   return <Ctx.Provider value={{ me, loading, membership, setMe, chooseTenant, can, logout }}>{children}</Ctx.Provider>
 }

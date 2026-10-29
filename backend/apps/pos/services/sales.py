@@ -1,9 +1,10 @@
 """Checkout, collections, returns and the cash drawer. Prices always come from the server's price list."""
 from dataclasses import dataclass, field
+from datetime import datetime
 from decimal import Decimal
 
 from django.db import IntegrityError, transaction
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from apps.audit.services.log import record as audit
@@ -32,6 +33,7 @@ class LineIn:
     product_id: int | None = None          # a retail product
     package_plan_id: int | None = None     # sell a package
     redeem_package_id: int | None = None   # pay this service with one session of the customer's package
+    unit_price: Decimal | None = None      # offline sync only: the price the customer was charged (D-013)
 
 
 @dataclass
@@ -69,6 +71,21 @@ def open_session(branch: Branch, opening_float, user) -> CashSession:
 
 def open_session_for(branch_id) -> CashSession | None:
     return CashSession.objects.filter(branch_id=branch_id, status=CashSession.Status.OPEN).first()
+
+
+@dataclass
+class OfflineCtx:
+    """An offline receipt being posted (D-013): the moment it happened, its printed reference, and the
+    differences found while posting (they put the receipt up for a manager's review, never silently)."""
+    at: datetime
+    ref: str
+    flags: list = field(default_factory=list)
+
+
+def session_at(branch_id, at) -> CashSession | None:
+    """The drawer that was open at that moment (an offline cash sale belongs to it even if it closed since)."""
+    return (CashSession.objects.filter(branch_id=branch_id, opened_at__lte=at)
+            .filter(Q(closed_at__isnull=True) | Q(closed_at__gt=at)).order_by("-opened_at").first())
 
 
 def expected_cash(session: CashSession) -> Decimal:
@@ -139,7 +156,7 @@ def invoice_state(inv: Invoice) -> dict:
             "refundable": paid}
 
 
-def _take_payments(inv, payments: list[PaymentIn], user, session_needed_branch):
+def _take_payments(inv, payments: list[PaymentIn], user, session_needed_branch, offline=None):
     created = []
     for p in payments:
         amount = money(p.amount)
@@ -151,19 +168,21 @@ def _take_payments(inv, payments: list[PaymentIn], user, session_needed_branch):
             raise DomainError(code="payment_reference_required", details={"method": p.method})
         session = None
         if p.method == "cash":
-            session = open_session_for(session_needed_branch)
+            session = session_at(session_needed_branch, offline.at) if offline else open_session_for(session_needed_branch)
             if session is None:
                 raise DomainError(code="no_open_session", message="Open the cash drawer first")
+            if offline and session.status != CashSession.Status.OPEN:
+                offline.flags.append("drawer_closed_before_sync")
         pay = Payment.objects.create(branch_id=inv.branch_id, invoice=inv, direction="in", method=p.method, amount=amount,
                                      reference=p.reference.strip(), cash_session=session,
-                                     business_date=business_date(), received_by=user)
+                                     business_date=inv.business_date, received_by=user)
         ledger.post_payment(pay, inv, user)
         created.append(pay)
     return created
 
 
 # ---------- checkout ----------
-def _plan_lines(data: CheckoutIn, branch, today, customer):
+def _plan_lines(data: CheckoutIn, branch, today, customer, offline=None):
     """Price every line from the server's data. Returns planned lines: dicts with everything needed to write them."""
     from apps.inventory.models import Product, StockLevel
     from apps.loyalty.models import CustomerPackage, PackagePlan
@@ -181,7 +200,8 @@ def _plan_lines(data: CheckoutIn, branch, today, customer):
             lvl = StockLevel.objects.filter(branch=branch, product=p).first()
             if lvl is None or lvl.qty < ln.qty:
                 raise DomainError(code="stock_insufficient", details={"position": i, "available": str(lvl.qty if lvl else 0)})
-            planned.append(dict(kind="product", product=p, name_ar=p.name_ar, name_en=p.name_en, price=p.sale_price, ln=ln, disc=disc))
+            planned.append(dict(kind="product", product=p, name_ar=p.name_ar, name_en=p.name_en,
+                                price=_offline_price(offline, ln, p.sale_price, i), ln=ln, disc=disc))
             continue
         if ln.package_plan_id:
             plan = PackagePlan.objects.select_related("service__category").filter(id=ln.package_plan_id, is_active=True).first()
@@ -192,7 +212,7 @@ def _plan_lines(data: CheckoutIn, branch, today, customer):
             if ln.qty != 1:
                 raise DomainError(code="qty_invalid", details={"position": i})
             planned.append(dict(kind="package", plan=plan, service=plan.service, name_ar=plan.name_ar, name_en=plan.name_en,
-                                price=plan.price, ln=ln, disc=disc))
+                                price=_offline_price(offline, ln, plan.price, i), ln=ln, disc=disc))
             continue
         svc = Service.objects.select_related("category").filter(id=ln.service_id, is_active=True).first()
         if svc is None:
@@ -213,14 +233,25 @@ def _plan_lines(data: CheckoutIn, branch, today, customer):
                                 ln=ln, disc=money(pkg.session_value * ln.qty), package=pkg))
             continue
         price = price_on(svc, branch.id, today)
-        if price is None:
+        if price is None and not (offline and ln.unit_price is not None):
             raise DomainError(code="service_has_no_price", details={"position": i, "service": svc.id})
+        price = _offline_price(offline, ln, price, i)
         planned.append(dict(kind="service", service=svc, name_ar=svc.name_ar, name_en=svc.name_en, price=price, ln=ln, disc=disc))
     for p in planned:
         p["gross"] = money(p["price"] * p["ln"].qty)
         if p["disc"] < 0 or p["disc"] > p["gross"]:
             raise DomainError(code="discount_invalid")
     return planned
+
+
+def _offline_price(offline, ln, server_price, position):
+    """Online: always the server's price. Offline: the customer paid the cached price — keep it, flag a difference."""
+    if offline is None or ln.unit_price is None:
+        return server_price
+    charged = money(ln.unit_price)
+    if server_price is None or money(server_price) != charged:
+        offline.flags.append(f"price_changed:{position}")
+    return charged
 
 
 def _apply_promotions(planned, data, customer, today):
@@ -252,7 +283,7 @@ def _apply_promotions(planned, data, customer, today):
     return coupon, coupon_disc, points, points_disc
 
 
-def checkout(data: CheckoutIn, *, user, membership) -> Invoice:
+def checkout(data: CheckoutIn, *, user, membership, offline: OfflineCtx | None = None) -> Invoice:
     from apps.inventory.services import stock
     from apps.loyalty.models import CustomerPackage
     from apps.loyalty.services import points as pts
@@ -260,7 +291,7 @@ def checkout(data: CheckoutIn, *, user, membership) -> Invoice:
     if not data.lines:
         raise DomainError(code="invoice_empty")
     branch = data.branch
-    today = business_date()
+    today = business_date(offline.at) if offline else business_date()
     customer = beneficiary = appointment = None
     if data.customer_id:
         customer = Customer.objects.filter(id=data.customer_id).first() or _raise("customer_unknown")
@@ -279,12 +310,14 @@ def checkout(data: CheckoutIn, *, user, membership) -> Invoice:
             customer = customer or appointment.customer
             beneficiary = beneficiary or appointment.beneficiary
 
-        planned = _plan_lines(data, branch, today, customer)
+        planned = _plan_lines(data, branch, today, customer, offline)
         # the cashier's own discount limit applies to manual discounts only (not coupons, points or packages)
         max_pct = max((p["disc"] * 100 / p["gross"] for p in planned if "package" not in p and p["gross"] > 0), default=ZERO)
         approved_by = None
         if max_pct > membership.discount_limit_percent:
-            if not membership.has_perm("pos.discount.override"):
+            if offline is not None and not membership.has_perm("pos.discount.override"):
+                offline.flags.append("discount_over_limit")
+            elif not membership.has_perm("pos.discount.override"):
                 raise DomainError(code="discount_over_limit", details={"limit": str(membership.discount_limit_percent)})
             approved_by = user
         coupon, coupon_disc, points, points_disc = _apply_promotions(planned, data, customer, today)
@@ -317,7 +350,9 @@ def checkout(data: CheckoutIn, *, user, membership) -> Invoice:
         seq = next_number(branch.tenant_id, f"invoice:{branch.legal_entity_id}:{today.year}")
         inv = Invoice.objects.create(
             legal_entity_id=branch.legal_entity_id, branch=branch, number=f"INV-{today.year}-{seq:06d}",
-            customer=customer, beneficiary=beneficiary, appointment=appointment, cash_session=open_session_for(branch.id),
+            customer=customer, beneficiary=beneficiary, appointment=appointment,
+            cash_session=session_at(branch.id, offline.at) if offline else open_session_for(branch.id),
+            offline_ref=offline.ref if offline else "", offline_at=offline.at if offline else None,
             subtotal=subtotal, discount_total=discount_total, total=total, is_credit=is_credit, business_date=today,
             issued_by=user, discount_approved_by=approved_by, coupon=coupon, points_redeemed=points, tip=tip,
             tip_staff_id=data.tip_staff_id if tip > 0 else None)
@@ -353,7 +388,7 @@ def checkout(data: CheckoutIn, *, user, membership) -> Invoice:
             Coupon.objects.filter(id=coupon.id).update(used_count=coupon.used_count + 1)
         if points:
             pts.record(customer, -points, "redeem", invoice=inv)
-        _take_payments(inv, data.payments, user, branch.id)
+        _take_payments(inv, data.payments, user, branch.id, offline)
         if not is_credit and customer is not None:
             pts.earn(customer, inv)
         if appointment is not None:

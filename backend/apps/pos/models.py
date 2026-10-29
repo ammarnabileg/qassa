@@ -56,6 +56,8 @@ class Invoice(TenantScopedModel):
     is_credit = models.BooleanField(default=False)  # issued with an unpaid balance (deferred payment)
     business_date = models.DateField(db_index=True)
     issued_at = models.DateTimeField(auto_now_add=True)
+    offline_ref = models.CharField(max_length=40, blank=True)        # OFF-<device>-<seq> printed while offline (D-013)
+    offline_at = models.DateTimeField(null=True, blank=True)         # when the sale really happened
     issued_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="+")
     discount_approved_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
     coupon = models.ForeignKey("loyalty.Coupon", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
@@ -166,3 +168,45 @@ class Payment(TenantScopedModel):
             models.CheckConstraint(condition=~Q(method="cash") | Q(cash_session__isnull=False), name="cash_needs_session"),
             models.CheckConstraint(condition=Q(method="cash") | ~Q(reference=""), name="noncash_needs_reference"),
         ]
+
+
+class PosDevice(TenantScopedModel):
+    """A browser registered for offline selling. The secret signs every offline receipt (HMAC-SHA256)."""
+    branch = models.ForeignKey("tenancy.Branch", on_delete=models.PROTECT, related_name="+")
+    name = models.CharField(max_length=60)
+    secret = models.CharField(max_length=64)
+    registered_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="+")
+    is_active = models.BooleanField(default=True)
+    last_sync_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta(TenantScopedModel.Meta):
+        constraints = [models.UniqueConstraint(fields=["tenant", "id"], name="uniq_posdevice_tenant_id")]
+
+
+class OfflineSale(TenantScopedModel):
+    """A receipt made without internet, kept exactly as received, and what became of it (D-013)."""
+    class Status(models.TextChoices):
+        SYNCED = "synced"        # posted, nothing to look at
+        REVIEW = "review"        # posted, but something differed (price, coupon, points…) — a manager must acknowledge
+        CONFLICT = "conflict"    # could not be posted (stock, closed period…) — fix and retry
+
+    device = models.ForeignKey(PosDevice, on_delete=models.PROTECT, related_name="sales")
+    uuid = models.UUIDField()
+    seq = models.PositiveIntegerField()
+    created_at_client = models.DateTimeField()
+    payload = models.JSONField()
+    signature = models.CharField(max_length=64)
+    status = models.CharField(max_length=8, choices=Status.choices)
+    flags = models.JSONField(default=list)
+    error = models.CharField(max_length=60, blank=True)
+    invoice = models.OneToOneField(Invoice, null=True, blank=True, on_delete=models.PROTECT, related_name="offline_sale")
+    cashier = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="+")
+    received_at = models.DateTimeField(auto_now_add=True)
+    reviewed_by = models.ForeignKey("identity.User", null=True, blank=True, on_delete=models.PROTECT, related_name="+")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta(TenantScopedModel.Meta):
+        constraints = [models.UniqueConstraint(fields=["tenant", "uuid"], name="uniq_offline_sale_uuid"),
+                       models.UniqueConstraint(fields=["device", "seq"], name="uniq_offline_sale_seq")]
+        ordering = ["device_id", "seq"]

@@ -37,8 +37,10 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
   try {
     res = await fetch('/api/v1' + path, { method, headers, credentials: 'include', body: opts.body ? JSON.stringify(opts.body) : undefined })
   } catch {
+    window.dispatchEvent(new CustomEvent('qassa:network', { detail: false }))   // the till switches to offline (D-013)
     throw new ApiError(0, 'network')
   }
+  window.dispatchEvent(new CustomEvent('qassa:network', { detail: ![502, 503, 504].includes(res.status) }))  // gateway errors = server unreachable
   if (res.status === 204) return undefined as T
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {

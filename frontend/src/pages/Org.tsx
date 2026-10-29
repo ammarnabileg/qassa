@@ -1,14 +1,29 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { api, type Branch, type LegalEntity } from '../api/client'
+import { api, getTenant, ApiError, type Branch, type LegalEntity } from '../api/client'
 import { useAuth } from '../auth'
 import { ErrorText } from '../components/ErrorText'
 import { useSave } from '../components/hooks'
 import { Dialog, Head, Icon, nameOf, useToast } from '../components/ui'
 
 export type OrgData = { legal_entities: LegalEntity[]; branches: Branch[] }
-export const useOrg = () => useQuery({ queryKey: ['org'], queryFn: () => api<OrgData>('/org') })
+/** Company and branches. The last copy is kept per company so the till still knows its branch offline (D-013). */
+export const useOrg = () => useQuery({
+  queryKey: ['org', getTenant()],
+  queryFn: async () => {
+    const key = `qassa.org.${getTenant()}`
+    try {
+      const d = await api<OrgData>('/org')
+      try { localStorage.setItem(key, JSON.stringify(d)) } catch { /* storage unavailable */ }
+      return d
+    } catch (e) {
+      const cached = e instanceof ApiError && e.status === 0 ? localStorage.getItem(key) : null
+      if (cached) return JSON.parse(cached) as OrgData
+      throw e
+    }
+  },
+})
 
 type Form = { id?: number; legal_entity: number; name_ar: string; name_en: string; code: string; business_type: Branch['business_type']; address: string; phone: string; latitude: string; longitude: string; opens_at: string; closes_at: string; online_booking: boolean; is_active: boolean }
 

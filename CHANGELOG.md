@@ -4,6 +4,12 @@ Release versions follow `MAJOR.MINOR.PATCH` and are tagged `vX.Y.Z` on `main`.
 Builds between releases are **debug** builds: `X.(Y+1).0-dev.N+sha` (see `scripts/version.py`).
 
 ## [Unreleased]
+### Added — Offline till (D-013)
+- The till keeps selling when the internet drops: catalogue snapshot in the browser, the app shell opens offline, every receipt numbered per device and HMAC-signed.
+- Automatic sync when the connection returns: posted once, at the real sale time and drawer; promotions no longer valid are kept as reviewed discounts; conflicts can be retried; missing receipt numbers are reported.
+- Offline receipts page for managers (review, retry, devices, missing numbers).
+### Fixed
+- The till header date used the device's time zone instead of Kuwait's.
 ### Added — Platform console and public site (D-010)
 - Platform home with real figures (active/trial/past-due salons, MRR, invoiced per month, plan mix, renewals, open tickets).
 - Monthly subscription invoices issued nightly (one per period), manual payment with reference, void with reason; overdue → past_due (never auto-suspended).

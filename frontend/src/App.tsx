@@ -10,6 +10,10 @@ import Cash from './pages/Cash'
 import Customers from './pages/Customers'
 import Invoices from './pages/Invoices'
 import POS from './pages/POS'
+import OfflinePOS from './pages/OfflinePOS'
+import OfflineReceipts from './pages/OfflineReceipts'
+import { OfflineProvider, useOffline } from './offline/OfflineProvider'
+import { OfflineBanner } from './offline/OfflineSetup'
 import JournalEntry from './pages/JournalEntry'
 import Login from './pages/Login'
 import Org from './pages/Org'
@@ -69,10 +73,17 @@ function Shell({ biz, plat, title, sub, groups, children }: {
         <div className="topbar"><Logo biz={biz} title={title} sub={sub} />
           <button className="btn sm" onClick={() => setOpen(!open)} aria-label={t('common.menu')}><Icon name="menu" /></button></div>
         {membership?.support && <SupportBanner />}
+        {membership && !membership.support && <OfflineBanner />}
         <main>{children}</main>
       </div>
     </div>
   )
+}
+
+/** The till switches to offline selling by itself when the connection drops (D-013). */
+function TillRoute() {
+  const { online } = useOffline()
+  return online ? <POS /> : <OfflinePOS />
 }
 
 function SupportBanner() {
@@ -150,6 +161,7 @@ export default function App() {
       { path: '/pos', label: t('nav.pos'), icon: 'cart', show: can('pos.sell') },
       { path: '/bookings', label: t('nav.bookings'), icon: 'calendar', show: can('booking.view') },
       { path: '/invoices', label: t('nav.invoices'), icon: 'receipt', show: can('pos.invoices.view') },
+      { path: '/offline-receipts', label: t('nav.offline'), icon: 'refresh', show: can('pos.invoices.view') },
       { path: '/cash', label: t('nav.cash'), icon: 'wallet', show: can('cash.session.open') },
       { path: '/inventory', label: t('nav.inventory'), icon: 'box', show: can('inventory.view') },
     ]],
@@ -180,10 +192,11 @@ export default function App() {
   ]
   const home = can('pos.sell') ? '/pos' : can('booking.view') ? '/bookings' : '/org'
   return (
-    <BranchProvider>
+    <BranchProvider><OfflineProvider>
     <Shell biz={membership.tenant_business_type} title={membership.tenant_name} sub={t(`biz.${membership.tenant_business_type}`)} groups={groups}>
       <Routes>
-        <Route path="/pos" element={<POS />} />
+        <Route path="/pos" element={<TillRoute />} />
+        <Route path="/offline-receipts" element={<OfflineReceipts />} />
         <Route path="/bookings" element={<Bookings />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/cash" element={<Cash />} />
@@ -209,6 +222,6 @@ export default function App() {
         <Route path="*" element={<Navigate to={home} replace />} />
       </Routes>
     </Shell>
-    </BranchProvider>
+    </OfflineProvider></BranchProvider>
   )
 }

@@ -8,6 +8,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
 from apps.core.dates import business_date
+from apps.core.errors import DomainError
 from apps.core.services.infra import idempotent
 from apps.pos.models import CashSession, Invoice
 from apps.pos.services import sales
@@ -167,7 +168,7 @@ class InvoiceOut(serializers.ModelSerializer):
         model = Invoice
         fields = ["id", "number", "branch", "customer", "customer_name", "customer_phone", "beneficiary", "beneficiary_name",
                   "appointment", "subtotal", "discount_total", "total", "tip", "points_redeemed", "is_credit", "business_date", "issued_at",
-                  "issued_by_name", "lines", "payments", "credit_notes", "state"]
+                  "issued_by_name", "lines", "payments", "credit_notes", "state", "offline_ref", "offline_at"]
 
     def get_customer_name(self, obj) -> str:
         return obj.customer.full_name if obj.customer_id else ""
@@ -303,3 +304,115 @@ class InvoiceCreditNotesView(TenantAPIView):
         sales.credit_note(inv, lines=[(x["invoice_line_id"], x["amount"], x["restock_qty"]) for x in v["lines"]], reason=v["reason"],
                           refund=refund, user=request.user)
         return Response(InvoiceOut(_invoices().get(id=pk)).data, status=status.HTTP_201_CREATED)
+
+
+# ---------- offline selling (D-013) ----------
+class DeviceIn(serializers.Serializer):
+    branch_id = serializers.IntegerField()
+    name = serializers.CharField(max_length=60)
+
+
+class DevicesView(TenantAPIView):
+    """Register this browser for offline selling. The secret is returned once and kept only in that browser."""
+    required_permissions = {"GET": "pos.invoices.view", "POST": "pos.sell"}
+
+    @extend_schema(responses=dict)
+    def get(self, request):
+        from apps.pos.models import OfflineSale, PosDevice
+        from apps.pos.services import offline
+        out = []
+        for d in PosDevice.objects.select_related("branch").order_by("-id"):
+            allowed = request.membership.branch_ids()
+            if allowed is not None and d.branch_id not in allowed:
+                continue
+            out.append({"id": d.id, "name": d.name, "branch_id": d.branch_id, "is_active": d.is_active, "last_sync_at": d.last_sync_at,
+                        "received": OfflineSale.objects.filter(device=d).count(), "missing_seq": offline.gaps(d)})
+        return Response(out)
+
+    @extend_schema(request=DeviceIn, responses={201: dict})
+    def post(self, request):
+        from apps.pos.services import offline
+        s = DeviceIn(data=request.data)
+        s.is_valid(raise_exception=True)
+        d = offline.register_device(branch=branch_for(request, s.validated_data["branch_id"]), name=s.validated_data["name"], user=request.user)
+        return Response({"id": d.id, "secret": d.secret, "branch_id": d.branch_id, "name": d.name}, status=status.HTTP_201_CREATED)
+
+
+class OfflineBundleView(TenantAPIView):
+    required_permissions = {"GET": "pos.sell"}
+
+    @extend_schema(parameters=[OpenApiParameter("branch_id", int, required=True)], responses=dict)
+    def get(self, request):
+        from apps.pos.services import offline
+        return Response(offline.bundle(branch_for(request, request.query_params.get("branch_id")), request.membership))
+
+
+class SyncIn(serializers.Serializer):
+    device_id = serializers.IntegerField()
+    sales = serializers.ListField(child=serializers.DictField(), max_length=200)
+
+
+def _sale_out(x):
+    return {"id": x.id, "uuid": str(x.uuid), "seq": x.seq, "ref": f"OFF-{x.device_id}-{x.seq}", "status": x.status, "flags": x.flags,
+            "error": x.error, "invoice_id": x.invoice_id, "invoice_number": x.invoice.number if x.invoice_id else None,
+            "created_at": x.created_at_client, "total": x.payload.get("total"), "device": x.device.name}
+
+
+class OfflineSyncView(TenantAPIView):
+    """Receive offline receipts in order. Each one is answered separately; resending is safe."""
+    required_permissions = {"POST": "pos.sell"}
+
+    @extend_schema(request=SyncIn, responses=dict)
+    def post(self, request):
+        from django.utils import timezone
+
+        from apps.pos.models import PosDevice
+        from apps.pos.services import offline
+        s = SyncIn(data=request.data)
+        s.is_valid(raise_exception=True)
+        device = get_object_or_404(PosDevice.objects.select_related("branch").filter(is_active=True), pk=s.validated_data["device_id"])
+        branch_for(request, device.branch_id)
+        results = []
+        for item in sorted(s.validated_data["sales"], key=lambda i: int(i.get("payload", {}).get("seq", 0))):
+            try:
+                sale = offline.receive(device, item, user=request.user, membership=request.membership)
+                results.append(_sale_out(sale))
+            except DomainError as e:
+                results.append({"uuid": str(item.get("payload", {}).get("uuid")), "rejected": e.code})
+            except (KeyError, ValueError, TypeError):
+                results.append({"uuid": str(item.get("payload", {}).get("uuid")), "rejected": "offline_payload_invalid"})
+        PosDevice.objects.filter(id=device.id).update(last_sync_at=timezone.now())
+        return Response({"results": results})
+
+
+class OfflineSalesView(TenantAPIView):
+    required_permissions = {"GET": "pos.invoices.view"}
+
+    @extend_schema(parameters=[OpenApiParameter("status", str)], responses=dict)
+    def get(self, request):
+        from apps.pos.models import OfflineSale
+        qs = OfflineSale.objects.select_related("device", "invoice").order_by("-id")
+        if request.query_params.get("status"):
+            qs = qs.filter(status=request.query_params["status"])
+        allowed = request.membership.branch_ids()
+        if allowed is not None:
+            qs = qs.filter(device__branch_id__in=allowed)
+        return Response([_sale_out(x) for x in qs[:300]])
+
+
+class OfflineSaleActionView(TenantAPIView):
+    required_permissions = {"POST": "pos.discount.override"}
+
+    @extend_schema(request=None, responses=dict)
+    def post(self, request, pk, action):
+        from apps.pos.models import OfflineSale
+        from apps.pos.services import offline
+        sale = get_object_or_404(OfflineSale.objects.select_related("device__branch"), pk=pk)
+        branch_for(request, sale.device.branch_id)
+        if action == "retry":
+            sale = offline.retry(sale, user=request.user, membership=request.membership)
+        elif action == "acknowledge":
+            sale = offline.acknowledge(sale, user=request.user)
+        else:
+            raise DomainError(code="bad_action")
+        return Response(_sale_out(OfflineSale.objects.select_related("device", "invoice").get(id=sale.id)))

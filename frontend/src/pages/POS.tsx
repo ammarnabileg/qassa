@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api, type Appointment, type CashSession, type Category, type Customer, type Invoice, type PackagePlan, type Product, type Quote, type Wallet } from '../api/client'
 import { useAuth } from '../auth'
+import { OfflineSetup } from '../offline/OfflineSetup'
 import { useBranch } from '../branch'
 import { ErrorText } from '../components/ErrorText'
 import { useSave } from '../components/hooks'
@@ -133,10 +134,11 @@ export default function POS() {
   const pkgFor = (serviceId: number) => (wallet.data?.packages ?? []).filter((p) => p.service_id === serviceId && p.sessions_left > 0)
   return (
     <>
-      <Head title={t('nav.pos')} sub={`${nameOf(branch, lang)} · ${new Date().toLocaleDateString(lang === 'ar' ? 'ar-KW' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}`}>
+      <Head title={t('nav.pos')} sub={`${nameOf(branch, lang)} · ${new Date().toLocaleDateString(lang === 'ar' ? 'ar-KW' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kuwait' })}`}>
         <input className="input" placeholder={t('pos.search')} style={{ width: 240 }} value={q} onChange={(e) => setQ(e.target.value)} />
       </Head>
       {can('cash.session.open') && session.data === null && <div className="notice"><Icon name="alert" />{t('pos.noDrawer')} <Link to="/cash" style={{ color: 'inherit', fontWeight: 700 }}>{t('pos.openDrawer')}</Link></div>}
+      <OfflineSetup />
       <div className="pos">
         <div>
           <div className="tabs">

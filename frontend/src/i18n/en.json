@@ -89,7 +89,8 @@
     "expenses": "Expenses",
     "assets": "Fixed assets",
     "settlements": "KNET & gateway settlements",
-    "periods": "Periods & closing"
+    "periods": "Periods & closing",
+    "offline": "Offline receipts"
   },
   "org": {
     "entities": "Legal entities",
@@ -293,7 +294,15 @@
     "settlement_duplicate": "A settlement with this reference already exists",
     "settlement_exceeds_clearing": "The settlement exceeds what is awaiting settlement",
     "settlement_values_invalid": "Invalid settlement (fees must be below gross)",
-    "year_already_closed": "This year is already closed"
+    "year_already_closed": "This year is already closed",
+    "offline_not_conflict": "This receipt is not blocked",
+    "offline_not_review": "This receipt does not need review",
+    "offline_seq_reused": "This receipt number was already used on this device",
+    "offline_signature_invalid": "Invalid receipt signature — altered or not from this device",
+    "offline_time_invalid": "Receipt time is not plausible (future or older than 7 days)",
+    "offline_total_invalid": "The receipt total does not match the server's calculation",
+    "offline_payload_invalid": "Receipt data is incomplete",
+    "tendered_short": "Amount tendered is below the total"
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -1128,5 +1137,51 @@
     "reopenHelp": "Reopening a closed period needs a reason, which is audited.",
     "closeYearQ": "Close fiscal year {{n}}?",
     "closeYearHelp": "A closing entry on the last day moves revenue and expense balances to retained earnings. The last month must be open; it cannot run twice. Do it after the accountant's review."
+  },
+  "off": {
+    "notReady": "No internet, and offline selling is not enabled on this device. Enable it from the till once you are online.",
+    "mode": "Offline",
+    "banner": "Offline — selling from this device's saved copy (updated {{age}} ago). {{n}} receipts waiting to be sent.",
+    "minutes": "{{n}} min",
+    "hours": "{{n}} h",
+    "asOfSnapshot": "as of last update",
+    "noNewCustomers": "New customers are added once online — pick an existing one or sell without a customer",
+    "sell": "Save & print receipt",
+    "noCredit": "Credit sales and transfers need the internet.",
+    "provisional": "Provisional receipt — the official invoice number is issued once online",
+    "next": "Next sale",
+    "saveFailed": "Could not save on this device — do not take the payment",
+    "enableHelp": "Enable offline selling on this device: if the internet drops the till keeps working; each receipt is saved signed and sent once online.",
+    "enable": "Enable",
+    "otherBranch": "This device is enabled for another branch — offline selling works there only",
+    "ready": "Ready to sell offline",
+    "noInternet": "No internet — the till keeps working. {{n}} receipts waiting.",
+    "sending": "Back online — sending {{n}} receipts",
+    "sendNow": "Send now",
+    "syncedWithIssues": "Receipts sent: {{r}} need review, {{c}} not posted",
+    "review": "Review",
+    "pageSub": "Receipts made offline: what needs review, what could not be posted, and missing receipts",
+    "missing": "Missing receipts from “{{device}}”: {{list}} — never arrived (deleted from the browser or device changed). Check the drawer.",
+    "thisDevice": "Waiting on this device",
+    "devices": "Enabled devices",
+    "st": {
+      "review": "Needs review",
+      "conflict": "Not posted",
+      "synced": "OK",
+      "all": "All"
+    },
+    "ref": "Receipt",
+    "device": "Device",
+    "what": "What happened",
+    "ack": "Reviewed",
+    "retry": "Retry",
+    "stillConflict": "Still not posted — fix the cause first",
+    "flag": {
+      "price_changed": "Price changed — kept at what the customer paid",
+      "promotion_not_honoured": "Promotion no longer valid ({{v}}) — kept as a manual discount",
+      "discount_over_limit": "Manual discount above the cashier's limit",
+      "drawer_closed_before_sync": "The drawer closed before this receipt arrived — it may explain a drawer difference"
+    },
+    "howItWorks": "How it works: each offline receipt gets the device's next number and a signature, and stays in the browser until the server has it. If a coupon, points or a package session were used meanwhile on another device, the receipt is posted at the amount paid and comes here for review."
   }
 }
