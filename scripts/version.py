@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Single source of version truth.
 
-  release build : the exact VERSION (e.g. 0.1.0) — only on a commit tagged v<VERSION>
+  release build : X.Y.Z on a commit tagged vX.Y.Z (VERSION holds the last release)
   debug build   : next minor + -dev.<commits since last release tag>+<short sha> (e.g. 0.2.0-dev.3+abc1234)
 
 Usage: version.py            → prints the version for the current checkout
        version.py --channel  → prints "release" or "debug"
 """
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -24,8 +25,10 @@ def git(*args):
 
 def compute():
     base = (ROOT / "VERSION").read_text().strip()
-    if git("tag", "--points-at", "HEAD", "--list", f"v{base}"):
-        return base, "release"
+    # a commit tagged vX.Y.Z is that release, even if VERSION was bumped in a later commit
+    for tag in git("tag", "--points-at", "HEAD", "--list", "v*").split():
+        if re.fullmatch(r"v\d+\.\d+\.\d+", tag):
+            return tag[1:], "release"
     major, minor, _ = (int(x) for x in base.split("."))
     sha = git("rev-parse", "--short", "HEAD") or os.environ.get("SOURCE_COMMIT", "")[:7] or "nogit"
     last_tag = git("describe", "--tags", "--abbrev=0", "--match", "v*")
