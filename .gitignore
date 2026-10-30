@@ -10,3 +10,4 @@ frontend/dist/
 .env.*
 !.env.example
 dump.rdb
+deploy/pwa/.last_build_id
