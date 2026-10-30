@@ -17,7 +17,7 @@ type Sales = {
   methods: { method: string; total: string }[]; hours: { hour: number; invoices: number }[]
   profit?: { sales: string; cogs: string; commissions: string; expenses: string; net: string }
 }
-type BranchRow = { branch_id: number; name_ar: string; name_en: string; today: string; invoices_today: number; waiting: number; in_service: number; month: string; drawer_open: boolean }
+type BranchRow = { branch_id: number; name_ar: string; name_en: string; address: string; today: string; invoices_today: number; invoices_month: number; waiting: number; in_service: number; month: string; drawer_open: boolean }
 type Range = 'today' | 'week' | 'month'
 
 const kwToday = () => new Date(Date.now() - 4 * 3600e3).toLocaleDateString('en-CA', { timeZone: 'Asia/Kuwait' })   // business day starts 04:00
@@ -114,6 +114,15 @@ export function Home() {
   const nav = useNavigate()
   const today = kwToday()
   const sales = useSales('today', branch?.id)
+  const yday = new Date(new Date(today + 'T12:00:00Z').getTime() - 864e5).toISOString().slice(0, 10)
+  const prev = useQuery({ enabled: !!branch, queryKey: ['rep', 'yday', branch?.id, yday],
+    queryFn: () => api<Sales>(`/reports/sales?from=${yday}&to=${yday}&branch_id=${branch!.id}`) })
+  const vs = (() => {
+    const a = Number(sales.data?.stats.sales ?? 0), b = Number(prev.data?.stats.sales ?? 0)
+    if (!prev.data || b === 0) return undefined
+    const pct = Math.round(((a - b) / b) * 100)
+    return <span style={{ color: pct >= 0 ? 'var(--brand-700)' : 'var(--danger, #c0392b)' }}>{t('home.vsYesterday', { n: `${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%` })}</span>
+  })()
   const appts = useQuery({ enabled: !!branch && can('booking.view'), queryKey: ['appointments', branch?.id, today], refetchInterval: 30000,
     queryFn: () => api<Appointment[]>(`/booking/appointments?branch_id=${branch!.id}&date=${today}`) })
   const invs = useQuery({ enabled: !!branch && can('pos.invoices.view'), queryKey: ['invoices', branch?.id, today],
@@ -130,10 +139,10 @@ export function Home() {
         {can('pos.sell') && <button className="btn brand" onClick={() => nav('/pos')}><Icon name="cart" />{t('home.sale')}</button>}
       </Head>
       {sales.data && <div className="grid stats">
-        <Stat label={t('home.salesToday')} value={formatKWD(sales.data.stats.sales, lang)} />
-        <Stat label={t('rep.invoices')} value={<bdi>{sales.data.stats.invoices}</bdi>} />
-        <Stat label={t('home.waiting')} value={<bdi>{queue.filter((a) => a.status !== 'in_service').length}</bdi>} />
-        <Stat label={t('home.onChair')} value={<bdi>{queue.filter((a) => a.status === 'in_service').length}</bdi>} />
+        <Stat label={t('home.salesToday')} value={formatKWD(sales.data.stats.sales, lang)} sub={vs} />
+        <Stat label={t('home.paidToday')} value={<bdi>{sales.data.stats.invoices}</bdi>} sub={t('home.customersN', { n: sales.data.stats.customers })} />
+        <Stat label={t('home.waiting')} value={<bdi>{queue.filter((a) => a.status !== 'in_service').length}</bdi>} sub={t('home.onChairN', { n: queue.filter((a) => a.status === 'in_service').length })} />
+        <Stat label={t('home.avgInvoice')} value={formatKWD(sales.data.stats.average, lang)} />
       </div>}
       <div className="grid g2" style={{ marginTop: 14 }}>
         <div className="card"><div className="row sb" style={{ marginBottom: 6 }}><h2>{t('home.queue')}</h2><button className="btn sm ghost" onClick={() => nav('/bookings')}>{t('home.allBookings')}</button></div>
@@ -155,31 +164,38 @@ export function Home() {
 export function CompanyHome() {
   const { t, i18n } = useTranslation()
   const lang = i18n.language as 'ar' | 'en'
-  const { membership } = useAuth()
-  const { setBranchId } = useBranch()
+  const { me, can } = useAuth()
+  const { setBranchId, setCompany } = useBranch()
   const nav = useNavigate()
   const rows = useQuery({ queryKey: ['rep-branches'], refetchInterval: 60000, queryFn: () => api<BranchRow[]>('/reports/branches') })
   const month = useSales('month')
   const data = rows.data ?? []
   const sum = (k: 'today' | 'month') => data.reduce((a, r) => a + Number(r[k]), 0).toFixed(3)
+  const top = [...data].sort((x, y) => Number(y.month) - Number(x.month))[0]
+  const hour = Number(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', timeZone: 'Asia/Kuwait' }))
+  const enter = (id: number) => { setBranchId(id); setCompany(false); nav('/home') }
   return (
     <>
-      <Head title={membership?.tenant_name ?? ''} sub={t('home.companySub')}>
-        <button className="btn" onClick={() => nav('/reports')}><Icon name="chart" />{t('nav.reports')}</button>
+      <Head title={t(hour < 12 ? 'home.morning' : 'home.evening', { name: (me?.full_name || '').split(' ')[0] })} sub={t('home.companySub')}>
+        {can('org.manage') && <button className="btn" onClick={() => nav('/whatsapp')}><Icon name="whatsapp" />{t('home.waReport')}</button>}
+        <button className="btn" onClick={() => nav('/reports')}><Icon name="chart" />{t('nav.branchReports')}</button>
+        <button className="btn primary" onClick={() => nav('/org')}><Icon name="store" />{t('home.manageBranches')}</button>
       </Head>
       <ErrorText error={rows.error} />
       <div className="grid stats">
-        <Stat label={t('home.salesToday')} value={formatKWD(sum('today'), lang)} />
-        <Stat label={t('home.salesMonth')} value={formatKWD(sum('month'), lang)} />
-        <Stat label={t('home.waiting')} value={<bdi>{data.reduce((a, r) => a + r.waiting, 0)}</bdi>} />
-        <Stat label={t('home.openDrawers')} value={<bdi>{data.filter((r) => r.drawer_open).length} / {data.length}</bdi>} />
+        <Stat label={t('home.salesTodayAll')} value={formatKWD(sum('today'), lang)} sub={t('home.invoicesN', { n: data.reduce((a, r) => a + r.invoices_today, 0) })} />
+        <Stat label={t('home.salesMonth')} value={formatKWD(sum('month'), lang)} sub={t('home.invoicesN', { n: data.reduce((a, r) => a + r.invoices_month, 0) })} />
+        {month.data?.profit ? <Stat label={t('home.netMonth')} value={formatKWD(month.data.profit.net, lang)} sub={t('home.afterCosts')} />
+          : <Stat label={t('home.waiting')} value={<bdi>{data.reduce((a, r) => a + r.waiting, 0)}</bdi>} />}
+        <Stat label={t('home.topBranch')} value={top ? nameOf(top, lang) : '—'} sub={top ? formatKWD(top.month, lang) : undefined} />
       </div>
       <h2 style={{ margin: '18px 0 10px' }}>{t('home.branchesToday')}</h2>
-      <div className="tw"><table><thead><tr><th>{t('acc.branch')}</th><th className="n">{t('rep.today')}</th><th className="n">{t('rep.invoices')}</th><th className="n">{t('home.waiting')}</th><th className="n">{t('rep.month')}</th><th>{t('nav.cash')}</th><th /></tr></thead>
-        <tbody>{data.map((r) => <tr key={r.branch_id}><td><b>{nameOf(r, lang)}</b></td><td className="n money">{formatKWD(r.today, lang)}</td><td className="n"><bdi>{r.invoices_today}</bdi></td>
-          <td className="n"><bdi>{r.waiting}</bdi>{r.in_service > 0 && <span className="cap muted"> + {r.in_service}</span>}</td><td className="n money">{formatKWD(r.month, lang)}</td>
+      <div className="tw"><table><thead><tr><th>{t('acc.branch')}</th><th className="n">{t('rep.today')}</th><th className="n">{t('rep.invoices')}</th><th className="n">{t('home.waiting')}</th><th className="n">{t('rep.month')}</th><th>{t('nav.cash')}</th><th></th></tr></thead>
+        <tbody>{data.map((r) => <tr key={r.branch_id}><td><b>{t('nav.branchSub', { name: nameOf(r, lang) })}</b>{r.address && <div className="cap muted">{r.address}</div>}</td>
+          <td className="n money"><b>{formatKWD(r.today, lang)}</b></td><td className="n"><bdi>{r.invoices_today}</bdi></td>
+          <td className="n">{r.waiting > 0 ? <span className="pill warn"><bdi>{r.waiting}</bdi></span> : '—'}{r.in_service > 0 && <span className="cap muted"> + {r.in_service}</span>}</td><td className="n money">{formatKWD(r.month, lang)}</td>
           <td>{r.drawer_open ? <span className="pill good">{t('home.drawerOpen')}</span> : <span className="pill mute">{t('home.drawerClosed')}</span>}</td>
-          <td><button className="btn sm ghost" onClick={() => { setBranchId(r.branch_id); nav('/home') }}>{t('home.open')}</button></td></tr>)}</tbody></table></div>
+          <td><button className="btn sm" onClick={() => enter(r.branch_id)}>{t('home.enterBranch')}</button></td></tr>)}</tbody></table></div>
       <div className="grid g2" style={{ marginTop: 14 }}>
         <div className="card"><h2 style={{ marginBottom: 12 }}>{t('home.monthByBranch')}</h2><Bars rows={data.map((r) => [nameOf(r, lang), Number(r.month), r.month])} fmt={(v) => formatKWD(v, lang)} /></div>
         <div className="card"><h2 style={{ marginBottom: 12 }}>{t('home.bestStaff')}</h2>{month.data && <Bars rows={month.data.staff.slice(0, 6).map((x) => [lang === 'en' && x.name_en ? x.name_en : x.name_ar, Number(x.total), x.total])} fmt={(v) => formatKWD(v, lang)} />}</div>

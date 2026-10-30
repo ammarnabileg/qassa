@@ -11,13 +11,13 @@ import { formatKWD } from '../money'
 type Tab = 'packages' | 'coupons' | 'points'
 const today = () => new Date().toISOString().slice(0, 10)
 
-export default function Marketing() {
+export default function Marketing({ initial = 'packages' }: { initial?: Tab }) {
   const { t, i18n } = useTranslation()
   const lang = i18n.language as 'ar' | 'en'
   const { can } = useAuth()
   const toast = useToast()
   const manage = can('marketing.manage')
-  const [tab, setTab] = useState<Tab>('packages')
+  const [tab, setTab] = useState<Tab>(initial)
   const services = useQuery({ queryKey: ['services'], queryFn: () => api<Service[]>('/catalog/services') })
   const plans = useQuery({ queryKey: ['plans'], queryFn: () => api<PackagePlan[]>('/loyalty/plans') })
   const coupons = useQuery({ queryKey: ['coupons'], queryFn: () => api<Coupon[]>('/loyalty/coupons') })

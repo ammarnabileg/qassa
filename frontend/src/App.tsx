@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './auth'
 import { BranchProvider, useBranch } from './branch'
@@ -50,6 +50,8 @@ function Shell({ biz, plat, title, sub, groups, children }: {
   const loc = useLocation()
   const [open, setOpen] = useState(false)
   useBizTheme(biz)
+  const { company, branch, setCompany } = useBranch()
+  const ownerInBranch = !!membership?.all_branches && !membership.support && !company && !!branch
   const role = membership ? (i18n.language === 'en' ? membership.role_name.en : membership.role_name.ar) : t('platform.staff')
   return (
     <div className="app">
@@ -74,6 +76,8 @@ function Shell({ biz, plat, title, sub, groups, children }: {
       <div>
         <div className="topbar"><Logo biz={biz} title={title} sub={sub} />
           <button className="btn sm" onClick={() => setOpen(!open)} aria-label={t('common.menu')}><Icon name="menu" /></button></div>
+        {ownerInBranch && <div className="imp" style={{ background: 'var(--brand-900)' }}><span><Icon name="store" /> <Trans i18nKey="nav.ownerIn" values={{ name: bName(branch!, i18n.language) }} components={{ b: <b /> }} /></span>
+          <button className="btn sm" onClick={() => { setCompany(true); nav('/company') }}>{t('nav.backCompany')}</button></div>}
         {membership?.support && <SupportBanner />}
         {membership && !membership.support && <OfflineBanner />}
         <main>{children}</main>
@@ -101,13 +105,23 @@ function SupportBanner() {
     <button className="btn sm" onClick={end}>{t('pc.endSupport')}</button></div>
 }
 
+const bName = (b: { name_ar: string; name_en?: string }, lang: string) => (lang === 'en' && b.name_en ? b.name_en : b.name_ar)
+
+/** Reference: "🏢 كل الفروع" switches an all-branches member to the company view; picking a branch enters it. */
 function BranchSelect() {
   const { t, i18n } = useTranslation()
-  const { branch, branches, setBranchId } = useBranch()
-  if (branches.length < 2) return null
-  return <select className="input" style={{ margin: '0 4px 6px', width: 'auto' }} aria-label={t('nav.branch')} value={branch?.id ?? ''}
-    onChange={(e) => setBranchId(Number(e.target.value))}>
-    {branches.map((b) => <option key={b.id} value={b.id}>{t('nav.branchOf', { name: i18n.language === 'en' && b.name_en ? b.name_en : b.name_ar })}</option>)}
+  const { membership } = useAuth()
+  const { branch, branches, setBranchId, company, setCompany } = useBranch()
+  const nav = useNavigate()
+  const canCo = !!membership?.all_branches
+  if (branches.length < 2 && !canCo) return null
+  return <select className="input" style={{ margin: '0 4px 6px', width: 'auto' }} aria-label={t('nav.branch')} value={company ? 'all' : branch?.id ?? ''}
+    onChange={(e) => {
+      if (e.target.value === 'all') { setCompany(true); nav('/company'); return }
+      setBranchId(Number(e.target.value)); if (company) { setCompany(false); nav('/home') }
+    }}>
+    {canCo && <option value="all">{t('nav.allBranches')}</option>}
+    {branches.map((b) => <option key={b.id} value={b.id}>{t('nav.branchOf', { name: bName(b, i18n.language) })}</option>)}
   </select>
 }
 
@@ -160,48 +174,83 @@ export default function App() {
   }
 
   if (!membership) return <TenantPicker />
-  const groups: [string, NavItem[]][] = [
-    [t('nav.operations'), [
-      { path: '/company', label: t('nav.company'), icon: 'grid', show: !!membership.all_branches && can('pos.invoices.view') },
-      { path: '/home', label: t('nav.home'), icon: 'home', show: true },
-      { path: '/pos', label: t('nav.pos'), icon: 'cart', show: can('pos.sell') },
-      { path: '/bookings', label: t('nav.bookings'), icon: 'calendar', show: can('booking.view') },
-      { path: '/invoices', label: t('nav.invoices'), icon: 'receipt', show: can('pos.invoices.view') },
-      { path: '/offline-receipts', label: t('nav.offline'), icon: 'refresh', show: can('pos.invoices.view') },
-      { path: '/reports', label: t('nav.reports'), icon: 'chart', show: can('pos.invoices.view') },
-      { path: '/cash', label: t('nav.cash'), icon: 'wallet', show: can('cash.session.open') },
-      { path: '/inventory', label: t('nav.inventory'), icon: 'box', show: can('inventory.view') },
+  return <BranchProvider canCompany={!!membership.all_branches && can('pos.invoices.view')}><OfflineProvider><TenantApp /></OfflineProvider></BranchProvider>
+}
+
+function TenantApp() {
+  const { t, i18n } = useTranslation()
+  const { membership: m, can } = useAuth()
+  const membership = m!
+  const { company, branch } = useBranch()
+  const canCo = !!membership.all_branches && can('pos.invoices.view')
+  const acc = (all: boolean): NavItem[] => [
+    { path: '/accounting/statements', label: t('nav.statements'), icon: 'chart', show: can('accounting.view') && all },
+    { path: '/accounting/expenses', label: t('nav.expenses'), icon: 'wallet', show: can('accounting.view') },
+    { path: '/accounting/assets', label: t('nav.assets'), icon: 'box', show: can('accounting.view') },
+    { path: '/accounting/settlements', label: t('nav.settlements'), icon: 'bank', show: can('accounting.view') },
+    { path: '/accounting/journal', label: t('nav.journal'), icon: 'book', show: can('accounting.journal.post') },
+    { path: '/accounting/trial-balance', label: t('nav.trialBalance'), icon: 'chart', show: can('accounting.view') },
+    { path: '/accounting/periods', label: t('nav.periods'), icon: 'calendar', show: can('accounting.view') },
+    { path: '/accounting/xbrl', label: t('nav.xbrl'), icon: 'file', show: can('accounting.view') && all },
+  ]
+  const system: NavItem[] = [
+    { path: '/settings', label: t('nav.settingsSub'), icon: 'settings', show: can('org.manage') || can('data.export') },
+    { path: '/subscription', label: t('nav.subscription'), icon: 'award', show: can('org.manage') },
+    { path: '/whatsapp', label: t('nav.whatsapp'), icon: 'whatsapp', show: can('org.manage') },
+    { path: '/support', label: t('nav.support'), icon: 'support', show: can('org.manage') && !membership.support },
+  ]
+  // Same menus as the reference (js/core/auth-nav.js CPAGES / PAGES), plus the accounting screens it doesn't have.
+  const groups: [string, NavItem[]][] = company ? [
+    [t('nav.g.company'), [
+      { path: '/company', label: t('nav.overview'), icon: 'chart', show: true },
+      { path: '/org', label: t('nav.branchesNav'), icon: 'store', show: true },
+      { path: '/reports', label: t('nav.branchReports'), icon: 'trend', show: true },
     ]],
-    [t('nav.setup'), [
-      { path: '/org', label: t('nav.org'), icon: 'store', show: true },
-      { path: '/services', label: t('nav.services'), icon: 'tag', show: can('catalog.view') },
-      { path: '/staff', label: t('nav.staff'), icon: 'users', show: can('staff.view') },
-      { path: '/customers', label: t('nav.customers'), icon: 'user', show: can('customers.view') },
-      { path: '/marketing', label: t('nav.marketing'), icon: 'sparkle', show: can('catalog.view') },
+    [t('nav.g.central'), [
+      { path: '/services', label: t('nav.services'), icon: 'sparkle', show: can('catalog.view') },
+      { path: '/marketing', label: t('nav.offers'), icon: 'tag', show: can('catalog.view') },
+      { path: '/loyalty', label: t('nav.loyalty'), icon: 'award', show: can('catalog.view') },
+      { path: '/customers', label: t('nav.customers'), icon: 'users', show: can('customers.view') },
+      { path: '/staff', label: t('nav.staff'), icon: 'user', show: can('staff.view') },
       { path: '/commissions', label: t('nav.commissions'), icon: 'percent', show: can('commission.view.all') },
       { path: '/users', label: t('nav.users'), icon: 'user-plus', show: can('org.manage') },
     ]],
-    [t('nav.accounting'), [
-      { path: '/accounting/statements', label: t('nav.statements'), icon: 'chart', show: can('accounting.view') && !!membership.all_branches },
+    [t('nav.accounting'), acc(true)],
+    [t('nav.g.system'), system],
+  ] : [
+    [t('nav.g.main'), [
+      { path: '/home', label: t('nav.home'), icon: 'home', show: true },
+      { path: '/pos', label: t('nav.pos'), icon: 'cart', show: can('pos.sell') },
+      { path: '/bookings', label: t('nav.bookingsShort'), icon: 'calendar', show: can('booking.view') },
+      { path: '/invoices', label: t('nav.invoices'), icon: 'receipt', show: can('pos.invoices.view') },
+      { path: '/offline-receipts', label: t('nav.offline'), icon: 'refresh', show: can('pos.invoices.view') },
+    ]],
+    [t('nav.g.customers'), [
+      { path: '/customers', label: t('nav.customers'), icon: 'users', show: can('customers.view') },
+      { path: '/loyalty', label: t('nav.loyalty'), icon: 'award', show: can('catalog.view') },
+      { path: '/marketing', label: t('nav.marketing'), icon: 'tag', show: can('catalog.view') && !canCo },
+    ]],
+    [t('nav.g.services'), [
+      { path: '/services', label: t('nav.services'), icon: 'sparkle', show: can('catalog.view') && !canCo },
+      { path: '/inventory', label: t('nav.inventory'), icon: 'box', show: can('inventory.view') },
+    ]],
+    [t('nav.g.accounts'), [
+      { path: '/staff', label: t('nav.staff'), icon: 'user', show: can('staff.view') },
       { path: '/accounting/expenses', label: t('nav.expenses'), icon: 'wallet', show: can('accounting.view') },
-      { path: '/accounting/assets', label: t('nav.assets'), icon: 'box', show: can('accounting.view') },
-      { path: '/accounting/settlements', label: t('nav.settlements'), icon: 'bank', show: can('accounting.view') },
-      { path: '/accounting/journal', label: t('nav.journal'), icon: 'book', show: can('accounting.journal.post') },
-      { path: '/accounting/trial-balance', label: t('nav.trialBalance'), icon: 'chart', show: can('accounting.view') },
-      { path: '/accounting/periods', label: t('nav.periods'), icon: 'calendar', show: can('accounting.view') },
-      { path: '/accounting/xbrl', label: t('nav.xbrl'), icon: 'file', show: can('accounting.view') && !!membership.all_branches },
+      { path: '/cash', label: t('nav.cashShort'), icon: 'bank', show: can('cash.session.open') },
+      { path: '/reports', label: t('nav.reports'), icon: 'chart', show: can('pos.invoices.view') },
+      { path: '/commissions', label: t('nav.commissions'), icon: 'percent', show: can('commission.view.all') && !canCo },
     ]],
-    [t('nav.account'), [
-      { path: '/whatsapp', label: t('nav.whatsapp'), icon: 'whatsapp', show: can('org.manage') },
-      { path: '/subscription', label: t('nav.subscription'), icon: 'award', show: can('org.manage') },
-      { path: '/settings', label: t('nav.settings'), icon: 'settings', show: can('org.manage') || can('data.export') },
-      { path: '/support', label: t('nav.support'), icon: 'support', show: can('org.manage') && !membership.support },
-    ]],
+    ...(canCo ? [] : [
+      [t('nav.accounting'), acc(false).filter((x) => x.path !== '/accounting/expenses')],
+      [t('nav.g.system'), [{ path: '/org', label: t('nav.org'), icon: 'store', show: true },
+        { path: '/users', label: t('nav.users'), icon: 'user-plus', show: can('org.manage') }, ...system]],
+    ] as [string, NavItem[]][]),
   ]
-  const home = membership.all_branches && can('pos.invoices.view') ? '/company' : '/home'
+  const home = company ? '/company' : '/home'
+  const sub = company || !branch ? t('nav.allBranchesSub') : t('nav.branchSub', { name: bName(branch, i18n.language) })
   return (
-    <BranchProvider><OfflineProvider>
-    <Shell biz={membership.tenant_business_type} title={membership.tenant_name} sub={t(`biz.${membership.tenant_business_type}`)} groups={groups}>
+    <Shell biz={membership.tenant_business_type} title={membership.tenant_name} sub={sub} groups={groups}>
       <Routes>
         <Route path="/pos" element={<TillRoute />} />
         <Route path="/offline-receipts" element={<OfflineReceipts />} />
@@ -214,6 +263,7 @@ export default function App() {
         <Route path="/customers" element={<Customers />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/marketing" element={<Marketing />} />
+        <Route path="/loyalty" element={<Marketing key="points" initial="points" />} />
         <Route path="/commissions" element={<Commissions />} />
         <Route path="/users" element={<Users />} />
         <Route path="/support" element={<Support />} />
@@ -234,6 +284,5 @@ export default function App() {
         <Route path="*" element={<Navigate to={home} replace />} />
       </Routes>
     </Shell>
-    </OfflineProvider></BranchProvider>
   )
 }

@@ -1,3 +1,4 @@
+import { SvcIcon } from '../components/ServiceArt'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -153,7 +154,7 @@ export default function POS() {
             </div>
             <div className="grid items">
               {shownServices.map((s) => <button key={s.id} className="item" disabled={!s.current_price} onClick={() => add('service', s.id)}>
-                <span className="ic"><Icon name="sparkle" /></span><b>{nameOf(s, lang)}</b>
+                <SvcIcon s={s} /><b>{nameOf(s, lang)}</b>
                 <span className="cap muted"><bdi>{s.duration_minutes}</bdi> {t('svc.min')}</span>
                 <span className="money">{s.current_price ? formatKWD(s.current_price, lang) : t('svc.noPrice')}</span></button>)}
               {shownServices.length === 0 && <div className="empty">{t('pos.noItems')}</div>}

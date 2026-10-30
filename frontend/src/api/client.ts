@@ -59,7 +59,7 @@ export type Account = { id: number; code: string; name_ar: string; name_en: stri
 export type TBRow = { account_id: number; code: string; name_ar: string; name_en: string; type: string; opening: string; debit: string; credit: string; closing: string; normal_side: string }
 
 export type Category = { id: number; name_ar: string; name_en: string; business_type: 'kids' | 'men' | 'women'; sort: number }
-export type Service = { id: number; category: number; business_type: string; name_ar: string; name_en: string; duration_minutes: number; home_visit: boolean; is_active: boolean; current_price: string | null }
+export type Service = { id: number; category: number; business_type: string; name_ar: string; name_en: string; duration_minutes: number; home_visit: boolean; art?: string; is_active: boolean; current_price: string | null }
 export type Price = { id: number; branch: number | null; price: string; valid_from: string; valid_to: string | null }
 export type Staff = { id: number; full_name_ar: string; full_name_en: string; phone: string; commission_percent: string; is_active: boolean; branch_ids: number[]; service_ids: number[] }
 export type Beneficiary = { id: number; full_name: string; relation: 'self' | 'child' | 'other'; birth_date: string | null; gender: '' | 'm' | 'f'; notes: string; is_active: boolean }

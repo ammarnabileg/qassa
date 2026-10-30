@@ -95,7 +95,8 @@ def branches(*, today: date, month_start: date, branch_ids: list[int] | None) ->
             t = Invoice.objects.filter(branch=b, business_date__gte=frm, business_date__lte=today).aggregate(s=Sum("total"))["s"] or ZERO
             r = CreditNote.objects.filter(invoice__branch=b, business_date__gte=frm, business_date__lte=today).aggregate(s=Sum("total"))["s"] or ZERO
             return t - r
-        out.append({"branch_id": b.id, "name_ar": b.name_ar, "name_en": b.name_en, "business_type": b.business_type,
+        out.append({"branch_id": b.id, "name_ar": b.name_ar, "name_en": b.name_en, "business_type": b.business_type, "address": b.address,
+                    "invoices_month": Invoice.objects.filter(branch=b, business_date__gte=month_start, business_date__lte=today).count(),
                     "today": _s(net(today)), "invoices_today": Invoice.objects.filter(branch=b, business_date=today).count(),
                     "waiting": Appointment.objects.filter(branch=b, business_date=today, status__in=["booked", "arrived"]).count(),
                     "in_service": Appointment.objects.filter(branch=b, business_date=today, status="in_service").count(),

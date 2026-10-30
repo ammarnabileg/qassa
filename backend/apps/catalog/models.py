@@ -23,6 +23,7 @@ class Service(TenantScopedModel):
     name_en = models.CharField(max_length=120, blank=True)
     duration_minutes = models.PositiveSmallIntegerField()
     home_visit = models.BooleanField(default=False)  # can be booked as a home visit
+    art = models.CharField(max_length=20, blank=True)  # illustration key on the till (reference js/ui/service-art.js); blank = guessed from the name
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

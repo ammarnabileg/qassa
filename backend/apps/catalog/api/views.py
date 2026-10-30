@@ -29,6 +29,10 @@ class PriceSerializer(serializers.ModelSerializer):
         fields = ["id", "branch", "price", "valid_from", "valid_to"]
 
 
+ART_KEYS = {"baby", "boyBig", "boy", "trimB", "washB", "qadhla", "pixie", "bob", "french", "straw", "layered", "trimG", "washG",
+            "dryS", "dryM", "dryL", "oil", "waveS", "waveL", "keratin", "beard", "beardTrim", "shave", "mask", "dyeM", "dyeW"}
+
+
 class ServiceSerializer(serializers.ModelSerializer):
     current_price = serializers.SerializerMethodField()
     business_type = serializers.CharField(source="category.business_type", read_only=True)
@@ -36,7 +40,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
         fields = ["id", "category", "business_type", "name_ar", "name_en", "duration_minutes", "home_visit",
-                  "is_active", "current_price"]
+                  "art", "is_active", "current_price"]
         validators = []  # duplicate names are reported as service_name_exists by the view
 
     def get_current_price(self, obj) -> str | None:
@@ -46,6 +50,11 @@ class ServiceSerializer(serializers.ModelSerializer):
             if p.branch_id is None and p.valid_from <= today and (p.valid_to is None or p.valid_to > today):
                 return str(p.price)
         return None
+
+    def validate_art(self, value):
+        if value and value not in ART_KEYS:
+            raise serializers.ValidationError("unknown art")
+        return value
 
     def validate_category(self, value):
         if not ServiceCategory.objects.filter(id=value.id).exists():  # scoped: other tenants' rows are invisible

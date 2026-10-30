@@ -8,6 +8,7 @@ import { useSave } from '../components/hooks'
 import { Dialog, Head, Icon, nameOf, useToast } from '../components/ui'
 import { formatKWD } from '../money'
 import { useOrg } from './Org'
+import { ART_KEYS, ServiceArt, SvcIcon } from '../components/ServiceArt'
 
 type Biz = Category['business_type']
 const today = () => new Date().toISOString().slice(0, 10)
@@ -62,7 +63,7 @@ export default function Services() {
   const [q, setQ] = useState('')
   const cats = useQuery({ queryKey: ['categories'], queryFn: () => api<Category[]>('/catalog/categories') })
   const services = useQuery({ queryKey: ['services'], queryFn: () => api<Service[]>('/catalog/services') })
-  const [svcForm, setSvcForm] = useState<{ id?: number; category: string; name_ar: string; name_en: string; duration_minutes: string; home_visit: boolean; is_active: boolean; price: string } | null>(null)
+  const [svcForm, setSvcForm] = useState<{ id?: number; category: string; name_ar: string; name_en: string; duration_minutes: string; home_visit: boolean; art: string; is_active: boolean; price: string } | null>(null)
   const [catForm, setCatForm] = useState<{ name_ar: string; name_en: string } | null>(null)
   const [pricesFor, setPricesFor] = useState<Service | null>(null)
   const svcSave = useSave<Service>([['services']], () => { setSvcForm(null); toast(t('common.saved')) })
@@ -75,8 +76,8 @@ export default function Services() {
 
   const openSvc = (s?: Service) => {
     svcSave.reset()
-    setSvcForm(s ? { id: s.id, category: String(s.category), name_ar: s.name_ar, name_en: s.name_en, duration_minutes: String(s.duration_minutes), home_visit: s.home_visit, is_active: s.is_active, price: '' }
-      : { category: myCats[0] ? String(myCats[0].id) : '', name_ar: '', name_en: '', duration_minutes: '30', home_visit: false, is_active: true, price: '' })
+    setSvcForm(s ? { id: s.id, category: String(s.category), name_ar: s.name_ar, name_en: s.name_en, duration_minutes: String(s.duration_minutes), home_visit: s.home_visit, art: s.art ?? '', is_active: s.is_active, price: '' }
+      : { category: myCats[0] ? String(myCats[0].id) : '', name_ar: '', name_en: '', duration_minutes: '30', home_visit: false, art: '', is_active: true, price: '' })
   }
   const submitSvc = () => {
     const { id, price, ...rest } = svcForm!
@@ -99,7 +100,7 @@ export default function Services() {
       {!myCats.length && !cats.isPending && <div className="notice"><Icon name="info" />{t('svc.noCategories')}</div>}
       <div className="tw"><table><thead><tr><th>{t('svc.service')}</th><th>{t('svc.category')}</th><th>{t('svc.duration')}</th><th className="n">{t('svc.price')}</th><th>{t('org.status')}</th><th></th></tr></thead>
         <tbody>{rows.map((s) => <tr key={s.id}>
-          <td><b>{nameOf(s, i18n.language)}</b>{s.home_visit && <> <span className="pill info">{t('svc.homeVisit')}</span></>}</td>
+          <td><div className="row" style={{ flexWrap: 'nowrap' }}><SvcIcon s={s} size={34} /><b>{nameOf(s, i18n.language)}</b>{s.home_visit && <span className="pill info">{t('svc.homeVisit')}</span>}</div></td>
           <td>{catName(s.category)}</td><td><bdi>{s.duration_minutes}</bdi> {t('svc.min')}</td>
           <td className="n money">{s.current_price ? formatKWD(s.current_price, i18n.language as 'ar' | 'en') : <span className="pill warn">{t('svc.noPrice')}</span>}</td>
           <td>{s.is_active ? <span className="pill good">{t('common.active')}</span> : <span className="pill mute">{t('common.inactive')}</span>}</td>
@@ -121,6 +122,11 @@ export default function Services() {
           </div>
           {!svcForm.id && can('catalog.price.change') && <label className="field">{t('svc.price')} (KWD)<input className="input" dir="ltr" inputMode="decimal" pattern="\d+(\.\d{1,3})?" value={svcForm.price} onChange={(e) => setSvcForm({ ...svcForm, price: e.target.value })} /></label>}
           {svcForm.id && <div className="small muted">{t('svc.priceViaHistory')}</div>}
+          <div className="field">{t('svc.art')}<div className="row" style={{ gap: 6 }}>
+            <button type="button" className={`btn sm${svcForm.art === '' ? ' primary' : ''}`} onClick={() => setSvcForm({ ...svcForm, art: '' })}>{t('svc.artAuto')}</button>
+            {ART_KEYS.map((k) => <button type="button" key={k} title={k} aria-pressed={svcForm.art === k} onClick={() => setSvcForm({ ...svcForm, art: k })}
+              style={{ padding: 2, borderRadius: 12, border: `2px solid ${svcForm.art === k ? 'var(--brand)' : 'transparent'}`, background: 'none', cursor: 'pointer' }}><ServiceArt art={k} size={36} /></button>)}
+          </div></div>
           <label className="chk"><span>{t('svc.homeVisit')}<small>{t('svc.homeVisitHelp')}</small></span><input type="checkbox" className="sw" checked={svcForm.home_visit} onChange={(e) => setSvcForm({ ...svcForm, home_visit: e.target.checked })} /></label>
           {svcForm.id && <label className="chk">{t('common.active')}<input type="checkbox" className="sw" checked={svcForm.is_active} onChange={(e) => setSvcForm({ ...svcForm, is_active: e.target.checked })} /></label>}
           <ErrorText error={svcSave.error} />

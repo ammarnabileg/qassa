@@ -94,7 +94,29 @@
     "home": "الرئيسية",
     "company": "لوحة الشركة",
     "reports": "التقارير",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "ownerIn": "أنت داخل <b>فرع {{name}}</b> كصاحب الشركة",
+    "backCompany": "رجوع للوحة الشركة",
+    "allBranches": "🏢 كل الفروع",
+    "allBranchesSub": "كل الفروع",
+    "branchSub": "فرع {{name}}",
+    "overview": "نظرة عامة",
+    "branchesNav": "الفروع",
+    "branchReports": "تقارير الفروع",
+    "offers": "العروض والكوبونات",
+    "loyalty": "النقاط والولاء",
+    "bookingsShort": "الحجوزات",
+    "cashShort": "الخزينة",
+    "settingsSub": "الإعدادات",
+    "g": {
+      "company": "الشركة",
+      "central": "إدارة مركزية لكل الفروع",
+      "system": "النظام",
+      "main": "الرئيسية",
+      "customers": "العملاء والتسويق",
+      "services": "الخدمات",
+      "accounts": "الحسابات"
+    }
   },
   "org": {
     "entities": "الكيانات القانونية",
@@ -334,7 +356,9 @@
     "current": "الحالي",
     "newPrice": "سعر جديد",
     "setPrice": "اعتماد السعر",
-    "upcoming": "قادم"
+    "upcoming": "قادم",
+    "art": "الرسمة على الكاشير",
+    "artAuto": "تلقائي"
   },
   "staff": {
     "sub": "الحلاقين ومقدمي الخدمة: الفروع اللي بيشتغلوا فيها والخدمات اللي بيعملوها",
@@ -1272,7 +1296,20 @@
     "drawerClosed": "مقفول",
     "open": "افتح",
     "monthByBranch": "مبيعات الشهر حسب الفرع",
-    "bestStaff": "أفضل الموظفين (الشهر)"
+    "bestStaff": "أفضل الموظفين (الشهر)",
+    "vsYesterday": "{{n}} عن امبارح",
+    "paidToday": "فواتير مدفوعة النهارده",
+    "customersN": "{{n}} عميل",
+    "onChairN": "+ {{n}} على الكرسي",
+    "avgInvoice": "متوسط الفاتورة",
+    "waReport": "واتساب: تقرير اليوم",
+    "manageBranches": "إدارة الفروع",
+    "salesTodayAll": "مبيعات النهارده (كل الفروع)",
+    "invoicesN": "{{n}} فاتورة",
+    "netMonth": "صافي الشهر",
+    "afterCosts": "بعد العمولات والمصروفات",
+    "topBranch": "أعلى فرع",
+    "enterBranch": "دخول الفرع"
   },
   "set": {
     "sub": "الإيصال وتصدير البيانات",

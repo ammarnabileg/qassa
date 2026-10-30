@@ -94,7 +94,29 @@
     "home": "Home",
     "company": "Company",
     "reports": "Reports",
-    "settings": "Settings"
+    "settings": "Settings",
+    "ownerIn": "You are inside <b>{{name}} branch</b> as the company owner",
+    "backCompany": "Back to company dashboard",
+    "allBranches": "🏢 All branches",
+    "allBranchesSub": "All branches",
+    "branchSub": "{{name}} branch",
+    "overview": "Overview",
+    "branchesNav": "Branches",
+    "branchReports": "Branch reports",
+    "offers": "Offers & coupons",
+    "loyalty": "Points & loyalty",
+    "bookingsShort": "Bookings",
+    "cashShort": "Cash drawer",
+    "settingsSub": "Settings",
+    "g": {
+      "company": "Company",
+      "central": "Central management for all branches",
+      "system": "System",
+      "main": "Main",
+      "customers": "Customers & marketing",
+      "services": "Services",
+      "accounts": "Accounts"
+    }
   },
   "org": {
     "entities": "Legal entities",
@@ -334,7 +356,9 @@
     "current": "Current",
     "newPrice": "New price",
     "setPrice": "Set price",
-    "upcoming": "Upcoming"
+    "upcoming": "Upcoming",
+    "art": "Till picture",
+    "artAuto": "Auto"
   },
   "staff": {
     "sub": "Service providers: the branches they work in and the services they deliver",
@@ -1272,7 +1296,20 @@
     "drawerClosed": "Closed",
     "open": "Open",
     "monthByBranch": "This month by branch",
-    "bestStaff": "Top staff (month)"
+    "bestStaff": "Top staff (month)",
+    "vsYesterday": "{{n}} vs yesterday",
+    "paidToday": "Paid invoices today",
+    "customersN": "{{n}} customers",
+    "onChairN": "+ {{n}} in the chair",
+    "avgInvoice": "Average invoice",
+    "waReport": "WhatsApp: today's report",
+    "manageBranches": "Manage branches",
+    "salesTodayAll": "Today's sales (all branches)",
+    "invoicesN": "{{n}} invoices",
+    "netMonth": "Month net",
+    "afterCosts": "After commissions and expenses",
+    "topBranch": "Top branch",
+    "enterBranch": "Enter branch"
   },
   "set": {
     "sub": "Receipt and data export",

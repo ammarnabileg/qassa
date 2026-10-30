@@ -38,8 +38,8 @@ export function Head({ title, sub, children }: { title: string; sub?: string; ch
   return <div className="head"><div><h1>{title}</h1>{sub && <div className="muted small">{sub}</div>}</div>{children && <div className="row">{children}</div>}</div>
 }
 
-export function Stat({ label, value }: { label: string; value: ReactNode }) {
-  return <div className="card stat"><div className="small muted">{label}</div><div className="v">{value}</div></div>
+export function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
+  return <div className="card stat"><div className="small muted">{label}</div><div className="v">{value}</div>{sub != null && <div className="cap muted">{sub}</div>}</div>
 }
 
 /** Native <dialog> with the design's header/body/footer. `onSubmit` keeps it open until the promise resolves. */
