@@ -71,3 +71,17 @@ def test_kids_list_visits_and_spend(salon):
     assert len(rows) == 1 and rows[0]["guardian"] == "أم يوسف" and rows[0]["phone"] == "96555123456"
     assert rows[0]["visits"] == 1 and rows[0]["total"] == q["total"] and rows[0]["last_visit"]
     assert c.get("/api/v1/customers/kids?q=nobody").json() == []
+
+
+def test_points_overview_and_manual_adjust(salon):
+    s = salon
+    c = client_for(s["owner"], s["t"])
+    cust = c.post("/api/v1/customers", {"full_name": "أم ليلى", "phone": "55111222", "add_self": False}, format="json").json()
+    assert c.post("/api/v1/loyalty/points/adjust", {"customer_id": cust["id"], "points": -5, "note": "x"}, format="json").json()["error"]["code"] == "points_insufficient"
+    assert c.post("/api/v1/loyalty/points/adjust", {"customer_id": cust["id"], "points": 0, "note": "x"}, format="json").json()["error"]["code"] == "points_zero"
+    r = c.post("/api/v1/loyalty/points/adjust", {"customer_id": cust["id"], "points": 40, "note": "هدية عيد ميلاد"}, format="json")
+    assert r.status_code == 200 and r.json()["balance"] == 40
+    assert c.post("/api/v1/loyalty/points/adjust", {"customer_id": cust["id"], "points": -15, "note": "تصحيح"}, format="json").json()["balance"] == 25
+    o = c.get("/api/v1/loyalty/points").json()
+    assert o["outstanding"] == 25 and o["balances"][0]["balance"] == 25 and o["recent"][0]["points"] == -15
+    assert client_for(s["cashier"], s["t"]).post("/api/v1/loyalty/points/adjust", {"customer_id": cust["id"], "points": 5, "note": "x"}, format="json").status_code == 403

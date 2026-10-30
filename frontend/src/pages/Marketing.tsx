@@ -17,7 +17,7 @@ export default function Marketing({ initial = 'packages' }: { initial?: Tab }) {
   const { can } = useAuth()
   const toast = useToast()
   const manage = can('marketing.manage')
-  const [tab, setTab] = useState<Tab>(initial)
+  const [tab, setTab] = useState<Tab>(() => (new URLSearchParams(window.location.search).get('tab') as Tab) || initial)
   const services = useQuery({ queryKey: ['services'], queryFn: () => api<Service[]>('/catalog/services') })
   const plans = useQuery({ queryKey: ['plans'], queryFn: () => api<PackagePlan[]>('/loyalty/plans') })
   const coupons = useQuery({ queryKey: ['coupons'], queryFn: () => api<Coupon[]>('/loyalty/coupons') })

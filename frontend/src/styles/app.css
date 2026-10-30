@@ -22,3 +22,4 @@ td.n,th.n{text-align:end}
 /* report day columns: let 31 bars share the card width instead of overflowing it */
 .days{overflow:hidden}
 .days div{min-width:0}
+body.tablet .imp{display:none}

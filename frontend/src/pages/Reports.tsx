@@ -76,10 +76,15 @@ export default function Reports() {
       <ErrorText error={q.error} />
       {d && <>
         <div className="grid stats">
-          <Stat label={t('rep.sales')} value={<>{formatKWD(d.stats.sales, lang)}{d.stats.returns !== '0.000' && <div className="cap muted">{t('rep.afterReturns', { v: formatKWD(d.stats.returns, lang) })}</div>}</>} />
-          <Stat label={t('rep.invoices')} value={<bdi>{d.stats.invoices}</bdi>} />
-          <Stat label={t('rep.average')} value={formatKWD(d.stats.average, lang)} />
-          <Stat label={t('rep.customers')} value={<><bdi>{d.stats.customers}</bdi><div className="cap muted">{t('rep.discounts', { v: formatKWD(d.stats.discounts, lang) })}</div></>} />
+          <Stat label={t('rep.sales')} value={formatKWD(d.stats.sales, lang)} sub={<>{t('home.invoicesN', { n: d.stats.invoices })}{d.stats.returns !== '0.000' && ` · ${t('rep.afterReturns', { v: formatKWD(d.stats.returns, lang) })}`}</>} />
+          <Stat label={t('rep.average')} value={formatKWD(d.stats.average, lang)} sub={t('rep.discounts', { v: formatKWD(d.stats.discounts, lang) })} />
+          {d.profit ? <>
+            <Stat label={t('rep.costs')} value={formatKWD((Number(d.profit.commissions) + Number(d.profit.expenses) + Number(d.profit.cogs)).toFixed(3), lang)} sub={t('rep.costsSub')} />
+            <Stat label={t('rep.netProfit')} value={formatKWD(d.profit.net, lang)} sub={t('rep.estimate')} />
+          </> : <>
+            <Stat label={t('rep.invoices')} value={<bdi>{d.stats.invoices}</bdi>} />
+            <Stat label={t('rep.customers')} value={<bdi>{d.stats.customers}</bdi>} />
+          </>}
         </div>
         {scope === 'all' && branches.data && <>
           <h2 style={{ margin: '18px 0 10px' }}>{t('rep.compare')}</h2>

@@ -31,6 +31,7 @@ import Subscription from './pages/Subscription'
 import TrialBalance from './pages/TrialBalance'
 import WhatsApp from './pages/WhatsApp'
 import Inventory from './pages/Inventory'
+import Loyalty from './pages/Loyalty'
 import Marketing from './pages/Marketing'
 import Commissions from './pages/Commissions'
 import Users from './pages/Users'
@@ -214,7 +215,7 @@ function TenantApp() {
     [t('nav.g.central'), [
       { path: '/services', label: t('nav.services'), icon: 'sparkle', show: can('catalog.view') },
       { path: '/marketing', label: t('nav.offers'), icon: 'tag', show: can('catalog.view') },
-      { path: '/loyalty', label: t('nav.loyalty'), icon: 'award', show: can('catalog.view') },
+      { path: '/loyalty', label: t('nav.loyalty'), icon: 'award', show: can('customers.view') },
       { path: '/customers', label: t('nav.customers'), icon: 'users', show: can('customers.view') },
       { path: '/staff', label: t('nav.staff'), icon: 'user', show: can('staff.view') },
       { path: '/commissions', label: t('nav.commissions'), icon: 'percent', show: can('commission.view.all') },
@@ -232,7 +233,7 @@ function TenantApp() {
     ]],
     [t('nav.g.customers'), [
       { path: '/customers', label: t('nav.customers'), icon: 'users', show: can('customers.view') },
-      { path: '/loyalty', label: t('nav.loyalty'), icon: 'award', show: can('catalog.view') },
+      { path: '/loyalty', label: t('nav.loyalty'), icon: 'award', show: can('customers.view') },
       { path: '/marketing', label: t('nav.marketing'), icon: 'tag', show: can('catalog.view') && !canCo },
     ]],
     [t('nav.g.services'), [
@@ -268,7 +269,7 @@ function TenantApp() {
         <Route path="/customers" element={<Customers />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/marketing" element={<Marketing />} />
-        <Route path="/loyalty" element={<Marketing key="points" initial="points" />} />
+        <Route path="/loyalty" element={<Loyalty />} />
         <Route path="/commissions" element={<Commissions />} />
         <Route path="/users" element={<Users />} />
         <Route path="/support" element={<Support />} />

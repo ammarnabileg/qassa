@@ -329,7 +329,8 @@
     "offline_time_invalid": "Receipt time is not plausible (future or older than 7 days)",
     "offline_total_invalid": "The receipt total does not match the server's calculation",
     "offline_payload_invalid": "Receipt data is incomplete",
-    "tendered_short": "Amount tendered is below the total"
+    "tendered_short": "Amount tendered is below the total",
+    "points_zero": "Points must not be zero"
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -1299,7 +1300,11 @@
     "profit": "Profit summary",
     "cogs": "Cost of products",
     "net": "Net",
-    "profitNote": "Operational view — the income statement is the reference"
+    "profitNote": "Operational view — the income statement is the reference",
+    "costs": "Expenses + commissions",
+    "costsSub": "Including product cost",
+    "netProfit": "Net profit",
+    "estimate": "Estimate — income statement is the reference"
   },
   "home": {
     "morning": "Good morning {{name}} 👋",
@@ -1354,5 +1359,39 @@
     "exportCustomers": "Customers",
     "exportInvoices": "This year's invoices",
     "noExport": "Export needs the “Export data” permission"
+  },
+  "loy": {
+    "sub": "Customers earn points on every visit and redeem them as a discount at the till",
+    "adjust": "Add / deduct points",
+    "rules": "Program rules",
+    "status": "Program status",
+    "on": "On",
+    "off": "Off",
+    "earnRule": "{{n}} points per 1 KWD",
+    "outstanding": "Points held by customers",
+    "liability": "Worth {{v}}",
+    "pointValue": "Point value",
+    "minRedeem": "Redeem from {{n}} points",
+    "redeemedMonth": "Points redeemed this month",
+    "balances": "Customer balances",
+    "family": "Child / customer",
+    "balance": "Balance",
+    "earned": "Earned",
+    "used": "Redeemed",
+    "worth": "Worth",
+    "recent": "Latest movements",
+    "none": "No points yet",
+    "invoice": "Invoice {{n}}",
+    "k": {
+      "earn": "Earned",
+      "redeem": "Redeemed",
+      "reverse": "Return",
+      "adjust": "Manual adjustment"
+    },
+    "add": "Add",
+    "deduct": "Deduct",
+    "points": "Points",
+    "reason": "Reason",
+    "newBalance": "Done — new balance {{n}} points"
   }
 }

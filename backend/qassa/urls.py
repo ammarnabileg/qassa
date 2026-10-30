@@ -145,6 +145,8 @@ urlpatterns = [
     path(api + "loyalty/plans", loy.PlansView.as_view()),
     path(api + "loyalty/plans/<int:pk>", loy.PlanDetailView.as_view()),
     path(api + "loyalty/settings", loy.LoyaltySettingsView.as_view()),
+    path(api + "loyalty/points", loy.PointsOverviewView.as_view()),
+    path(api + "loyalty/points/adjust", loy.PointsAdjustView.as_view()),
     path(api + "loyalty/coupons", loy.CouponsView.as_view()),
     path(api + "loyalty/coupons/<int:pk>", loy.CouponDetailView.as_view()),
     path(api + "customers/<int:pk>/wallet", loy.CustomerWalletView.as_view()),
