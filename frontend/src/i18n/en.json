@@ -500,7 +500,8 @@
     "maxBranches": "Max branches",
     "maxStaff": "Max staff",
     "ownerPhone": "Owner's WhatsApp",
-    "ownerPhoneHelp": "Login codes are sent here from the platform number. Only changeable here (account security)."
+    "ownerPhoneHelp": "Login codes are sent here from the platform number. Only changeable here (account security).",
+    "search": "Search company or phone"
   },
   "book": {
     "sub": "Book, move to the chair, and send to checkout when done",
@@ -1228,7 +1229,9 @@
     "reopen": "Reopen",
     "reopenHelp": "Reopening a closed period needs a reason, which is audited.",
     "closeYearQ": "Close fiscal year {{n}}?",
-    "closeYearHelp": "A closing entry on the last day moves revenue and expense balances to retained earnings. The last month must be open; it cannot run twice. Do it after the accountant's review."
+    "closeYearHelp": "A closing entry on the last day moves revenue and expense balances to retained earnings. The last month must be open; it cannot run twice. Do it after the accountant's review.",
+    "monthTotal": "Month total: {{v}}",
+    "byAccount": "By account"
   },
   "off": {
     "notReady": "No internet, and offline selling is not enabled on this device. Enable it from the till once you are online.",

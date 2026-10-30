@@ -45,21 +45,34 @@ export function Expenses() {
   const s = useSave<Expense>([['expenses']], done)
   const expenseAccs = (accs.data ?? []).filter((a) => a.type === 'expense' && a.is_postable && !a.is_control)
   const open = (list.data ?? []).filter((x) => x.paid_from === 'accrued' && !x.paid_on)
+  const [month, setMonth] = useState(() => today().slice(0, 7))
+  const rows = (list.data ?? []).filter((x) => x.expense_date.startsWith(month))
+  const total = rows.reduce((a, x) => a + Number(x.amount), 0)
+  const byAcc = Object.values(rows.reduce<Record<string, { name: string; v: number }>>((m, x) => {
+    const k = x.account_code; m[k] = m[k] ?? { name: lang === 'en' ? x.account_name_en : x.account_name_ar, v: 0 }; m[k].v += Number(x.amount); return m
+  }, {})).sort((a, b) => b.v - a.v)
   return (
     <>
-      <Head title={t('nav.expenses')} sub={t('fin.expSub')}>
+      <Head title={t('nav.expenses')} sub={t('fin.monthTotal', { v: formatKWD(total.toFixed(3), lang) })}>
+        <input type="month" className="input" style={{ width: 'auto' }} value={month} onChange={(ev) => setMonth(ev.target.value || today().slice(0, 7))} />
         {can('accounting.journal.post') && <button className="btn primary" onClick={() => { s.reset(); setForm({ expense_date: today(), account_id: String(expenseAccs[0]?.id ?? ''), description: '', amount: '', paid_from: 'bank', reference: '', branch: true }) }}><Icon name="plus" />{t('fin.addExpense')}</button>}
       </Head>
       <ErrorText error={list.error} />
       {open.length > 0 && <div className="notice"><Icon name="clock" />{t('fin.accruedOpen', { n: open.length, v: formatKWD(open.reduce((a, x) => a + Number(x.amount), 0).toFixed(3), lang) })}</div>}
+      <div className="grid" style={{ gridTemplateColumns: 'minmax(0,3fr) minmax(220px,1fr)', gap: 14, alignItems: 'start' }}>
       <div className="tw"><table><thead><tr><th>{t('acc.date')}</th><th>{t('acc.account')}</th><th>{t('fin.description')}</th><th>{t('fin.paidFrom')}</th><th className="n">{t('inv.amount')}</th><th /></tr></thead>
-        <tbody>{list.data?.map((x) => <tr key={x.id}>
+        <tbody>{rows.map((x) => <tr key={x.id}>
           <td className="num">{x.expense_date}</td><td><span className="num">{x.account_code}</span> {lang === 'en' ? x.account_name_en : x.account_name_ar}</td>
           <td>{x.description}{x.reference && <div className="cap muted">{x.reference}</div>}</td>
           <td><span className={`pill ${x.paid_from === 'accrued' && !x.paid_on ? 'warn' : 'mute'}`}>{t(`fin.pf.${x.paid_from}`)}</span>{x.paid_from === 'accrued' && x.paid_on && <div className="cap muted">{t('fin.paidOn', { d: x.paid_on })}</div>}</td>
           <td className="n money">{formatKWD(x.amount, lang)}</td>
           <td>{x.paid_from === 'accrued' && !x.paid_on && can('accounting.journal.post') && <button className="btn sm" onClick={() => { s.reset(); setPay({ x, paid_on: today(), reference: '' }) }}>{t('inv2.pay')}</button>}</td></tr>)}
-          {list.data?.length === 0 && <tr><td colSpan={6} className="empty">{t('common.empty')}</td></tr>}</tbody></table></div>
+          {rows.length === 0 && <tr><td colSpan={6} className="empty">{t('common.empty')}</td></tr>}</tbody></table></div>
+      <div className="card"><h2 style={{ marginBottom: 10 }}>{t('fin.byAccount')}</h2>
+        <div className="list">{byAcc.map((a) => <div key={a.name}><div className="row sb small"><span>{a.name}</span><b className="money">{formatKWD(a.v.toFixed(3), lang)}</b></div>
+          <div style={{ height: 8, borderRadius: 9, background: 'var(--surface-2)', marginTop: 4 }}><div style={{ height: 8, borderRadius: 9, background: 'var(--brand)', width: `${(a.v / (byAcc[0]?.v || 1)) * 100}%` }} /></div></div>)}
+          {byAcc.length === 0 && <div className="small muted">{t('common.empty')}</div>}</div></div>
+      </div>
       <Dialog open={!!form} title={t('fin.addExpense')} onClose={() => setForm(null)} busy={s.busy}
         onSubmit={() => s.save({ path: `/accounting/expenses${q}`, idempotencyKey: key, body: { ...form, account_id: Number(form!.account_id), branch_id: form!.branch || form!.paid_from === 'cash' ? branch?.id : null } })}>
         {form && <>

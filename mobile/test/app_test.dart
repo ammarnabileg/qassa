@@ -68,7 +68,7 @@ void main() {
   testWidgets('first screen is login; wrong code is refused; new customer registers and lands on home', (tester) async {
     final fake = Fake();
     await start(tester, fake);
-    expect(find.text(tr('ar', 'login_title')), findsOneWidget);
+    expect(find.text(tr('ar', 'first_time')), findsOneWidget);
     expect(Directionality.of(tester.element(find.byKey(const Key('phone')))), TextDirection.rtl);
     await tester.enterText(find.byKey(const Key('phone')), '55550001');
     await tester.tap(find.byKey(const Key('send')));

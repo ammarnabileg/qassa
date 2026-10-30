@@ -69,11 +69,14 @@ class _LoginScreenState extends State<LoginScreen> {
         ]));
     final body = switch (step) {
       'phone' => [
-          Text(t('login_title'), style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w700)),
-          Text(t('login_sub'), style: const TextStyle(fontSize: 13, color: Tokens.muted)),
-          const SizedBox(height: 16),
           field(t('phone'), phone, ltr: true, kb: TextInputType.phone, key: const Key('phone')),
-          FilledButton(key: const Key('send'), onPressed: busy ? null : sendCode, child: Text(t('send_code'))),
+          const SizedBox(height: 4),
+          FilledButton(key: const Key('send'), onPressed: busy ? null : sendCode,
+              style: FilledButton.styleFrom(backgroundColor: Brand.of(c.biz).base, foregroundColor: Tokens.ink, minimumSize: const Size.fromHeight(56),
+                  textStyle: const TextStyle(fontFamily: 'Alexandria', fontSize: 17, fontWeight: FontWeight.w700)),
+              child: Text(t('send_code'))),
+          const SizedBox(height: 14),
+          Center(child: Text(t('first_time'), style: const TextStyle(fontSize: 12, color: Tokens.muted))),
         ],
       'code' => [
           Text(t('code_title'), style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w700)),
@@ -105,6 +108,22 @@ class _LoginScreenState extends State<LoginScreen> {
           FilledButton(key: const Key('register'), onPressed: busy ? null : register, child: Text(t('create_account'))),
         ],
     };
+    // Reference customer app login: centred logo, salon name and a one-line promise; the header bar only after sign-in steps.
+    if (step == 'phone') {
+      return Scaffold(
+        body: SafeArea(child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 420), child: ListView(
+          shrinkWrap: true, padding: const EdgeInsets.all(24), children: [
+            Center(child: LogoMark(biz: c.biz, size: 72)),
+            const SizedBox(height: 12),
+            Text(cat.salonName, textAlign: TextAlign.center, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
+            Text(t('tagline_${c.biz}'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: Tokens.muted)),
+            const SizedBox(height: 22),
+            ...body,
+            if (error != null) Notice(t(error!), bad: true),
+            Center(child: TextButton(onPressed: c.toggleLang, child: Text('🌐 ${t('language')}', style: const TextStyle(color: Tokens.ink, fontWeight: FontWeight.w600)))),
+          ])))),
+      );
+    }
     return Scaffold(
       body: Column(children: [
         PhHead(biz: c.biz, title: cat.salonName, subtitle: t('biz_${c.biz}'),

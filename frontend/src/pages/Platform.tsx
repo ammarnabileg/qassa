@@ -112,20 +112,28 @@ export function PlatformTenants() {
   const [onboard, setOnboard] = useState(false)
   const [manage, setManage] = useState<TenantRow | null>(null)
   const [support, setSupport] = useState<TenantRow | null>(null)
-  const rows = q.data ?? []
+  const all = q.data ?? []
+  const [find, setFind] = useState('')
+  const [st, setSt] = useState<string>('all')
+  const sts = ['all', ...[...new Set(all.map((r) => r.status))]]
+  const rows = all.filter((r) => (st === 'all' || r.status === st) &&
+    (!find || `${r.name} ${r.slug} ${r.owner_phone}`.toLowerCase().includes(find.toLowerCase())))
   const plans = usePlans()
   const planName = (code: string | null) => { const p = plans.data?.find((x) => x.code === code); return p ? nameOf(p, i18n.language) : code ?? '—' }
   return (
     <>
       <Head title={t('platform.tenants')} sub={t('platform.tenantsSub')}>
+        <input className="input" style={{ width: 220 }} placeholder={t('platform.search')} value={find} onChange={(e) => setFind(e.target.value)} />
         <button className="btn primary" onClick={() => setOnboard(true)}><Icon name="plus" />{t('platform.onboard')}</button>
       </Head>
       <div className="grid stats" style={{ marginBottom: 14 }}>
-        <Stat label={t('platform.total')} value={<bdi>{rows.length}</bdi>} />
-        <Stat label={t('platform.st.active')} value={<bdi>{rows.filter((r) => r.status === 'active').length}</bdi>} />
-        <Stat label={t('platform.st.trial')} value={<bdi>{rows.filter((r) => r.status === 'trial').length}</bdi>} />
-        <Stat label={t('platform.branchesTotal')} value={<bdi>{rows.reduce((a, r) => a + r.branches, 0)}</bdi>} />
+        <Stat label={t('platform.total')} value={<bdi>{all.length}</bdi>} />
+        <Stat label={t('platform.st.active')} value={<bdi>{all.filter((r) => r.status === 'active').length}</bdi>} />
+        <Stat label={t('platform.st.trial')} value={<bdi>{all.filter((r) => r.status === 'trial').length}</bdi>} />
+        <Stat label={t('platform.branchesTotal')} value={<bdi>{all.reduce((a, r) => a + r.branches, 0)}</bdi>} />
       </div>
+      <div className="seg" style={{ marginBottom: 10 }}>{sts.map((x) => <button key={x} className={st === x ? 'on' : ''} onClick={() => setSt(x)}>
+        {x === 'all' ? t('pos.all') : t(`platform.st.${x}`)} <bdi className="cap muted">{x === 'all' ? all.length : all.filter((r) => r.status === x).length}</bdi></button>)}</div>
       <ErrorText error={q.error} />
       <div className="tw"><table><thead><tr><th>{t('platform.company')}</th><th>{t('org.type')}</th><th>{t('platform.plan')}</th><th>{t('org.branches')}</th><th>{t('platform.appLink')}</th><th>{t('platform.status')}</th><th></th></tr></thead>
         <tbody>{rows.map((r) => <tr key={r.id}>
@@ -134,7 +142,7 @@ export function PlatformTenants() {
           <td>{planName(r.plan)}</td><td><bdi>{r.branches}</bdi></td>
           <td>{r.hosts.map((h) => <div key={h}><a className="small" href={`https://${h}`} target="_blank" rel="noreferrer" dir="ltr">{h}</a></div>)}</td>
           <td><span className={`pill ${STATUS_PILL[r.status]}`}>{t(`platform.st.${r.status}`)}</span></td>
-          <td className="row" style={{ flexWrap: 'nowrap' }}><button className="btn sm" onClick={() => setManage(r)}>{t('platform.manage')}</button>
+          <td className="row" style={{ flexWrap: 'nowrap' }}>{r.owner_phone && <a className="btn sm ghost" style={{ color: '#25D366' }} href={`https://wa.me/${r.owner_phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" aria-label="WhatsApp"><Icon name="whatsapp" /></a>}<button className="btn sm" onClick={() => setManage(r)}>{t('platform.manage')}</button>
             <button className="btn sm ghost" onClick={() => setSupport(r)}><Icon name="eye" />{t('pc.viewAs')}</button></td></tr>)}
           {q.isPending && <tr><td colSpan={7} className="empty">{t('common.loading')}</td></tr>}</tbody></table></div>
       {onboard && <OnboardDialog onClose={() => setOnboard(false)} />}

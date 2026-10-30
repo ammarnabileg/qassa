@@ -6,6 +6,9 @@ import { useAuth } from '../auth'
 import { ErrorText } from '../components/ErrorText'
 import { useSave } from '../components/hooks'
 import { Dialog, Head, Icon, nameOf, useToast } from '../components/ui'
+import { useNavigate } from 'react-router-dom'
+import { useBranch } from '../branch'
+import { formatKWD } from '../money'
 
 export type OrgData = { legal_entities: LegalEntity[]; branches: Branch[] }
 /** Company and branches. The last copy is kept per company so the till still knows its branch offline (D-013). */
@@ -32,6 +35,10 @@ export default function Org() {
   const { can } = useAuth()
   const toast = useToast()
   const q = useOrg()
+  const { membership } = useAuth()
+  const { setBranchId, setCompany } = useBranch()
+  const nav = useNavigate()
+  const month = useQuery({ enabled: can('pos.invoices.view'), queryKey: ['rep-branches'], queryFn: () => api<{ branch_id: number; month: string }[]>('/reports/branches') })
   const [form, setForm] = useState<Form | null>(null)
   const { save, busy, error, reset } = useSave<Branch>([['org'], ['subscription']], () => { setForm(null); toast(t('common.saved')) })
   if (q.isPending) return <p className="muted">{t('common.loading')}</p>
@@ -52,11 +59,21 @@ export default function Org() {
       <div className="grid">
         <div className="tw"><table><thead><tr><th>{t('acc.entity')}</th><th>{t('org.cr')}</th><th>{t('org.currency')}</th></tr></thead>
           <tbody>{q.data.legal_entities.map((e) => <tr key={e.id}><td><b>{nameOf(e, i18n.language)}</b></td><td className="num">{e.commercial_registration || '—'}</td><td>{e.base_currency}</td></tr>)}</tbody></table></div>
-        <div className="tw"><table><thead><tr><th>{t('org.code')}</th><th>{t('acc.branch')}</th><th>{t('org.type')}</th><th>{t('org.phone')}</th><th>{t('org.status')}</th><th></th></tr></thead>
-          <tbody>{q.data.branches.map((b) => <tr key={b.id}><td className="num">{b.code}</td><td><b>{nameOf(b, i18n.language)}</b><div className="cap muted">{b.address}</div></td>
-            <td><span className="pill info">{t(`biz.${b.business_type}`)}</span></td><td className="num">{b.phone || '—'}</td>
-            <td>{b.is_active ? <span className="pill good">{t('common.active')}</span> : <span className="pill mute">{t('common.inactive')}</span>}</td>
-            <td>{can('org.manage') && <button className="btn sm" onClick={() => open(b)}>{t('common.edit')}</button>}</td></tr>)}</tbody></table></div>
+        {/* branch cards like the reference (c-branches) */}
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 12 }}>
+          {q.data.branches.map((b) => { const m = month.data?.find((x) => x.branch_id === b.id)
+            return <div className="card" key={b.id} style={{ display: 'grid', gap: 6 }}>
+              <div className="row sb"><span style={{ fontSize: 22 }}>📍</span>{b.is_active ? <span className="pill good">{t('common.active')}</span> : <span className="pill mute">{t('common.inactive')}</span>}</div>
+              <h3>{t('nav.branchSub', { name: nameOf(b, i18n.language) })} <span className="cap muted num">{b.code}</span></h3>
+              {b.address && <div className="small muted">{b.address}</div>}
+              <div className="small"><span className="pill info">{t(`biz.${b.business_type}`)}</span> {b.phone && <bdi className="num">☎ {b.phone}</bdi>}</div>
+              {m && <div className="row sb small"><span className="muted">{t('home.salesMonth')}</span><b className="money">{formatKWD(m.month, i18n.language as 'ar' | 'en')}</b></div>}
+              <div className="row" style={{ marginTop: 4 }}>
+                {membership?.all_branches && b.is_active && <button className="btn sm primary" onClick={() => { setBranchId(b.id); setCompany(false); nav('/home') }}>{t('home.enterBranch')}</button>}
+                {can('org.manage') && <button className="btn sm" onClick={() => open(b)}>{t('common.edit')}</button>}
+                {b.phone && <a className="btn sm ghost" style={{ color: '#25D366' }} href={`https://wa.me/${b.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" aria-label="WhatsApp"><Icon name="whatsapp" /></a>}
+              </div></div> })}
+        </div>
       </div>
       <Dialog open={!!form} title={form?.id ? t('org.editBranch') : t('org.addBranch')} onClose={() => setForm(null)} onSubmit={submit} busy={busy}>
         {form && <>
