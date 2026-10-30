@@ -75,6 +75,7 @@ export default function POS() {
   const [paidNow, setPaidNow] = useState('')
   const [key, setKey] = useState(() => crypto.randomUUID())
   const [receipt, setReceipt] = useState<Invoice | null>(null)
+  const kidName = customer?.beneficiaries.find((b) => b.id === beneficiary && b.relation !== 'self')?.full_name ?? ''
   // Reference quick fields: child's name + guardian's mobile. Reuses the guardian if the number exists, adds the child if new.
   const [quick, setQuick] = useState({ child: '', phone: '' })
   const [quickBusy, setQuickBusy] = useState(false)
@@ -208,7 +209,7 @@ export default function POS() {
         <div className="card cart">
           <div className="row sb"><h2>{t('pos.invoice')}</h2><button className="btn ghost sm danger" onClick={reset}>{t('pos.clear')}</button></div>
           {appointment && <div className="notice info"><Icon name="calendar" />{t('pos.fromBooking', { name: appointment.beneficiary_name || appointment.customer_name })}</div>}
-          {customer ? <div className="li"><span className="av">{customer.full_name[0]}</span><div className="grow"><b>{customer.full_name}</b> <bdi className="cap muted">+{customer.phone}</bdi>
+          {customer ? <div className="li"><span className="av">{(kidName || customer.full_name)[0]}</span><div className="grow"><b>{kidName || customer.full_name}</b>{kidName && <span className="cap muted"> · {customer.full_name}</span>} <bdi className="cap muted">+{customer.phone}</bdi>
             {wallet.data && <div className="cap muted">⭐ <bdi>{wallet.data.points}</bdi> {t('pos.pointsUnit')}{wallet.data.packages.length > 0 && ` · ${t('pos.hasPackages', { n: wallet.data.packages.length })}`}</div>}</div>
             {!appointment && <button className="btn sm ghost" onClick={() => { setCustomer(null); setBeneficiary(null); setPoints(''); setLines(lines.map((l) => ({ ...l, redeem_package_id: null }))) }}><Icon name="close" /></button>}</div>
             : <>

@@ -145,6 +145,9 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 50,
     "EXCEPTION_HANDLER": "apps.core.errors.exception_handler",
     "COERCE_DECIMAL_TO_STRING": True,
+    # Proxies in front of Django that append to X-Forwarded-For (production: Traefik -> nginx = 2). Throttles then key on
+    # the address Traefik saw, not on the client-controlled start of the header. Unset (dev): REMOTE_ADDR + whole header.
+    "NUM_PROXIES": int(env("TRUSTED_PROXY_COUNT")) if env("TRUSTED_PROXY_COUNT") else None,
     "DEFAULT_THROTTLE_RATES": {"login": env("THROTTLE_LOGIN", "10/min"), "mfa": "10/min", "public": env("THROTTLE_PUBLIC", "60/min"), "lead": env("THROTTLE_LEAD", "5/hour")},
 }
 

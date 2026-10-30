@@ -8,6 +8,8 @@ import { useSave } from '../components/hooks'
 import { Dialog, Head, Icon, nameOf, useToast } from '../components/ui'
 import StaffSchedule from './StaffSchedule'
 import { useOrg } from './Org'
+import { useSales } from './Reports'
+import { formatKWD } from '../money'
 
 type Form = { id?: number; full_name_ar: string; full_name_en: string; phone: string; commission_percent: string; is_active: boolean; branch_ids: number[]; service_ids: number[] }
 
@@ -29,22 +31,31 @@ export default function Staff() {
   const submit = () => { const { id, ...body } = form!; save({ path: id ? `/staff/${id}` : '/staff', method: id ? 'PATCH' : 'POST', body }) }
 
   if (staff.isError) return <ErrorText error={staff.error} />
+  // month performance (reference v-staff): services done and sales from issued invoices; commission due from the ledger
+  const month = useSales('month')
+  const coms = useQuery({ enabled: can('commission.view.all'), queryKey: ['commissions'], queryFn: () => api<{ staff_id: number; balance: string }[]>('/commissions') })
+  const perf = (id: number) => month.data?.staff.find((x) => x.staff_id === id)
+  const due = (id: number) => { const b = coms.data?.find((x) => x.staff_id === id)?.balance; return b && Number(b) !== 0 ? b : null }
   return (
     <>
       <Head title={t('nav.staff')} sub={t('staff.sub')}>
         {can('staff.manage') && <button className="btn primary" onClick={() => open()}><Icon name="plus" />{t('staff.add')}</button>}
       </Head>
-      <div className="tw"><table><thead><tr><th>{t('staff.name')}</th><th>{t('acc.branch')}</th><th>{t('staff.skills')}</th><th>{t('org.phone')}</th><th>{t('org.status')}</th><th></th></tr></thead>
+      <div className="tw"><table><thead><tr><th>{t('staff.name')}</th><th>{t('acc.branch')}</th><th>{t('staff.skills')}</th><th>{t('org.phone')}</th><th className="n">{t('staff.rate')}</th><th className="n">{t('staff.monthCount')}</th><th className="n">{t('staff.monthSales')}</th><th className="n">{t('staff.due')}</th><th>{t('org.status')}</th><th></th></tr></thead>
         <tbody>{staff.data?.map((s) => <tr key={s.id}>
           <td><b>{lang === 'en' && s.full_name_en ? s.full_name_en : s.full_name_ar}</b></td>
           <td>{s.branch_ids.map(branchName).join('، ') || '—'}</td>
           <td><bdi>{s.service_ids.length}</bdi> {t('staff.servicesCount')}</td>
           <td className="num">{s.phone || '—'}</td>
+          <td className="n"><bdi>{Number(s.commission_percent)}%</bdi></td>
+          <td className="n"><bdi>{perf(s.id)?.count ?? '—'}</bdi></td>
+          <td className="n money">{perf(s.id) ? formatKWD(perf(s.id)!.total, lang as 'ar' | 'en') : '—'}</td>
+          <td className="n money"><b>{due(s.id) ? formatKWD(due(s.id)!, lang as 'ar' | 'en') : '—'}</b></td>
           <td>{s.is_active ? <span className="pill good">{t('common.active')}</span> : <span className="pill mute">{t('common.inactive')}</span>}</td>
           <td className="row" style={{ flexWrap: 'nowrap' }}><button className="btn sm" onClick={() => setSched(s)}><Icon name="clock" />{t('sched.title')}</button>
             {can('staff.manage') && <button className="btn sm" onClick={() => open(s)}>{t('common.edit')}</button>}</td></tr>)}
-          {staff.data?.length === 0 && <tr><td colSpan={6} className="empty">{t('common.empty')}</td></tr>}
-          {staff.isPending && <tr><td colSpan={6} className="empty">{t('common.loading')}</td></tr>}</tbody></table></div>
+          {staff.data?.length === 0 && <tr><td colSpan={10} className="empty">{t('common.empty')}</td></tr>}
+          {staff.isPending && <tr><td colSpan={10} className="empty">{t('common.loading')}</td></tr>}</tbody></table></div>
 
       <Dialog open={!!form} wide title={form?.id ? t('staff.edit') : t('staff.add')} onClose={() => setForm(null)} onSubmit={submit} busy={busy}>
         {form && <>

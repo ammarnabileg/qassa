@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -52,12 +52,15 @@ export default function Reports() {
   const { t, i18n } = useTranslation()
   const lang = i18n.language as 'ar' | 'en'
   const { membership } = useAuth()
-  const { branch } = useBranch()
+  const { branch, branches: allBranches, company: coView } = useBranch()
   const [range, setRange] = useState<Range>('month')
-  const [scope, setScope] = useState<'branch' | 'all'>('branch')
+  const [scope, setScope] = useState<'branch' | 'all'>(coView ? 'all' : 'branch')
   const company = !!membership?.all_branches
   const q = useSales(range, scope === 'all' && company ? undefined : branch?.id)
-  const branches = useQuery({ enabled: company && scope === 'all', queryKey: ['rep-branches'], queryFn: () => api<BranchRow[]>('/reports/branches') })
+  // per-branch numbers for the comparison (reference v-c-rep)
+  const r = rangeOf(range)
+  const per = useQueries({ queries: (company && scope === 'all' ? allBranches : []).map((b) => ({
+    queryKey: ['rep', range, b.id, r.to], queryFn: () => api<Sales>(`/reports/sales?from=${r.from}&to=${r.to}&branch_id=${b.id}`) })) })
   const d = q.data
   const csv = () => {
     if (!d) return
@@ -86,10 +89,17 @@ export default function Reports() {
             <Stat label={t('rep.customers')} value={<bdi>{d.stats.customers}</bdi>} />
           </>}
         </div>
-        {scope === 'all' && branches.data && <>
+        {scope === 'all' && allBranches.length > 1 && <>
           <h2 style={{ margin: '18px 0 10px' }}>{t('rep.compare')}</h2>
-          <div className="tw"><table><thead><tr><th>{t('acc.branch')}</th><th className="n">{t('rep.today')}</th><th className="n">{t('rep.invoices')}</th><th className="n">{t('rep.month')}</th></tr></thead>
-            <tbody>{branches.data.map((b) => <tr key={b.branch_id}><td><b>{nameOf(b, lang)}</b></td><td className="n money">{formatKWD(b.today, lang)}</td><td className="n"><bdi>{b.invoices_today}</bdi></td><td className="n money">{formatKWD(b.month, lang)}</td></tr>)}</tbody></table></div>
+          <div className="tw"><table><thead><tr><th>{t('acc.branch')}</th><th className="n">{t('rep.sales')}</th><th className="n">{t('rep.invoices')}</th><th className="n">{t('rep.average')}</th><th className="n">{t('rep.disc')}</th>
+            {d.profit && <><th className="n">{t('rep.com')}</th><th className="n">{t('rep.exp')}</th><th className="n">{t('rep.net')}</th></>}</tr></thead>
+            <tbody>{allBranches.map((b, i) => { const x = per[i]?.data; return <tr key={b.id}><td><b>{t('nav.branchSub', { name: nameOf(b, lang) })}</b></td>
+              {x ? <><td className="n money">{formatKWD(x.stats.sales, lang)}</td><td className="n"><bdi>{x.stats.invoices}</bdi></td><td className="n money">{formatKWD(x.stats.average, lang)}</td><td className="n money">{formatKWD(x.stats.discounts, lang)}</td>
+                {d.profit && x.profit && <><td className="n money">{formatKWD(x.profit.commissions, lang)}</td><td className="n money">{formatKWD(x.profit.expenses, lang)}</td><td className="n money"><b>{formatKWD(x.profit.net, lang)}</b></td></>}</>
+                : <td colSpan={d.profit ? 7 : 4} className="muted">…</td>}</tr> })}
+              <tr><td><b>{t('rep.total')}</b></td><td className="n money"><b>{formatKWD(d.stats.sales, lang)}</b></td><td className="n"><b><bdi>{d.stats.invoices}</bdi></b></td><td className="n money">{formatKWD(d.stats.average, lang)}</td><td className="n money">{formatKWD(d.stats.discounts, lang)}</td>
+                {d.profit && <><td className="n money">{formatKWD(d.profit.commissions, lang)}</td><td className="n money">{formatKWD(d.profit.expenses, lang)}</td><td className="n money"><b>{formatKWD(d.profit.net, lang)}</b></td></>}</tr>
+            </tbody></table></div>
         </>}
         <div className="grid g2" style={{ marginTop: 14 }}>
           <div className="card"><h2>{t('rep.daily')}</h2><Days days={d.days} lang={lang} /></div>

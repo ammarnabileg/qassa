@@ -78,6 +78,8 @@ export function PlatformBilling() {
   const lang = i18n.language as 'ar' | 'en'
   const toast = useToast()
   const [f, setF] = useState('')
+  const owners = useQuery({ queryKey: ['tenants'], queryFn: () => api<{ id: number; owner_phone: string }[]>('/platform/tenants') })
+  const phoneOf = (id: number) => owners.data?.find((x) => x.id === id)?.owner_phone.replace(/\D/g, '') || ''
   const q = useQuery({ queryKey: ['pinv', f], queryFn: () => api<SubInvoice[]>(`/platform/invoices${f ? `?status=${f}` : ''}`) })
   const [act, setAct] = useState<{ inv: SubInvoice; action: 'pay' | 'void'; method: string; reference: string; reason: string } | null>(null)
   const run = useSave<{ issued: number; past_due: number }>([['pinv'], ['pdash'], ['tenants']], (r) => toast(t('pc.billingRan', { n: r.issued, p: r.past_due })))
@@ -105,7 +107,9 @@ export function PlatformBilling() {
           <td><span className={`pill ${invPill(i)}`}>{t(`pc.inv.${invState(i)}`)}</span>{i.paid_reference && <div className="cap muted">{t(`pc.m.${i.paid_method}`)} · {i.paid_reference}</div>}</td>
           <td className="row" style={{ flexWrap: 'nowrap' }}>{i.status === 'issued' && <>
             <button className="btn sm" onClick={() => { s.reset(); setAct({ inv: i, action: 'pay', method: 'bank', reference: '', reason: '' }) }}>{t('pc.recordPayment')}</button>
-            <button className="btn sm ghost danger" onClick={() => { s.reset(); setAct({ inv: i, action: 'void', method: 'bank', reference: '', reason: '' }) }}>{t('pc.void')}</button></>}</td></tr>)}
+            <button className="btn sm ghost danger" onClick={() => { s.reset(); setAct({ inv: i, action: 'void', method: 'bank', reference: '', reason: '' }) }}>{t('pc.void')}</button>
+            {phoneOf(i.tenant) && <a className="btn sm ghost" style={{ color: '#25D366' }} target="_blank" rel="noreferrer"
+              href={`https://wa.me/${phoneOf(i.tenant)}?text=${encodeURIComponent(t('pc.remindText', { name: i.tenant_name, n: i.number, v: formatKWD(i.amount, lang), d: i.due_on }))}`}><Icon name="whatsapp" />{t('pc.remind')}</a>}</>}</td></tr>)}
           {rows.length === 0 && <tr><td colSpan={8} className="empty">{t('pc.noInvoicesYet')}</td></tr>}</tbody></table></div>
       <Dialog open={!!act} title={act ? `${act.action === 'pay' ? t('pc.recordPayment') : t('pc.void')} · ${act.inv.number}` : ''} onClose={() => setAct(null)} busy={s.busy}
         onSubmit={() => s.save({ path: `/platform/invoices/${act!.inv.id}/action`, body: { action: act!.action, method: act!.method, reference: act!.reference, reason: act!.reason } })}>

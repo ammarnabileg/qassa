@@ -158,18 +158,25 @@ export function PlatformPlans() {
   const plans = usePlans()
   const [edit, setEdit] = useState<Plan | null>(null)
   const { save, busy, error, reset } = useSave<Plan>([['plans']], () => { setEdit(null); toast(t('common.saved')) })
+  const tenants = useQuery({ queryKey: ['tenants'], queryFn: () => api<TenantRow[]>('/platform/tenants') })
   const lang = i18n.language as 'ar' | 'en'
   return (
     <>
-      <Head title={t('platform.plans')} sub={t('platform.plansSub')} />
-      <div className="cards">{plans.data?.map((p) => <div key={p.id} className="plan">
-        <div className="row sb"><b>{nameOf(p, lang)}</b><button className="btn sm" onClick={() => { reset(); setEdit({ ...p }) }}>{t('common.edit')}</button></div>
+      <Head title={t('platform.plans')} sub={t('platform.plansSub')}>
+        <a className="btn" href="/#price" target="_blank" rel="noreferrer"><Icon name="eye" />{t('pc.previewSite')}</a>
+      </Head>
+      <div className="cards">{plans.data?.map((p) => <div key={p.id} className="plan" style={p.highlight ? { borderColor: 'var(--ink)', borderWidth: 2 } : undefined}>
+        <div className="row sb"><b>{nameOf(p, lang)}</b>{p.highlight && <span className="pill good">{t('site.popular')}</span>}</div>
         <div className="price">{formatKWD(p.monthly_price, lang)}<span className="small muted"> / {t('plan.month')}</span></div>
         <ul>
           <li><Icon name="store" />{t('plan.branches', { n: p.max_branches >= 99 ? t('plan.unlimited') : p.max_branches })}</li>
           <li><Icon name="users" />{t('plan.staff', { n: p.max_staff >= 99 ? t('plan.unlimited') : p.max_staff })}</li>
           <li><Icon name="link" />{p.custom_domain ? t('plan.customDomain') : t('plan.subdomain')}</li>
+          {((lang === 'en' ? p.features_en : p.features_ar) ?? []).map((f) => <li key={f}><Icon name="check" />{f}</li>)}
         </ul>
+        <div className="row sb" style={{ marginTop: 'auto', borderTop: '1px solid var(--line)', paddingTop: 10 }}>
+          <span className="small muted">{t('platform.subscribers', { n: (tenants.data ?? []).filter((x) => x.plan === p.code).length })}</span>
+          <button className="btn sm" onClick={() => { reset(); setEdit({ ...p }) }}>{t('common.edit')}</button></div>
       </div>)}</div>
       <Dialog open={!!edit} title={t('platform.editPlan')} onClose={() => setEdit(null)} busy={busy}
         onSubmit={() => { const { id, code, ...body } = edit!; void code; save({ path: `/platform/plans/${id}`, method: 'PATCH', body: { ...body, features_ar: body.features_ar?.map((x) => x.trim()).filter(Boolean), features_en: body.features_en?.map((x) => x.trim()).filter(Boolean) } }) }}>

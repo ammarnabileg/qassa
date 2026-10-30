@@ -20,6 +20,7 @@ services:
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?},localhost  # localhost: container healthcheck
       DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:?}
       DJANGO_BEHIND_TLS_PROXY: "1"
+      TRUSTED_PROXY_COUNT: "2"  # Traefik (Coolify) -> nginx (web) -> Django; throttles key on the visitor address
       POSTGRES_HOST: db
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
       REDIS_URL: redis://redis:6379/1

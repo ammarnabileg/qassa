@@ -85,3 +85,19 @@ def test_points_overview_and_manual_adjust(salon):
     o = c.get("/api/v1/loyalty/points").json()
     assert o["outstanding"] == 25 and o["balances"][0]["balance"] == 25 and o["recent"][0]["points"] == -15
     assert client_for(s["cashier"], s["t"]).post("/api/v1/loyalty/points/adjust", {"customer_id": cust["id"], "points": 5, "note": "x"}, format="json").status_code == 403
+
+
+def test_throttle_keys_on_the_address_traefik_saw(settings):
+    """Behind Traefik -> nginx, a client-made X-Forwarded-For prefix must not create a fresh throttle bucket."""
+    from rest_framework.settings import api_settings
+    from rest_framework.test import APIRequestFactory
+    from rest_framework.throttling import SimpleRateThrottle
+    settings.REST_FRAMEWORK = {**settings.REST_FRAMEWORK, "NUM_PROXIES": 2}
+    api_settings.reload()
+    try:
+        f = APIRequestFactory()
+        ident = lambda xff: SimpleRateThrottle.get_ident(None, f.get("/", HTTP_X_FORWARDED_FOR=xff, REMOTE_ADDR="10.0.0.9"))
+        assert ident("1.1.1.1, 203.0.113.7, 10.0.0.5") == ident("9.9.9.9, 203.0.113.7, 10.0.0.5") == "203.0.113.7"
+        assert ident("203.0.113.8, 10.0.0.5") == "203.0.113.8"
+    finally:
+        api_settings.reload()

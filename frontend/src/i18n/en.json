@@ -370,7 +370,11 @@
     "skills": "Services (skills)",
     "servicesCount": "services",
     "branches": "Branches",
-    "noServices": "Add services first"
+    "noServices": "Add services first",
+    "rate": "Commission",
+    "monthCount": "Services this month",
+    "monthSales": "Month sales",
+    "due": "Commission due"
   },
   "cust": {
     "sub": "Guardians and customers, and who receives the service (children or the customer)",
@@ -501,7 +505,8 @@
     "maxStaff": "Max staff",
     "ownerPhone": "Owner's WhatsApp",
     "ownerPhoneHelp": "Login codes are sent here from the platform number. Only changeable here (account security).",
-    "search": "Search company or phone"
+    "search": "Search company or phone",
+    "subscribers": "{{n}} companies subscribed"
   },
   "book": {
     "sub": "Book, move to the chair, and send to checkout when done",
@@ -1044,7 +1049,10 @@
     "headlineEn": "Headline (English)",
     "subAr": "Description (Arabic)",
     "subEn": "Description (English)",
-    "emptyDefault": "Leave empty for the default text"
+    "emptyDefault": "Leave empty for the default text",
+    "remind": "Remind",
+    "remindText": "Hi {{name}} 👋 Qassa subscription invoice {{n}} of {{v}} is due on {{d}}. If you've paid, please send us the reference. Thanks!",
+    "previewSite": "Preview pricing page"
   },
   "site": {
     "tag": "Salon system",
@@ -1307,7 +1315,11 @@
     "costs": "Expenses + commissions",
     "costsSub": "Including product cost",
     "netProfit": "Net profit",
-    "estimate": "Estimate — income statement is the reference"
+    "estimate": "Estimate — income statement is the reference",
+    "disc": "Discounts",
+    "com": "Commissions",
+    "exp": "Expenses",
+    "total": "Total"
   },
   "home": {
     "morning": "Good morning {{name}} 👋",
