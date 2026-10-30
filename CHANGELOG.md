@@ -4,6 +4,14 @@ Release versions follow `MAJOR.MINOR.PATCH` and are tagged `vX.Y.Z` on `main`.
 Builds between releases are **debug** builds: `X.(Y+1).0-dev.N+sha` (see `scripts/version.py`).
 
 ## [Unreleased]
+
+## [0.2.0] — 2026-10-30
+### Added — dashboards, reports, settings (design screens v-home, v-rep, v-c-home, v-c-rep, v-set, v-p-set)
+- Branch home (today, queue, latest invoices), company home (every branch today and this month), reports with branch comparison, best sellers, staff, payment methods, peak hours and a profit summary (cost-permission only).
+- Salon receipt settings (header, footer, commercial registration) and CSV export of customers and invoices (audited).
+- Platform settings: sales WhatsApp, support e-mail, site headline and trial length (no longer only environment variables).
+- Customer app: points and active packages on the account screen.
+- Staging-only test accounts without MFA (`E2E_PASSWORD`), closed when the variable is removed.
 ### Added — MOCI report
 - Cash flow statement (indirect method, reconciled to the change in cash) and statement of changes in equity.
 ### Added — Offline till (D-013)
