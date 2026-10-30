@@ -227,6 +227,21 @@ class AccountTab extends StatelessWidget {
           Text(me.fullName, style: const TextStyle(fontWeight: FontWeight.w700)),
           Text('\u2066+${me.phone}\u2069', style: cap),
         ]))),
+        if (me.points != null || me.packages.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(t('wallet'), style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          if (me.points != null) SCard(
+            leading: CircleAvatar(radius: 17, backgroundColor: Brand.of(c.biz).soft, child: Icon(Icons.star_rounded, color: Brand.of(c.biz).dark, size: 20)),
+            child: Text(t('points_n').replaceAll('{n}', '${me.points}'), style: small)),
+          for (final p in me.packages) SCard(
+            leading: CircleAvatar(radius: 17, backgroundColor: Brand.of(c.biz).soft, child: Icon(Icons.card_giftcard, color: Brand.of(c.biz).dark, size: 20)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text((c.lang == 'en' ? p['name_en'] : p['name_ar']) as String, style: small),
+              Text(t('sessions_left').replaceAll('{n}', '${p['sessions_left']}').replaceAll('{total}', '${p['sessions_total']}')
+                  .replaceAll('{date}', p['expires_on'] as String), style: cap),
+            ])),
+        ],
         const SizedBox(height: 16),
         Text(t('beneficiaries'), style: const TextStyle(fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),

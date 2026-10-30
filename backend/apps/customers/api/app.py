@@ -115,8 +115,19 @@ class BeneficiaryOut(serializers.ModelSerializer):
 
 
 def me_payload(c: Customer) -> dict:
+    from apps.core.dates import business_date
+    from apps.loyalty.models import CustomerPackage, LoyaltySettings
+    from apps.loyalty.services import points
+    cfg = LoyaltySettings.objects.first()
+    pkgs = (CustomerPackage.objects.select_related("plan").filter(customer=c, voided=False, sessions_left__gt=0,
+                                                                expires_on__gte=business_date()).order_by("expires_on"))
     return {"id": c.id, "full_name": c.full_name, "phone": c.phone, "preferred_language": c.preferred_language,
-            "beneficiaries": BeneficiaryOut(c.beneficiaries.filter(is_active=True).order_by("id"), many=True).data}
+            "beneficiaries": BeneficiaryOut(c.beneficiaries.filter(is_active=True).order_by("id"), many=True).data,
+            "points": points.balance(c) if cfg and cfg.enabled else None,
+            "points_value": str(cfg.point_value) if cfg and cfg.enabled else None,
+            "packages": [{"name_ar": k.plan.name_ar if k.plan_id else "", "name_en": (k.plan.name_en or k.plan.name_ar) if k.plan_id else "",
+                          "sessions_left": k.sessions_left, "sessions_total": k.sessions_total, "expires_on": k.expires_on.isoformat()}
+                         for k in pkgs]}
 
 
 class RegisterView(AppView):

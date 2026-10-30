@@ -56,9 +56,13 @@ class Me {
   Me(Json j)
       : fullName = j['full_name'] as String,
         phone = j['phone'] as String,
-        beneficiaries = [for (final b in j['beneficiaries'] as List) b as Json];
+        beneficiaries = [for (final b in j['beneficiaries'] as List) b as Json],
+        points = j['points'] as int?,
+        packages = [for (final p in (j['packages'] as List?) ?? const []) p as Json];
   final String fullName, phone;
   final List<Json> beneficiaries;
+  final int? points;            // null when the salon has no loyalty programme
+  final List<Json> packages;    // active session packages
 }
 
 /// Customer app API. On a company's own domain the salon is the host; elsewhere (store app, local testing)
