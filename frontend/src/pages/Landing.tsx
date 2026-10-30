@@ -6,7 +6,7 @@ import { ErrorText, LangToggle } from '../components/ErrorText'
 import { Icon, LogoMark, nameOf, useBizTheme } from '../components/ui'
 import { formatKWD } from '../money'
 
-type Site = { whatsapp: string; email: string; trial_days: number }
+type Site = { whatsapp: string; email: string; trial_days: number; headline_ar?: string; headline_en?: string; sub_ar?: string; sub_en?: string }
 const BIZ: [('kids' | 'men' | 'women'), string][] = [['kids', '#0CD273'], ['men', '#C9A24B'], ['women', '#EC6F9A']]
 const FEATS = ['cart', 'calendar', 'award', 'store', 'whatsapp', 'chart']
 const go = (id: string) => (e: React.MouseEvent) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }) }
@@ -48,8 +48,8 @@ export default function Landing() {
         <section className="hero">
           <div>
             <span className="eyebrow">{t('site.eyebrow', { n: trial })}</span>
-            <h1>{t('site.headline')}</h1>
-            <p>{t('site.sub')}</p>
+            <h1>{(lang === 'en' ? site.data?.headline_en : site.data?.headline_ar) || t('site.headline')}</h1>
+            <p>{(lang === 'en' ? site.data?.sub_en : site.data?.sub_ar) || t('site.sub')}</p>
             <div className="row" style={{ marginTop: 18 }}>
               <a className="btn brand lg" style={{ width: 'auto' }} href="#signup" onClick={go('signup')}>{t('site.cta')}</a>
               <a className="btn lg" style={{ width: 'auto' }} href="#price" onClick={go('price')}>{t('site.seePrices')}</a>

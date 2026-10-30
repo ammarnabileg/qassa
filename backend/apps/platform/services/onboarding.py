@@ -58,7 +58,7 @@ def onboard_tenant(spec: OnboardingSpec, actor=None) -> Tenant:
                                     kind=TenantDomain.Kind.SUBDOMAIN, is_active=True, activated_at=timezone.now())
         today = timezone.localdate()
         Subscription.objects.create(tenant=tenant, plan=plan, started_on=today,
-                                    current_period_end=today + datetime.timedelta(days=30))
+                                    current_period_end=today + datetime.timedelta(days=_trial_days()))
         with tenant_context(tenant.id):
             entity = LegalEntity.objects.create(name_ar=spec.legal_name_ar, name_en=spec.legal_name_en,
                                                 commercial_registration=spec.commercial_registration)
@@ -79,3 +79,8 @@ def onboard_tenant(spec: OnboardingSpec, actor=None) -> Tenant:
             audit("tenant.onboarded", tenant_id=tenant.id, actor=actor, obj=tenant,
                   data={"entity": entity.id, "branches": [b.code for b in spec.branches], "plan": plan.code})
         return tenant
+
+
+def _trial_days() -> int:
+    from apps.platform.models import PlatformSettings
+    return PlatformSettings.get().trial_days or 30

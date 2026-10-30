@@ -140,3 +140,20 @@ class SupportAccess(models.Model):
     started_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     ended_at = models.DateTimeField(null=True, blank=True)
+
+
+class PlatformSettings(models.Model):
+    """Single row: what the public site shows and the trial length (reference v-p-set). Edited by platform staff."""
+    support_email = models.EmailField(blank=True)
+    sales_whatsapp = models.CharField(max_length=20, blank=True)
+    headline_ar = models.CharField(max_length=200, blank=True)
+    headline_en = models.CharField(max_length=200, blank=True)
+    sub_ar = models.CharField(max_length=400, blank=True)
+    sub_en = models.CharField(max_length=400, blank=True)
+    trial_days = models.PositiveSmallIntegerField(default=30)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(id=1)
+        return obj

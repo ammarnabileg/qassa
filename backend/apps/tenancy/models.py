@@ -127,3 +127,16 @@ class MembershipBranch(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["membership", "branch"], name="uniq_membership_branch")]
+
+
+class SalonSettings(TenantScopedModel):
+    """What prints on the receipt (reference v-set, tab الإيصال). Kuwait has no VAT today: no tax is calculated."""
+    receipt_header_ar = models.CharField(max_length=120, blank=True)
+    receipt_footer_ar = models.CharField(max_length=200, blank=True)
+    receipt_footer_en = models.CharField(max_length=200, blank=True)
+    commercial_registration = models.CharField(max_length=40, blank=True)
+    show_staff_on_receipt = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta(TenantScopedModel.Meta):
+        constraints = [models.UniqueConstraint(fields=["tenant"], name="uniq_salon_settings")]

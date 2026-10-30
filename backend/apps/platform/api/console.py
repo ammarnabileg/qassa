@@ -358,11 +358,47 @@ def active_support(user, tenant_id=None):
 
 
 class PublicSiteView(APIView):
-    """Contact details and trial length for the public site (no secrets)."""
+    """Contact details, headline and trial length for the public site (no secrets)."""
     permission_classes = [AllowAny]
     authentication_classes = []
 
     @extend_schema(responses=dict)
     def get(self, request):
         from django.conf import settings
-        return Response({"whatsapp": settings.QASSA["SALES_WHATSAPP"], "email": settings.QASSA["SALES_EMAIL"], "trial_days": 30})
+
+        from apps.platform.models import PlatformSettings
+        c = PlatformSettings.get()
+        return Response({"whatsapp": c.sales_whatsapp or settings.QASSA["SALES_WHATSAPP"], "email": c.support_email or settings.QASSA["SALES_EMAIL"],
+                         "trial_days": c.trial_days, "headline_ar": c.headline_ar, "headline_en": c.headline_en, "sub_ar": c.sub_ar, "sub_en": c.sub_en})
+
+
+class PlatformSettingsSerializer(serializers.Serializer):
+    support_email = serializers.EmailField(required=False, allow_blank=True)
+    sales_whatsapp = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    headline_ar = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    headline_en = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    sub_ar = serializers.CharField(max_length=400, required=False, allow_blank=True)
+    sub_en = serializers.CharField(max_length=400, required=False, allow_blank=True)
+    trial_days = serializers.IntegerField(min_value=0, max_value=90, required=False)
+
+
+class PlatformSettingsView(APIView):
+    permission_classes = [IsPlatformStaff]
+
+    @extend_schema(responses=PlatformSettingsSerializer)
+    def get(self, request):
+        from apps.platform.models import PlatformSettings
+        return Response(PlatformSettingsSerializer(PlatformSettings.get()).data)
+
+    @extend_schema(request=PlatformSettingsSerializer, responses=PlatformSettingsSerializer)
+    def patch(self, request):
+        from apps.customers.services.phone import normalize_phone
+        from apps.platform.models import PlatformSettings
+        s = PlatformSettingsSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        c = PlatformSettings.get()
+        for k, v in s.validated_data.items():
+            setattr(c, k, normalize_phone(v) if k == "sales_whatsapp" and v else v)
+        c.save()
+        audit("platform.settings", actor=request.user, data={k: str(v) for k, v in s.validated_data.items()})
+        return Response(PlatformSettingsSerializer(c).data)

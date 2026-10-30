@@ -90,7 +90,11 @@
     "assets": "Fixed assets",
     "settlements": "KNET & gateway settlements",
     "periods": "Periods & closing",
-    "offline": "Offline receipts"
+    "offline": "Offline receipts",
+    "home": "Home",
+    "company": "Company",
+    "reports": "Reports",
+    "settings": "Settings"
   },
   "org": {
     "entities": "Legal entities",
@@ -972,7 +976,21 @@
     "howToPay": "To pay: transfer the amount and send the reference to support.",
     "featuresAr": "Features — Arabic (one per line)",
     "featuresEn": "Features — English",
-    "featuresHelp": "Shown on the pricing page. The first line of higher plans is “Everything in …”."
+    "featuresHelp": "Shown on the pricing page. The first line of higher plans is “Everything in …”.",
+    "settings": "Platform settings",
+    "settingsSub": "What the public site shows and the trial length",
+    "preview": "Preview site",
+    "identity": "Contact",
+    "supportEmail": "Support email",
+    "salesWa": "Sales WhatsApp",
+    "trialDays": "Trial (days)",
+    "trialHelp": "Shown on the site and applied to new companies",
+    "pricingPage": "Site headline",
+    "headlineAr": "Headline (Arabic)",
+    "headlineEn": "Headline (English)",
+    "subAr": "Description (Arabic)",
+    "subEn": "Description (English)",
+    "emptyDefault": "Leave empty for the default text"
   },
   "site": {
     "tag": "Salon system",
@@ -1204,5 +1222,72 @@
       "drawer_closed_before_sync": "The drawer closed before this receipt arrived — it may explain a drawer difference"
     },
     "howItWorks": "How it works: each offline receipt gets the device's next number and a signature, and stays in the browser until the server has it. If a coupon, points or a package session were used meanwhile on another device, the receipt is posted at the amount paid and comes here for review."
+  },
+  "rep": {
+    "allBranches": "All branches",
+    "r": {
+      "today": "Today",
+      "week": "Last 7 days",
+      "month": "This month"
+    },
+    "sales": "Sales",
+    "afterReturns": "after {{v}} returns",
+    "invoices": "Invoices",
+    "average": "Average invoice",
+    "customers": "Customers",
+    "discounts": "{{v}} discounts",
+    "compare": "Branch comparison",
+    "today": "Today",
+    "month": "Month",
+    "daily": "Daily sales",
+    "top": "Best sellers",
+    "byStaff": "By staff",
+    "methods": "Payment methods",
+    "peak": "Peak hours",
+    "profit": "Profit summary",
+    "cogs": "Cost of products",
+    "net": "Net",
+    "profitNote": "Operational view — the income statement is the reference"
+  },
+  "home": {
+    "morning": "Good morning {{name}} 👋",
+    "evening": "Good evening {{name}} 👋",
+    "booking": "Booking",
+    "sale": "New sale",
+    "salesToday": "Sales today",
+    "salesMonth": "Sales this month",
+    "waiting": "Waiting",
+    "onChair": "On the chair",
+    "queue": "The queue now",
+    "allBookings": "All bookings",
+    "noQueue": "Nobody waiting",
+    "latest": "Latest invoices",
+    "all": "All",
+    "walkIn": "Walk-in",
+    "noInvoices": "No invoices today",
+    "companySub": "All your branches on one screen",
+    "openDrawers": "Open drawers",
+    "branchesToday": "Branches today",
+    "drawerOpen": "Open",
+    "drawerClosed": "Closed",
+    "open": "Open",
+    "monthByBranch": "This month by branch",
+    "bestStaff": "Top staff (month)"
+  },
+  "set": {
+    "sub": "Receipt and data export",
+    "receipt": "Receipt",
+    "header": "Line under the branch name",
+    "headerPh": "e.g. address or phone",
+    "footerAr": "Footer message (Arabic)",
+    "footerEn": "Footer message (English)",
+    "cr": "Commercial registration no.",
+    "crShort": "CR",
+    "noVat": "Kuwait has no VAT today, so no tax is calculated on invoices.",
+    "data": "Data",
+    "dataHelp": "Download your data as CSV for Excel. Every export is audited.",
+    "exportCustomers": "Customers",
+    "exportInvoices": "This year's invoices",
+    "noExport": "Export needs the “Export data” permission"
   }
 }

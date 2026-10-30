@@ -8,6 +8,7 @@ import { useBranch } from '../branch'
 import { ErrorText } from '../components/ErrorText'
 import { useSave } from '../components/hooks'
 import { Dialog, Head, Icon, nameOf, useToast } from '../components/ui'
+import { useSalonSettings } from './Settings'
 import { formatKWD, fromFils } from '../money'
 import { safeFils } from './POS'
 
@@ -16,6 +17,7 @@ const dt = (iso: string, lang: string) => new Date(iso).toLocaleString(lang === 
 
 /** Printable receipt (72 mm), using the design's #receipt / #printArea styles. */
 export function Receipt({ invoice: inv, onClose }: { invoice: Invoice; onClose: () => void }) {
+  const salon = useSalonSettings()
   const { t, i18n } = useTranslation()
   const lang = i18n.language as 'ar' | 'en'
   const { membership } = useAuth()
@@ -30,7 +32,7 @@ export function Receipt({ invoice: inv, onClose }: { invoice: Invoice; onClose: 
   }, [printing])
   const body = (
     <div id="receipt">
-      <div className="rc"><b>{membership?.tenant_name}</b><div>{branch ? nameOf(branch, lang) : ''}</div><div className="cap">{inv.number} · {dt(inv.issued_at, lang)}</div></div>
+      <div className="rc"><b>{membership?.tenant_name}</b><div>{branch ? nameOf(branch, lang) : ''}</div>{salon.data?.receipt_header_ar && <div className="cap">{salon.data.receipt_header_ar}</div>}<div className="cap">{inv.number} · {dt(inv.issued_at, lang)}</div></div>
       <hr />
       {inv.lines.map((l) => <div className="r" key={l.id}><span>{l.qty > 1 && <bdi>{l.qty}× </bdi>}{nameOf({ name_ar: l.name_ar, name_en: l.name_en }, lang)}</span><span className="money">{formatKWD(l.line_total, lang)}</span></div>)}
       <hr />
@@ -41,7 +43,8 @@ export function Receipt({ invoice: inv, onClose }: { invoice: Invoice; onClose: 
       {inv.payments.map((p) => <div className="r" key={p.id}><span>{p.direction === 'out' ? t('inv.refund') + ' · ' : ''}{t(`pos.m.${p.method}`)}{p.reference && ` (${p.reference})`}</span><span className="money">{formatKWD(p.amount, lang)}</span></div>)}
       {inv.state.balance !== '0.000' && <div className="r"><b>{t('inv.balance')}</b><b className="money">{formatKWD(inv.state.balance, lang)}</b></div>}
       <hr /><div className="rc cap">{inv.beneficiary_name || inv.customer_name}{inv.customer_phone && <> · <bdi>+{inv.customer_phone}</bdi></>}</div>
-      <div className="rc cap">{t('inv.thanks')}</div>
+      {salon.data?.commercial_registration && <div className="rc cap">{t('set.crShort')} <bdi>{salon.data.commercial_registration}</bdi></div>}
+      <div className="rc cap">{(lang === 'en' ? salon.data?.receipt_footer_en : salon.data?.receipt_footer_ar) || t('inv.thanks')}</div>
     </div>
   )
   return (

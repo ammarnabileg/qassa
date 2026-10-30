@@ -19,6 +19,7 @@ from apps.notifications.api.views import WhatsAppActionView, WhatsAppView, Messa
 from apps.pos.api import views as pos
 from apps.customers.api import app as capp
 from apps.platform.api import console as con
+from apps.pos.api import report_views as rep
 from apps.customers.api import views as cust
 from apps.staff.api import views as stf
 
@@ -101,6 +102,7 @@ urlpatterns = [
     path(api + "subscription/invoices", con.MyInvoicesView.as_view()),
     path(api + "public/leads", con.PublicLeadView.as_view()),
     path(api + "public/site", con.PublicSiteView.as_view()),
+    path(api + "platform/settings", con.PlatformSettingsView.as_view()),
     path(api + "platform/plans/<int:pk>", plat.PlanDetailView.as_view()),
     # phase 3: operations
     path(api + "booking/appointments", bk.AppointmentsView.as_view()),
@@ -111,6 +113,10 @@ urlpatterns = [
     path(api + "pos/sessions/<int:pk>/approve", pos.SessionApproveView.as_view()),
     path(api + "pos/checkout", pos.CheckoutView.as_view()),
     path(api + "pos/quote", pos.QuoteView.as_view()),
+    path(api + "reports/sales", rep.SalesReportView.as_view()),
+    path(api + "reports/branches", rep.BranchesReportView.as_view()),
+    path(api + "salon-settings", rep.SalonSettingsView.as_view()),
+    path(api + "export/<str:kind>", rep.ExportView.as_view()),
     path(api + "pos/devices", pos.DevicesView.as_view()),
     path(api + "pos/offline/bundle", pos.OfflineBundleView.as_view()),
     path(api + "pos/offline/sync", pos.OfflineSyncView.as_view()),

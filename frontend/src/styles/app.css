@@ -18,3 +18,7 @@ td.n,th.n{text-align:end}
 .stmt{max-width:680px;display:flex;flex-direction:column;gap:4px}
 .stmt .r{display:flex;justify-content:space-between;gap:12px;padding:3px 0}
 .stmt hr{border:0;border-top:1px dashed var(--line-strong);margin:8px 0}
+
+/* report day columns: let 31 bars share the card width instead of overflowing it */
+.days{overflow:hidden}
+.days div{min-width:0}

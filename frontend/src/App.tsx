@@ -18,8 +18,10 @@ import JournalEntry from './pages/JournalEntry'
 import Login from './pages/Login'
 import Org from './pages/Org'
 import { PlatformPlans, PlatformTenants } from './pages/Platform'
-import { PlatformBilling, PlatformHome, PlatformLeads, PlatformSupport } from './pages/PlatformConsole'
+import { PlatformBilling, PlatformHome, PlatformLeads, PlatformSettingsPage, PlatformSupport } from './pages/PlatformConsole'
 import Landing from './pages/Landing'
+import Reports, { CompanyHome, Home } from './pages/Reports'
+import Settings from './pages/Settings'
 import Support from './pages/Support'
 import { api } from './api/client'
 import Services from './pages/Services'
@@ -141,6 +143,7 @@ export default function App() {
         { path: '/platform/support', label: t('pc.support'), icon: 'support', show: true },
         { path: '/platform/leads', label: t('pc.leads'), icon: 'user-plus', show: true },
         { path: '/platform/plans', label: t('platform.plans'), icon: 'layers', show: true },
+        { path: '/platform/settings', label: t('pc.settings'), icon: 'settings', show: true },
       ]]]}>
         <Routes>
           <Route path="/platform/home" element={<PlatformHome />} />
@@ -149,6 +152,7 @@ export default function App() {
           <Route path="/platform/support" element={<PlatformSupport />} />
           <Route path="/platform/leads" element={<PlatformLeads />} />
           <Route path="/platform/plans" element={<PlatformPlans />} />
+          <Route path="/platform/settings" element={<PlatformSettingsPage />} />
           <Route path="*" element={<Navigate to="/platform/home" replace />} />
         </Routes>
       </Shell>
@@ -158,10 +162,13 @@ export default function App() {
   if (!membership) return <TenantPicker />
   const groups: [string, NavItem[]][] = [
     [t('nav.operations'), [
+      { path: '/company', label: t('nav.company'), icon: 'grid', show: !!membership.all_branches && can('pos.invoices.view') },
+      { path: '/home', label: t('nav.home'), icon: 'home', show: true },
       { path: '/pos', label: t('nav.pos'), icon: 'cart', show: can('pos.sell') },
       { path: '/bookings', label: t('nav.bookings'), icon: 'calendar', show: can('booking.view') },
       { path: '/invoices', label: t('nav.invoices'), icon: 'receipt', show: can('pos.invoices.view') },
       { path: '/offline-receipts', label: t('nav.offline'), icon: 'refresh', show: can('pos.invoices.view') },
+      { path: '/reports', label: t('nav.reports'), icon: 'chart', show: can('pos.invoices.view') },
       { path: '/cash', label: t('nav.cash'), icon: 'wallet', show: can('cash.session.open') },
       { path: '/inventory', label: t('nav.inventory'), icon: 'box', show: can('inventory.view') },
     ]],
@@ -187,10 +194,11 @@ export default function App() {
     [t('nav.account'), [
       { path: '/whatsapp', label: t('nav.whatsapp'), icon: 'whatsapp', show: can('org.manage') },
       { path: '/subscription', label: t('nav.subscription'), icon: 'award', show: can('org.manage') },
+      { path: '/settings', label: t('nav.settings'), icon: 'settings', show: can('org.manage') || can('data.export') },
       { path: '/support', label: t('nav.support'), icon: 'support', show: can('org.manage') && !membership.support },
     ]],
   ]
-  const home = can('pos.sell') ? '/pos' : can('booking.view') ? '/bookings' : '/org'
+  const home = membership.all_branches && can('pos.invoices.view') ? '/company' : '/home'
   return (
     <BranchProvider><OfflineProvider>
     <Shell biz={membership.tenant_business_type} title={membership.tenant_name} sub={t(`biz.${membership.tenant_business_type}`)} groups={groups}>
@@ -209,6 +217,10 @@ export default function App() {
         <Route path="/commissions" element={<Commissions />} />
         <Route path="/users" element={<Users />} />
         <Route path="/support" element={<Support />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/company" element={<CompanyHome />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/whatsapp" element={<WhatsApp />} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/accounting/journal" element={<JournalEntry />} />
