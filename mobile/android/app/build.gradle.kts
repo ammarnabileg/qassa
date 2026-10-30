@@ -1,3 +1,12 @@
+import java.util.Properties
+
+// Store signing: android/key.properties is written by CI from GitHub secrets (never committed).
+// Without it the release build is signed with the debug key — fine for testing, not for Google Play.
+val keyProps = Properties().apply {
+    val f = rootProject.file("key.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -29,12 +38,6 @@ android {
         versionName = flutter.versionName
     }
 
-    // Store signing: android/key.properties is written by CI from GitHub secrets (never committed).
-    // Without it the release build is signed with the debug key — fine for testing, not for Google Play.
-    val keyProps = java.util.Properties().apply {
-        val f = rootProject.file("key.properties")
-        if (f.exists()) f.inputStream().use { load(it) }
-    }
     signingConfigs {
         if (keyProps.getProperty("storeFile") != null) {
             create("upload") {
