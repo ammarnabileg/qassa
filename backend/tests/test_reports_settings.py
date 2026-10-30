@@ -55,3 +55,19 @@ def test_salon_and_platform_settings_and_export(salon):
     site = APIClient().get("/api/v1/public/site").json()
     assert site["whatsapp"] == "96555512345" and site["trial_days"] == 14
     assert client_for(s["owner"]).patch("/api/v1/platform/settings", {"trial_days": 1}, format="json").status_code == 403
+
+
+def test_kids_list_visits_and_spend(salon):
+    s = salon
+    c = client_for(s["owner"], s["t"])
+    cust = c.post("/api/v1/customers", {"full_name": "أم يوسف", "phone": "55123456", "add_self": False}, format="json").json()
+    kid = c.post(f"/api/v1/customers/{cust['id']}/beneficiaries", {"full_name": "يوسف", "relation": "child"}, format="json").json()
+    open_drawer(s)
+    lines = [{"service_id": s["cut"].id, "staff_id": s["staff"][0].id}]
+    q = client_for(s["cashier"], s["t"]).post("/api/v1/pos/quote", {"branch_id": s["b"]["HAW"].id, "lines": lines}, format="json").json()
+    r = checkout(s, s["cashier"], lines, [{"method": "cash", "amount": q["total"]}], key="kid1", customer_id=cust["id"], beneficiary_id=kid["id"])
+    assert r.status_code == 201, r.content
+    rows = c.get("/api/v1/customers/kids?q=يوسف").json()
+    assert len(rows) == 1 and rows[0]["guardian"] == "أم يوسف" and rows[0]["phone"] == "96555123456"
+    assert rows[0]["visits"] == 1 and rows[0]["total"] == q["total"] and rows[0]["last_visit"]
+    assert c.get("/api/v1/customers/kids?q=nobody").json() == []

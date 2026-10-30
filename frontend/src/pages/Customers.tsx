@@ -16,6 +16,9 @@ const age = (d: string | null) => {
   const b = new Date(d), n = new Date()
   return n.getFullYear() - b.getFullYear() - (n < new Date(n.getFullYear(), b.getMonth(), b.getDate()) ? 1 : 0)
 }
+type Kid = { id: number; customer_id: number; name: string; birth_date: string | null; notes: string; guardian: string; phone: string; whatsapp_opt_in: boolean; visits: number; total: string; last_visit: string | null }
+const sinceDays = (d: string | null) => (d ? Math.floor((Date.now() - new Date(d).getTime()) / 864e5) : null)
+
 const display = (phone: string) => phone.startsWith('965') && phone.length === 11 ? `+965 ${phone.slice(3, 7)} ${phone.slice(7)}` : `+${phone}`
 
 export default function Customers() {
@@ -24,7 +27,11 @@ export default function Customers() {
   const { can } = useAuth()
   const toast = useToast()
   const [q, setQ] = useState('')
-  const list = useQuery({ queryKey: ['customers', q], queryFn: () => api<Customer[]>(`/customers?q=${encodeURIComponent(q)}`) })
+  const { membership } = useAuth()
+  const kidsBiz = membership?.tenant_business_type === 'kids'
+  const [view, setView] = useState<'kids' | 'guardians'>(kidsBiz ? 'kids' : 'guardians')
+  const kids = useQuery({ queryKey: ['customers', 'kids', q], enabled: view === 'kids', queryFn: () => api<Kid[]>(`/customers/kids?q=${encodeURIComponent(q)}`) })
+  const list = useQuery({ queryKey: ['customers', q], enabled: view === 'guardians', queryFn: () => api<Customer[]>(`/customers?q=${encodeURIComponent(q)}`) })
   const [cForm, setCForm] = useState<CForm | null>(null)
   const [profile, setProfile] = useState<number | null>(null)
   const [bForm, setBForm] = useState<BForm | null>(null)
@@ -45,12 +52,27 @@ export default function Customers() {
 
   return (
     <>
-      <Head title={t('nav.customers')} sub={t('cust.sub')}>
+      <Head title={view === 'kids' ? t('cust.kidsTitle') : t('nav.customers')} sub={view === 'kids' ? t('cust.kidsSub') : t('cust.sub')}>
         <input className="input" placeholder={t('cust.search')} style={{ width: 240 }} value={q} onChange={(e) => setQ(e.target.value)} />
-        {manage && <button className="btn primary" onClick={openNew}><Icon name="plus" />{t('cust.add')}</button>}
+        {manage && <button className="btn primary" onClick={openNew}><Icon name="plus" />{view === 'kids' ? t('cust.addKid') : t('cust.add')}</button>}
       </Head>
       <ErrorText error={list.error} />
-      <div className="tw"><table><thead><tr><th>{t('cust.name')}</th><th>{t('org.phone')}</th><th>{t('cust.beneficiaries')}</th><th>{t('cust.whatsapp')}</th><th></th></tr></thead>
+      {kidsBiz && <div className="tabs"><button className={view === 'kids' ? 'on' : ''} onClick={() => setView('kids')}>{t('cust.tabKids')}</button>
+        <button className={view === 'guardians' ? 'on' : ''} onClick={() => setView('guardians')}>{t('cust.tabGuardians')}</button></div>}
+      {view === 'kids' && <><ErrorText error={kids.error} /><div className="tw"><table><thead><tr><th>{t('cust.kid')}</th><th>{t('cust.age')}</th><th>{t('cust.guardian')}</th><th className="n">{t('cust.visits')}</th><th className="n">{t('cust.spent')}</th><th>{t('cust.lastVisit')}</th><th>{t('cust.status')}</th><th></th></tr></thead>
+        <tbody>{kids.data?.map((k) => { const d = sinceDays(k.last_visit), a = age(k.birth_date)
+          const st = k.visits === 0 ? ['mute', 'new0'] : d !== null && d > 60 ? ['bad', 'away'] : k.visits >= 3 ? ['good', 'regular'] : ['info', 'new']
+          return <tr key={k.id} style={{ cursor: 'pointer' }} onClick={() => setProfile(k.customer_id)}>
+            <td><b>{k.name}</b>{k.notes && <> <span className="pill info">{t('cust.note')}</span></>}</td>
+            <td>{a !== null ? t('cust.years', { n: a }) : '—'}</td>
+            <td className="small"><span className="muted">{k.guardian}</span> <bdi className="num">{display(k.phone)}</bdi></td>
+            <td className="n"><bdi>{k.visits}</bdi></td><td className="n money">{formatKWD(k.total, lang)}</td>
+            <td className="small">{k.last_visit ? new Date(k.last_visit).toLocaleDateString(lang === 'ar' ? 'ar-KW' : 'en-GB', { day: 'numeric', month: 'long' }) : '—'}</td>
+            <td><span className={`pill ${st[0]}`}>{t(`cust.st.${st[1]}`)}</span></td>
+            <td onClick={(e) => e.stopPropagation()}>{k.whatsapp_opt_in && <a className="btn sm ghost" href={`https://wa.me/${k.phone}`} target="_blank" rel="noreferrer" aria-label="WhatsApp"><Icon name="whatsapp" /></a>}</td></tr> })}
+          {kids.data?.length === 0 && <tr><td colSpan={8} className="empty">{q ? t('cust.noMatch') : t('common.empty')}</td></tr>}
+          {kids.isPending && <tr><td colSpan={8} className="empty">{t('common.loading')}</td></tr>}</tbody></table></div></>}
+      {view === 'guardians' &&       <div className="tw"><table><thead><tr><th>{t('cust.name')}</th><th>{t('org.phone')}</th><th>{t('cust.beneficiaries')}</th><th>{t('cust.whatsapp')}</th><th></th></tr></thead>
         <tbody>{list.data?.map((x) => <tr key={x.id} className="click" onClick={() => setProfile(x.id)}>
           <td><b>{x.full_name}</b>{x.notes && <> <span className="pill info">{t('cust.note')}</span></>}</td>
           <td className="num" dir="ltr" style={{ textAlign: 'start' }}>{display(x.phone)}</td>
@@ -58,7 +80,7 @@ export default function Customers() {
           <td>{x.whatsapp_opt_in ? <span className="pill good">{t('common.yes')}</span> : <span className="pill mute">{t('common.no')}</span>}</td>
           <td><Icon name="chevron-left" /></td></tr>)}
           {list.data?.length === 0 && <tr><td colSpan={5} className="empty">{q ? t('cust.noMatch') : t('common.empty')}</td></tr>}
-          {list.isPending && <tr><td colSpan={5} className="empty">{t('common.loading')}</td></tr>}</tbody></table></div>
+          {list.isPending && <tr><td colSpan={5} className="empty">{t('common.loading')}</td></tr>}</tbody></table></div>}
 
       <Dialog open={!!cForm} title={cForm?.id ? t('cust.edit') : t('cust.add')} onClose={() => setCForm(null)} onSubmit={submitC} busy={cSave.busy}>
         {cForm && <>

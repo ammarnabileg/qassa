@@ -144,10 +144,12 @@ export default function Bookings() {
           <div className="cap muted">{a.items.map((i) => `${nameOf({ name_ar: i.service_name_ar, name_en: i.service_name_en }, i18n.language)} · ${staffName(i.staff_id)}`).join(' ← ')}
             {a.customer_phone && <> · <bdi>+{a.customer_phone}</bdi></>}</div>
           {a.source === 'walk_in' && <span className="pill info">{t('book.walkIn')}</span>}{' '}
+          {a.source === 'online' && <span className="pill info">📱 {t('book.online')}</span>}{' '}
           {a.status === 'arrived' && <span className="pill warn">{t('book.st.arrived')}</span>}
           {['cancelled', 'no_show', 'invoiced', 'completed'].includes(a.status) && <span className={`pill ${a.status === 'invoiced' ? 'good' : a.status === 'completed' ? 'info' : 'mute'}`}>{t(`book.st.${a.status}`)}</span>}
           {a.status_reason && <div className="cap muted">{a.status_reason}</div>}
-          {manage && <div className="acts">{acts(a)}</div>}
+          {(manage || a.customer_phone) && <div className="acts">{manage && acts(a)}
+            {a.customer_phone && <a className="btn sm ghost" href={`https://wa.me/${a.customer_phone}`} target="_blank" rel="noreferrer" aria-label="WhatsApp" style={{ color: '#25D366' }}><Icon name="whatsapp" /></a>}</div>}
         </div>)}
       </div>
     )

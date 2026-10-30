@@ -54,7 +54,8 @@
     "testCode": "test environment — code {{code}}",
     "remember": "Remember this device for 60 days (not on a shared device)",
     "forgot": "Forgot password?",
-    "forgotSent": "If this email is registered, a reset link is on its way."
+    "forgotSent": "If this email is registered, a reset link is on its way.",
+    "prices": "Prices & plans"
   },
   "tenant": {
     "choose": "Choose a company",
@@ -400,7 +401,7 @@
     "gender": "Gender",
     "male": "Male",
     "female": "Female",
-    "years": "yrs",
+    "years": "{{n}} yrs",
     "bNotes": "Notes (allergies, afraid of clippers…)",
     "wallet": "Packages & points",
     "sessionsLeft": "{{n}} of {{total}} sessions left",
@@ -411,6 +412,24 @@
       "redeem": "Redeemed",
       "reverse": "Reversed after return",
       "adjust": "Adjustment"
+    },
+    "kidsTitle": "Our little customers",
+    "kidsSub": "Tap any child to see their profile and visits",
+    "addKid": "Child",
+    "tabKids": "Kids",
+    "tabGuardians": "Guardians",
+    "kid": "Child",
+    "age": "Age",
+    "guardian": "Guardian",
+    "visits": "Visits",
+    "spent": "Total spent",
+    "lastVisit": "Last visit",
+    "status": "Status",
+    "st": {
+      "regular": "Regular",
+      "new": "New",
+      "new0": "No visit yet",
+      "away": "Away"
     }
   },
   "plan": {
@@ -521,7 +540,8 @@
       "cancelled": "Cancelled",
       "no_show": "No-show"
     },
-    "reschedule": "Reschedule"
+    "reschedule": "Reschedule",
+    "online": "Online"
   },
   "pos": {
     "search": "Search services…",
@@ -567,7 +587,15 @@
     "redeemPoints": "Redeem points",
     "couponApplied": "Coupon applied",
     "tip": "Tip",
-    "tipFor": "Tip for"
+    "tipFor": "Tip for",
+    "tablet": "Tablet mode",
+    "menu": "Menu",
+    "offers": "Offers",
+    "childName": "Child's name",
+    "childPh": "e.g. Yousef",
+    "guardianPhone": "Guardian's mobile",
+    "quickAdd": "Add to invoice",
+    "guardianOf": "Guardian of {{name}}"
   },
   "inv": {
     "sub": "Invoices, collections and returns",

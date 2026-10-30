@@ -83,6 +83,7 @@ urlpatterns = [
     path(api + "staff/<int:pk>", stf.StaffDetailView.as_view()),
     path(api + "customers", cust.CustomersView.as_view()),
     path(api + "customers/<int:pk>", cust.CustomerDetailView.as_view()),
+    path(api + "customers/kids", cust.KidsView.as_view()),
     path(api + "customers/<int:pk>/beneficiaries", cust.BeneficiariesView.as_view()),
     path(api + "beneficiaries/<int:pk>", cust.BeneficiaryDetailView.as_view()),
     path(api + "platform/tenants/<int:pk>", plat.TenantAdminView.as_view()),

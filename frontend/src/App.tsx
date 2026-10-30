@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
@@ -23,7 +24,7 @@ import Landing from './pages/Landing'
 import Reports, { CompanyHome, Home } from './pages/Reports'
 import Settings from './pages/Settings'
 import Support from './pages/Support'
-import { api } from './api/client'
+import { api, type Appointment } from './api/client'
 import Services from './pages/Services'
 import Staff from './pages/Staff'
 import Subscription from './pages/Subscription'
@@ -39,7 +40,7 @@ import { Assets, Expenses, Periods, Settlements, Statements } from './pages/Fina
 
 const ellipsis = { display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } as const
 
-type NavItem = { path: string; label: string; icon: string; show: boolean }
+type NavItem = { path: string; label: string; icon: string; show: boolean; badge?: number }
 
 function Shell({ biz, plat, title, sub, groups, children }: {
   biz: Biz; plat?: boolean; title: string; sub: string; groups: [string, NavItem[]][]; children: React.ReactNode
@@ -63,7 +64,7 @@ function Shell({ biz, plat, title, sub, groups, children }: {
           return vis.length ? <div key={g}>
             <div className="grp">{g}</div>
             {vis.map((x) => <button key={x.path} className={loc.pathname.startsWith(x.path) ? 'on' : ''}
-              onClick={() => { nav(x.path); setOpen(false) }}><Icon name={x.icon} /><span>{x.label}</span></button>)}
+              onClick={() => { nav(x.path); setOpen(false) }}><Icon name={x.icon} /><span>{x.label}</span>{!!x.badge && <span className="badge">{x.badge}</span>}</button>)}
           </div> : null
         })}
         <div className="me">
@@ -183,6 +184,10 @@ function TenantApp() {
   const membership = m!
   const { company, branch } = useBranch()
   const canCo = !!membership.all_branches && can('pos.invoices.view')
+  const today = new Date(Date.now() - 4 * 3600e3).toLocaleDateString('en-CA', { timeZone: 'Asia/Kuwait' })
+  const appts = useQuery({ enabled: !company && !!branch && can('booking.view'), queryKey: ['appointments', branch?.id, today], refetchInterval: 30000,
+    queryFn: () => api<Appointment[]>(`/booking/appointments?branch_id=${branch!.id}&date=${today}`) })
+  const waiting = (appts.data ?? []).filter((a) => a.status === 'booked' || a.status === 'arrived' || a.status === 'in_service').length
   const acc = (all: boolean): NavItem[] => [
     { path: '/accounting/statements', label: t('nav.statements'), icon: 'chart', show: can('accounting.view') && all },
     { path: '/accounting/expenses', label: t('nav.expenses'), icon: 'wallet', show: can('accounting.view') },
@@ -221,7 +226,7 @@ function TenantApp() {
     [t('nav.g.main'), [
       { path: '/home', label: t('nav.home'), icon: 'home', show: true },
       { path: '/pos', label: t('nav.pos'), icon: 'cart', show: can('pos.sell') },
-      { path: '/bookings', label: t('nav.bookingsShort'), icon: 'calendar', show: can('booking.view') },
+      { path: '/bookings', label: t('nav.bookingsShort'), icon: 'calendar', show: can('booking.view'), badge: waiting },
       { path: '/invoices', label: t('nav.invoices'), icon: 'receipt', show: can('pos.invoices.view') },
       { path: '/offline-receipts', label: t('nav.offline'), icon: 'refresh', show: can('pos.invoices.view') },
     ]],

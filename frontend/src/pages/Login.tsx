@@ -77,15 +77,18 @@ export default function Login() {
             <div style={{ alignSelf: 'flex-end' }}><LangToggle className="btn sm" /></div>
             <div><h1>{t('auth.welcome')}</h1><div className="small muted">{t('auth.sub')}</div></div>
             <label className="field">{t('auth.email')}<input className="input" type="email" dir="ltr" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
-            <label className="field">{t('auth.password')}<input className="input" type="password" dir="ltr" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
-            <ErrorText error={err} />
-            <button className="btn primary lg" disabled={busy}>{t('auth.submit')}</button>
-            {forgotSent ? <div className="notice good">{t('auth.forgotSent')}</div> :
-              <button type="button" className="btn ghost sm" disabled={busy} onClick={async () => {
+            <label className="field"><span className="row sb">{t('auth.password')}
+              <a href="#" className="cap" style={{ color: 'var(--brand-700)' }} onClick={async (e) => {
+                e.preventDefault()
                 if (!email) { setErr({ code: 'email_required' }); return }
                 setErr(null)
                 try { await api('/auth/password/forgot', { method: 'POST', body: { email } }); setForgotSent(true) } catch (x) { setErr(x) }
-              }}>{t('auth.forgot')}</button>}
+              }}>{t('auth.forgot')}</a></span>
+              <input className="input" type="password" dir="ltr" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
+            {forgotSent && <div className="notice good">{t('auth.forgotSent')}</div>}
+            <ErrorText error={err} />
+            <button className="btn primary lg" disabled={busy}>{t('auth.submit')}</button>
+            <div className="row" style={{ justifyContent: 'center' }}><a className="small" style={{ color: 'var(--brand-700)' }} href="/#price">{t('auth.prices')}</a></div>
           </form>
         ) : (
           <form onSubmit={submitToken}>

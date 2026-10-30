@@ -111,3 +111,28 @@ class BeneficiaryDetailView(TenantAPIView):
         s = BeneficiarySerializer(b, data=request.data, partial=True)
         s.is_valid(raise_exception=True)
         return Response(BeneficiarySerializer(s.save()).data)
+
+
+class KidsView(TenantAPIView):
+    """Kids salons (reference "العملاء الصغار"): one row per child with the guardian, visits, spend and last visit."""
+    required_permissions = {"GET": "customers.view"}
+
+    @extend_schema(parameters=[OpenApiParameter("q", str)], responses=dict)
+    def get(self, request):
+        from django.db.models import Count, Max, Sum
+        from apps.pos.models import Invoice
+        qs = Beneficiary.objects.filter(is_active=True).exclude(relation="self").select_related("customer").order_by("-id")
+        if q := request.query_params.get("q", "").strip():
+            digits = "".join(ch for ch in q if ch.isdigit())
+            cond = Q(full_name__icontains=q) | Q(customer__full_name__icontains=q)
+            if len(digits) >= 3:
+                cond |= Q(customer__phone__contains=digits)
+            qs = qs.filter(cond)
+        rows = list(qs[:300])
+        stats = {r["beneficiary_id"]: r for r in Invoice.objects.filter(beneficiary_id__in=[b.id for b in rows])
+                 .values("beneficiary_id").annotate(n=Count("id"), total=Sum("total"), last=Max("business_date"))}
+        return Response([{"id": b.id, "customer_id": b.customer_id, "name": b.full_name, "birth_date": b.birth_date, "gender": b.gender,
+                          "notes": b.notes, "guardian": b.customer.full_name, "phone": b.customer.phone,
+                          "whatsapp_opt_in": b.customer.whatsapp_opt_in,
+                          "visits": stats.get(b.id, {}).get("n", 0), "total": str(stats.get(b.id, {}).get("total") or "0.000"),
+                          "last_visit": stats.get(b.id, {}).get("last")} for b in rows])

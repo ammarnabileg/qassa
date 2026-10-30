@@ -10,6 +10,7 @@ import './i18n'
 import './styles/design.css'
 import './styles/site.css'
 import './styles/app.css'
+import './styles/tablet.css'
 
 console.info(`Qassa ${__APP_VERSION__} (${__APP_CHANNEL__})`)
 

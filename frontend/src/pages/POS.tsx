@@ -9,7 +9,7 @@ import { OfflineSetup } from '../offline/OfflineSetup'
 import { useBranch } from '../branch'
 import { ErrorText } from '../components/ErrorText'
 import { useSave } from '../components/hooks'
-import { Head, Icon, nameOf, useToast } from '../components/ui'
+import { Head, Icon, Logo, nameOf, useToast } from '../components/ui'
 import { formatKWD, fromFils, toFils } from '../money'
 import { Receipt } from './Invoices'
 import { useServicesStaff } from './Bookings'
@@ -35,7 +35,17 @@ function useDebounced<T>(value: T, ms = 300) {
 export default function POS() {
   const { t, i18n } = useTranslation()
   const lang = i18n.language as 'ar' | 'en'
-  const { can } = useAuth()
+  const { can, membership } = useAuth()
+  // Tablet / iPad mode (reference assets/css/tablet.css): full-screen, touch-sized till; remembered on the device.
+  const [tablet, setTabletState] = useState(() => { try { return localStorage.getItem('qassa.tablet') === '1' } catch { return false } })
+  const setTablet = (on: boolean) => { setTabletState(on); try { localStorage.setItem('qassa.tablet', on ? '1' : '0') } catch { /* private mode */ } }
+  const kwTime = () => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kuwait' })
+  const [clock, setClock] = useState(kwTime)
+  useEffect(() => {
+    document.body.classList.toggle('tablet', tablet)
+    const id = tablet ? setInterval(() => setClock(kwTime()), 20000) : undefined
+    return () => { document.body.classList.remove('tablet'); clearInterval(id) }
+  }, [tablet])
   const { branch } = useBranch()
   const toast = useToast()
   const nav = useNavigate()
@@ -65,6 +75,22 @@ export default function POS() {
   const [paidNow, setPaidNow] = useState('')
   const [key, setKey] = useState(() => crypto.randomUUID())
   const [receipt, setReceipt] = useState<Invoice | null>(null)
+  // Reference quick fields: child's name + guardian's mobile. Reuses the guardian if the number exists, adds the child if new.
+  const [quick, setQuick] = useState({ child: '', phone: '' })
+  const [quickBusy, setQuickBusy] = useState(false)
+  const [quickErr, setQuickErr] = useState<unknown>(null)
+  const quickAdd = async () => {
+    setQuickBusy(true); setQuickErr(null)
+    try {
+      const digits = quick.phone.replace(/\D/g, '')
+      const child = quick.child.trim()
+      let c = (await api<Customer[]>(`/customers?q=${digits}`)).find((x) => x.phone.endsWith(digits.slice(-8)))
+      if (!c) c = await api<Customer>('/customers', { method: 'POST', body: { full_name: t('pos.guardianOf', { name: child }), phone: digits, add_self: false } })
+      let b = c.beneficiaries.find((x) => x.full_name.trim() === child)
+      if (!b) { await api(`/customers/${c.id}/beneficiaries`, { method: 'POST', body: { full_name: child, relation: 'child' } }); c = await api<Customer>(`/customers/${c.id}`); b = c.beneficiaries.find((x) => x.full_name.trim() === child) }
+      setCustomer(c); setBeneficiary(b?.id ?? null); setQuick({ child: '', phone: '' })
+    } catch (x) { setQuickErr(x) } finally { setQuickBusy(false) }
+  }
   const found = useQuery({ queryKey: ['customers', cq], enabled: cq.length >= 2 && !customer, queryFn: () => api<Customer[]>(`/customers?q=${encodeURIComponent(cq)}`) })
   const wallet = useQuery({ queryKey: ['wallet', customer?.id], enabled: !!customer, queryFn: () => api<Wallet>(`/customers/${customer!.id}/wallet`) })
 
@@ -134,24 +160,28 @@ export default function POS() {
   const shownPlans = (plans.data ?? []).filter((p) => p.is_active && branchServices.some((s) => s.id === p.service) && match(p))
   const pkgFor = (serviceId: number) => (wallet.data?.packages ?? []).filter((p) => p.service_id === serviceId && p.sessions_left > 0)
   return (
-    <>
+    <div id="v-pos">
+      <div className="tbar tonly"><Logo biz={membership!.tenant_business_type} title={membership!.tenant_name} sub={t('nav.branchSub', { name: nameOf(branch, lang) })} />
+        <span className="clock">{clock}</span>
+        <button className="btn sm" onClick={() => { setTablet(false); nav('/bookings') }}><Icon name="calendar" />{t('nav.bookingsShort')}</button>
+        <button className="btn sm" onClick={() => setTablet(false)}><Icon name="grid" />{t('pos.menu')}</button></div>
       <Head title={t('nav.pos')} sub={`${nameOf(branch, lang)} · ${new Date().toLocaleDateString(lang === 'ar' ? 'ar-KW' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kuwait' })}`}>
+        <button className="btn" onClick={() => setTablet(true)}>📱 {t('pos.tablet')}</button>
         <input className="input" placeholder={t('pos.search')} style={{ width: 240 }} value={q} onChange={(e) => setQ(e.target.value)} />
       </Head>
       {can('cash.session.open') && session.data === null && <div className="notice"><Icon name="alert" />{t('pos.noDrawer')} <Link to="/cash" style={{ color: 'inherit', fontWeight: 700 }}>{t('pos.openDrawer')}</Link></div>}
       <OfflineSetup />
       <div className="pos">
-        <div>
-          <div className="tabs">
-            <button className={tab === 'service' ? 'on' : ''} onClick={() => setTab('service')}>{t('pos.tab.service')}</button>
+        <div className="tleft">
+          <div className="tsearch tonly"><input className="input" placeholder={t('pos.search')} value={q} onChange={(e) => setQ(e.target.value)} /></div>
+          {/* one chip row like the reference: all · offers · each category · products */}
+          <div className="seg cats">
+            <button className={tab === 'service' && cat === 'all' ? 'on' : ''} onClick={() => { setTab('service'); setCat('all') }}>{t('pos.all')}</button>
+            {shownPlans.length > 0 && <button className={tab === 'package' ? 'on' : ''} onClick={() => setTab('package')}>🎁 {t('pos.offers')}</button>}
+            {myCats.map((c) => <button key={c.id} className={tab === 'service' && cat === c.id ? 'on' : ''} onClick={() => { setTab('service'); setCat(c.id) }}>{nameOf(c, lang)}</button>)}
             {can('inventory.view') && <button className={tab === 'product' ? 'on' : ''} onClick={() => setTab('product')}>{t('pos.tab.product')}</button>}
-            {shownPlans.length > 0 && <button className={tab === 'package' ? 'on' : ''} onClick={() => setTab('package')}>{t('pos.tab.package')}</button>}
           </div>
           {tab === 'service' && <>
-            <div className="seg cats">
-              <button className={cat === 'all' ? 'on' : ''} onClick={() => setCat('all')}>{t('pos.all')}</button>
-              {myCats.map((c) => <button key={c.id} className={cat === c.id ? 'on' : ''} onClick={() => setCat(c.id)}>{nameOf(c, lang)}</button>)}
-            </div>
             <div className="grid items">
               {shownServices.map((s) => <button key={s.id} className="item" disabled={!s.current_price} onClick={() => add('service', s.id)}>
                 <SvcIcon s={s} /><b>{nameOf(s, lang)}</b>
@@ -183,6 +213,12 @@ export default function POS() {
             {!appointment && <button className="btn sm ghost" onClick={() => { setCustomer(null); setBeneficiary(null); setPoints(''); setLines(lines.map((l) => ({ ...l, redeem_package_id: null }))) }}><Icon name="close" /></button>}</div>
             : <>
               <input className="input" placeholder={t('pos.customer')} value={cq} onChange={(e) => setCq(e.target.value)} />
+              {can('customers.manage') && !cq && branch?.business_type === 'kids' && <div className="two">
+                <label className="field">{t('pos.childName')}<input className="input" placeholder={t('pos.childPh')} value={quick.child} onChange={(e) => setQuick({ ...quick, child: e.target.value })} /></label>
+                <label className="field">{t('pos.guardianPhone')}<input className="input" dir="ltr" inputMode="tel" placeholder="5xxxxxxx" value={quick.phone} onChange={(e) => setQuick({ ...quick, phone: e.target.value.replace(/[^\d+]/g, '') })} /></label>
+              </div>}
+              {quick.child.trim() && quick.phone.length >= 8 && !cq && <button className="btn sm" disabled={quickBusy} onClick={quickAdd}><Icon name="user-plus" />{t('pos.quickAdd')}</button>}
+              <ErrorText error={quickErr} />
               {found.data && found.data.length > 0 && <div className="list">{found.data.slice(0, 4).map((c) => <button key={c.id} className="li btn ghost" style={{ justifyContent: 'flex-start' }}
                 onClick={() => { setCustomer(c); setBeneficiary(c.beneficiaries.find((b) => b.relation !== 'self')?.id ?? c.beneficiaries[0]?.id ?? null) }}>
                 <b>{c.full_name}</b> <bdi className="cap muted">+{c.phone}</bdi></button>)}</div>}
@@ -249,12 +285,12 @@ export default function POS() {
           {!splitOk && <div className="notice bad">{t('pos.splitMismatch')}</div>}
           {needsDrawer && <div className="notice">{t('pos.noDrawer')}</div>}
           <ErrorText error={error} />
-          <button className="btn brand lg" disabled={!lines.length || busy || !fresh || !splitOk || needsDrawer || (safeFils(tip) > 0n && !tipStaff)}
+          <button id="checkout" className="btn brand lg" disabled={!lines.length || busy || !fresh || !splitOk || needsDrawer || (safeFils(tip) > 0n && !tipStaff)}
             onClick={checkout}>{busy ? t('common.loading') : t('pos.checkout')}</button>
         </div>
       </div>
       {receipt && <Receipt invoice={receipt} onClose={() => setReceipt(null)} />}
-    </>
+    </div>
   )
 }
 
