@@ -5,7 +5,7 @@ Builds between releases are **debug** builds: `X.(Y+1).0-dev.N+sha` (see `script
 
 ## [Unreleased]
 
-## [0.2.0] — 2026-10-30
+## [0.2.0] — 2026-10-30 (ready; tag `v0.2.0` to be created on GitHub by the owner)
 ### Added — dashboards, reports, settings (design screens v-home, v-rep, v-c-home, v-c-rep, v-set, v-p-set)
 - Branch home (today, queue, latest invoices), company home (every branch today and this month), reports with branch comparison, best sellers, staff, payment methods, peak hours and a profit summary (cost-permission only).
 - Salon receipt settings (header, footer, commercial registration) and CSV export of customers and invoices (audited).
