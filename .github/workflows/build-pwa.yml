@@ -1,7 +1,9 @@
 # Builds the customer PWA (same steps as deploy/build-pwa.sh) and uploads it as an artifact.
-# Run it by hand after changes in mobile/, download the artifact into deploy/pwa and commit it.
+# Runs on every change in mobile/; download the artifact into deploy/pwa and commit it.
 name: Build PWA
-on: { workflow_dispatch: {} }
+on:
+  workflow_dispatch: {}
+  push: { branches: [main], paths: ["mobile/**", ".github/workflows/build-pwa.yml"] }
 jobs:
   pwa:
     runs-on: ubuntu-latest
