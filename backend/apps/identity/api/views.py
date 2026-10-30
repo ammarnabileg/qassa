@@ -85,7 +85,7 @@ class CsrfView(APIView):
 class LoginView(APIView):
     permission_classes = [AllowAny]
     throttle_scope = "login"
-    from rest_framework.throttling import ScopedRateThrottle
+    from apps.core.throttling import AtomicScopedRateThrottle as ScopedRateThrottle
     throttle_classes = [ScopedRateThrottle]
 
     @extend_schema(request=LoginSerializer, responses={200: MeOut, 401: None}, description="Returns MeOut, or MfaStep when MFA is required.")
@@ -124,7 +124,7 @@ class MfaSetupView(APIView):
     """Returns an otpauth:// URL for an authenticator app. Only during a pending login without a device."""
     permission_classes = [AllowAny]
     throttle_scope = "mfa"
-    from rest_framework.throttling import ScopedRateThrottle
+    from apps.core.throttling import AtomicScopedRateThrottle as ScopedRateThrottle
     throttle_classes = [ScopedRateThrottle]
 
     @extend_schema(request=None, responses=inline_serializer("MfaSetup", {"otpauth_url": serializers.CharField()}))
@@ -142,7 +142,7 @@ class MfaSetupView(APIView):
 class MfaVerifyView(APIView):
     permission_classes = [AllowAny]
     throttle_scope = "mfa"
-    from rest_framework.throttling import ScopedRateThrottle
+    from apps.core.throttling import AtomicScopedRateThrottle as ScopedRateThrottle
     throttle_classes = [ScopedRateThrottle]
 
     @extend_schema(request=MfaSerializer, responses={200: MeOut, 401: None, 429: None})
@@ -192,7 +192,7 @@ class MfaWhatsAppView(APIView):
     """Send the second-factor code over the platform's WhatsApp number to the phone on the account."""
     permission_classes = [AllowAny]
     throttle_scope = "mfa"
-    from rest_framework.throttling import ScopedRateThrottle
+    from apps.core.throttling import AtomicScopedRateThrottle as ScopedRateThrottle
     throttle_classes = [ScopedRateThrottle]
 
     @extend_schema(request=None, responses=inline_serializer("MfaWhatsAppSent", {"sent": serializers.BooleanField(), "to": serializers.CharField()}))
@@ -233,7 +233,7 @@ class SetPasswordView(APIView):
     """Accept an invitation or finish a reset. The link works once."""
     permission_classes = [AllowAny]
     throttle_scope = "login"
-    from rest_framework.throttling import ScopedRateThrottle
+    from apps.core.throttling import AtomicScopedRateThrottle as ScopedRateThrottle
     throttle_classes = [ScopedRateThrottle]
 
     @extend_schema(request=SetPasswordIn, responses={204: None})
@@ -254,7 +254,7 @@ class ForgotPasswordView(APIView):
     """Always answers the same, whether or not the email exists (no account discovery)."""
     permission_classes = [AllowAny]
     throttle_scope = "login"
-    from rest_framework.throttling import ScopedRateThrottle
+    from apps.core.throttling import AtomicScopedRateThrottle as ScopedRateThrottle
     throttle_classes = [ScopedRateThrottle]
 
     @extend_schema(request=ForgotIn, responses={200: dict})

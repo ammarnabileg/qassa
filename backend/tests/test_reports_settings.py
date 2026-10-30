@@ -101,3 +101,18 @@ def test_throttle_keys_on_the_address_traefik_saw(settings):
         assert ident("203.0.113.8, 10.0.0.5") == "203.0.113.8"
     finally:
         api_settings.reload()
+
+
+def test_login_limit_holds_under_a_parallel_burst(db, settings):
+    """15 logins at once against a 10/min limit: exactly 10 get through, the rest are refused with 429."""
+    from concurrent.futures import ThreadPoolExecutor
+    from django.core.cache import cache
+    from rest_framework.test import APIClient
+    settings.CACHES = {"default": {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": "redis://localhost:6379/9"}}
+    cache.clear()
+
+    def hit(_):
+        return APIClient().post("/api/v1/auth/login", {}, format="json", REMOTE_ADDR="198.51.100.20").status_code
+    with ThreadPoolExecutor(max_workers=15) as ex:
+        codes = list(ex.map(hit, range(15)))
+    assert codes.count(429) == 5 and codes.count(400) == 10, codes

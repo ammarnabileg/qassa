@@ -11,7 +11,7 @@ from rest_framework import serializers, status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.throttling import ScopedRateThrottle
+from apps.core.throttling import AtomicScopedRateThrottle as ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.audit.services.log import record as audit

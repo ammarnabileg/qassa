@@ -9,7 +9,7 @@ from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.throttling import ScopedRateThrottle
+from apps.core.throttling import AtomicScopedRateThrottle as ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.core.errors import DomainError
