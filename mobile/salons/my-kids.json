@@ -1,0 +1,8 @@
+{
+  "slug": "my-kids",
+  "app_name": "My Kids",
+  "business_type": "kids",
+  "android_id": "com.mykids.salon",
+  "ios_bundle_id": "com.mykids.salon",
+  "store_account": "Salon's own Google Play / Apple Developer account; the platform is added as Admin (D-014)"
+}

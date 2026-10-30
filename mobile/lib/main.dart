@@ -14,8 +14,9 @@ import 'ui.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
-  // On a company's domain the host names the salon. Elsewhere (store app, local testing) ?salon=<slug>.
-  final slug = Uri.base.queryParameters['salon'];
+  // A salon's own app is locked to it (SALON_SLUG). On a company's domain the host names the salon.
+  // Elsewhere (platform store app, local testing) ?salon=<slug>.
+  final slug = Config.salonSlug.isNotEmpty ? Config.salonSlug : Uri.base.queryParameters['salon'];
   runApp(QassaApp(controller: AppController(api: Api(salonSlug: slug), prefs: prefs)));
 }
 

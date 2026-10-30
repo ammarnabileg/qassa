@@ -1,0 +1,88 @@
+# A salon's own store app (D-014): same code, locked to one salon, with its name, store ids and icon.
+# One build per mobile/salons/<slug>.json, on every change there (and by hand for a single salon).
+# Signing secrets per salon (slug upper-cased, "-" -> "_"), falling back to the platform's Android key:
+#   ANDROID_KEYSTORE_BASE64_<SLUG>, ANDROID_KEYSTORE_PASSWORD_<SLUG>, ANDROID_KEY_ALIAS_<SLUG>, ANDROID_KEY_PASSWORD_<SLUG>
+# iOS stays unsigned until the salon's Apple Developer account gives us signing (team member + certificates).
+name: Build salon apps
+on:
+  workflow_dispatch:
+    inputs:
+      salon: { description: "Salon slug (mobile/salons/<slug>.json); empty = all", required: false, default: "" }
+  push: { branches: [main], paths: ["mobile/salons/**", ".github/workflows/build-salon-apps.yml"] }
+env:
+  API_URL: https://qassa.kuw1.com
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    outputs: { salons: "${{ steps.s.outputs.salons }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - id: s
+        env: { ONE: "${{ github.event.inputs.salon }}" }
+        run: |
+          if [ -n "$ONE" ]; then
+            [ -f "mobile/salons/$ONE.json" ] || { echo "::error::mobile/salons/$ONE.json not found"; exit 1; }
+            L="[\"$ONE\"]"
+          else
+            L=$(ls mobile/salons/*.json | xargs -n1 basename | sed 's/\.json$//' | python3 -c 'import json,sys;print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')
+          fi
+          echo "salons=$L" >> "$GITHUB_OUTPUT"
+  android:
+    needs: list
+    if: needs.list.outputs.salons != '[]'
+    strategy: { fail-fast: false, matrix: { salon: "${{ fromJson(needs.list.outputs.salons) }}" } }
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: mobile } }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17" }
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: "3.47.8", channel: stable, cache: true }
+      - id: key
+        run: echo "k=$(echo '${{ matrix.salon }}' | tr 'a-z-' 'A-Z_')" >> "$GITHUB_OUTPUT"
+      - name: Signing key (salon's own, else the platform's)
+        env:
+          KS: "${{ secrets[format('ANDROID_KEYSTORE_BASE64_{0}', steps.key.outputs.k)] || secrets.ANDROID_KEYSTORE_BASE64 }}"
+          KSP: "${{ secrets[format('ANDROID_KEYSTORE_PASSWORD_{0}', steps.key.outputs.k)] || secrets.ANDROID_KEYSTORE_PASSWORD }}"
+          KA: "${{ secrets[format('ANDROID_KEY_ALIAS_{0}', steps.key.outputs.k)] || secrets.ANDROID_KEY_ALIAS }}"
+          KP: "${{ secrets[format('ANDROID_KEY_PASSWORD_{0}', steps.key.outputs.k)] || secrets.ANDROID_KEY_PASSWORD }}"
+          OWN: "${{ secrets[format('ANDROID_KEYSTORE_BASE64_{0}', steps.key.outputs.k)] != '' }}"
+        run: |
+          if [ -n "$KS" ]; then
+            echo "$KS" | base64 -d > android/app/upload.jks
+            printf "storeFile=upload.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n" "$KSP" "$KA" "$KP" > android/key.properties
+            [ "$OWN" = "true" ] && echo "signed with the salon's key" || echo "signed with the platform's key"
+          else
+            echo "::warning::No signing secrets: debug key (testing only)"
+          fi
+      - run: pip install pillow && flutter pub get
+      - run: |
+          D="$(python3 tool/salon_app.py ${{ matrix.salon }}) --dart-define=QASSA_VERSION=$(python3 ../scripts/version.py) --dart-define=QASSA_CHANNEL=release"
+          echo "$D" | grep -q API_URL || D="$D --dart-define=API_URL=$API_URL"
+          flutter build apk --release --build-number=${{ github.run_number }} $D
+          flutter build appbundle --release --build-number=${{ github.run_number }} $D
+          mkdir -p out && cp build/app/outputs/flutter-apk/app-release.apk out/${{ matrix.salon }}.apk && cp build/app/outputs/bundle/release/app-release.aab out/${{ matrix.salon }}.aab
+      - uses: actions/upload-artifact@v4
+        with: { name: "android-${{ matrix.salon }}", path: mobile/out/, retention-days: 14 }
+  ios:
+    needs: list
+    if: needs.list.outputs.salons != '[]'
+    strategy: { fail-fast: false, matrix: { salon: "${{ fromJson(needs.list.outputs.salons) }}" } }
+    runs-on: macos-latest
+    defaults: { run: { working-directory: mobile } }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: "3.47.8", channel: stable, cache: true }
+      - run: pip3 install --break-system-packages pillow || pip3 install pillow
+      - run: flutter pub get
+      - run: |
+          D="$(python3 tool/salon_app.py ${{ matrix.salon }}) --dart-define=QASSA_VERSION=$(python3 ../scripts/version.py) --dart-define=QASSA_CHANNEL=release"
+          echo "$D" | grep -q API_URL || D="$D --dart-define=API_URL=$API_URL"
+          flutter build ios --release --no-codesign --build-number=${{ github.run_number }} $D
+          mkdir -p Payload && cp -r build/ios/iphoneos/Runner.app Payload/ && zip -qr ${{ matrix.salon }}-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with: { name: "ios-${{ matrix.salon }}-unsigned", path: "mobile/${{ matrix.salon }}-unsigned.ipa", retention-days: 14 }

@@ -7,6 +7,12 @@ val keyProps = Properties().apply {
     if (f.exists()) f.inputStream().use { load(it) }
 }
 
+// A salon's own app: android/salon.properties (appId, appName) is written by CI from mobile/salons/<slug>.json.
+val salonProps = Properties().apply {
+    val f = rootProject.file("salon.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -24,8 +30,8 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "app.qassa.qassa_app"
+        applicationId = salonProps.getProperty("appId") ?: "app.qassa.qassa_app"
+        manifestPlaceholders["appName"] = salonProps.getProperty("appName") ?: "Qassa"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
