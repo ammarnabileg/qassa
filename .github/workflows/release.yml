@@ -1,0 +1,28 @@
+# Tags and publishes a release when VERSION changes on main: VERSION=0.3.0 → tag v0.3.0 on that commit + a GitHub Release
+# with the CHANGELOG section. Runs with the repository's own token, so nobody has to create tags by hand.
+# Nothing happens if the tag already exists (re-runs and older versions are safe).
+name: Release
+on:
+  push: { branches: [main], paths: ["VERSION", ".github/workflows/release.yml"] }
+  workflow_dispatch: {}
+permissions: { contents: write }
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - id: v
+        run: |
+          V=$(tr -d ' \n' < VERSION)
+          echo "$V" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::VERSION must be X.Y.Z (got '$V')"; exit 1; }
+          if git rev-parse -q --verify "refs/tags/v$V" >/dev/null; then echo "v$V already exists — nothing to do"; echo "skip=1" >> "$GITHUB_OUTPUT"; fi
+          echo "v=$V" >> "$GITHUB_OUTPUT"
+      - if: steps.v.outputs.skip != '1'
+        env: { GH_TOKEN: "${{ github.token }}", V: "${{ steps.v.outputs.v }}" }
+        run: |
+          # release notes = the "## [X.Y.Z]" section of CHANGELOG.md
+          awk -v v="$V" '$0 ~ "^## \\[" v "\\]" {on=1; next} on && /^## \[/ {exit} on' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "Release $V" > notes.md
+          git tag -a "v$V" -m "v$V" && git push origin "v$V"
+          gh release create "v$V" --title "v$V" --notes-file notes.md --verify-tag

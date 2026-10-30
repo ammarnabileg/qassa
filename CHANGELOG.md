@@ -5,6 +5,8 @@ Builds between releases are **debug** builds: `X.(Y+1).0-dev.N+sha` (see `script
 
 ## [Unreleased]
 
+Releases: bump `VERSION` on `main` (and add its section here); the Release workflow tags `vX.Y.Z` and publishes it.
+
 ## [0.2.0] — 2026-10-30 (tag `v0.2.0` → 3031078)
 ### Added — dashboards, reports, settings (design screens v-home, v-rep, v-c-home, v-c-rep, v-set, v-p-set)
 - Branch home (today, queue, latest invoices), company home (every branch today and this month), reports with branch comparison, best sellers, staff, payment methods, peak hours and a profit summary (cost-permission only).
