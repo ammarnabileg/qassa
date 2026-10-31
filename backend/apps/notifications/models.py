@@ -49,6 +49,7 @@ class MessagingSettings(TenantScopedModel):
     winback = models.BooleanField(default=False)
     winback_days = models.PositiveSmallIntegerField(default=45)
     winback_coupon = models.CharField(max_length=30, blank=True)
+    rebook = models.BooleanField(default=False)   # "time for the next cut" on each service's rebook_days (marketing consent)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta(TenantScopedModel.Meta):

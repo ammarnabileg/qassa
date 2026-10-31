@@ -34,6 +34,9 @@ TEXT = {
     "winback": {
         "ar": "وحشتنا يا {name} 💚\nبقالك فترة ما زرتش {salon}.{offer}\nاحجز من التطبيق أو ابعتلنا هنا.",
         "en": "We miss you, {name} 💚\nIt's been a while since your last visit to {salon}.{offer}\nBook in the app or message us here."},
+    "rebook": {
+        "ar": "أهلاً {name} ✂️\nآخر {service} في {salon} كانت من {days} يوم — غالباً ده وقت الجاية.\nاحجز من التطبيق أو ابعتلنا هنا ونظبطلك ميعاد.",
+        "en": "Hi {name} ✂️\nYour last {service} at {salon} was {days} days ago — it's usually time for the next one.\nBook in the app or message us here."},
 }
 FEEDBACK_DELAY = 2 * 3600
 
@@ -161,6 +164,56 @@ def handle_receipt(ev):
         pts = "" if not bal else (f"رصيد نقاطك: {bal}" if lang == "ar" else f"Your points: {bal}")
         text = TEXT["receipt"][lang].format(salon=inv.tenant.name, number=inv.number, total=inv.total, points=pts).strip()
         _send(ev.tenant_id, inv.customer, "receipt", text, f"receipt {inv.number}")
+
+
+def queue_rebook(today=None) -> int:
+    """Daily: 'time for the next one' when a service's usual interval (rebook_days) has passed since the customer's visit —
+    unless they have come back or booked since. Marketing consent required. Two days' slack covers a missed run."""
+    from apps.booking.models import Appointment
+    from apps.catalog.models import Service
+    from apps.core.dates import business_date
+    from apps.notifications.models import MessagingSettings
+    from apps.pos.models import Invoice, InvoiceLine
+    today = today or business_date()
+    n = 0
+    for s in MessagingSettings.unscoped.filter(rebook=True):
+        with tenant_context(s.tenant_id):
+            for svc in Service.objects.filter(rebook_days__gt=0, is_active=True):
+                due = today - timedelta(days=svc.rebook_days)
+                lines = (InvoiceLine.objects.filter(service=svc, invoice__business_date__gte=due - timedelta(days=2),
+                                                    invoice__business_date__lte=due, invoice__customer__isnull=False,
+                                                    invoice__customer__whatsapp_opt_in=True, invoice__customer__marketing_opt_in=True)
+                         .select_related("invoice"))
+                for ln in lines:
+                    inv = ln.invoice
+                    if Invoice.objects.filter(customer_id=inv.customer_id, id__gt=inv.id).exists() or \
+                            Appointment.objects.filter(customer_id=inv.customer_id, status="booked", starts_at__gt=timezone.now()).exists():
+                        continue
+                    key = f"inv:{inv.id}:rebook"
+                    if OutboxEvent.objects.filter(topic="wa.rebook", dedupe_key=key).exists():
+                        continue
+                    enqueue("wa.rebook", {"invoice_id": inv.id, "service_id": svc.id, "days": (today - inv.business_date).days}, tenant_id=s.tenant_id, dedupe_key=key)
+                    n += 1
+    return n
+
+
+@outbox_handler("wa.rebook")
+def handle_rebook(ev):
+    from apps.catalog.models import Service
+    from apps.pos.models import Invoice
+    with tenant_context(ev.tenant_id):
+        inv = Invoice.objects.select_related("customer", "beneficiary", "tenant").filter(id=ev.payload["invoice_id"]).first()
+        svc = Service.objects.filter(id=ev.payload["service_id"]).first()
+        if not settings_for(ev.tenant_id).rebook or inv is None or svc is None:
+            return
+        c = inv.customer
+        if not (c.whatsapp_opt_in and c.marketing_opt_in and c.is_active):
+            return
+        lang = c.preferred_language
+        name = (inv.beneficiary.full_name if inv.beneficiary_id else c.full_name).split(" ")[0]
+        service = svc.name_en if lang == "en" and svc.name_en else svc.name_ar
+        _send(ev.tenant_id, c, "rebook", TEXT["rebook"][lang].format(name=name, service=service, salon=inv.tenant.name,
+                                                                    days=ev.payload["days"]), f"rebook {inv.number}")
 
 
 @outbox_handler("wa.feedback")

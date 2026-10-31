@@ -57,7 +57,7 @@ export default function WhatsApp() {
   )
 }
 
-type Auto = { booking_confirmation: boolean; reminder: boolean; reminder_hours: number; receipt: boolean; feedback: boolean; google_review_url: string; winback: boolean; winback_days: number; winback_coupon: string }
+type Auto = { booking_confirmation: boolean; reminder: boolean; reminder_hours: number; receipt: boolean; feedback: boolean; google_review_url: string; winback: boolean; winback_days: number; winback_coupon: string; rebook: boolean }
 
 /** Automatic service messages from the salon's own number (D-012). */
 function AutoMessages() {
@@ -80,6 +80,7 @@ function AutoMessages() {
       {d.feedback && <label className="field">{t('wa.auto.reviewUrl')}<input className="input" dir="ltr" type="url" placeholder="https://g.page/r/…/review" defaultValue={d.google_review_url}
         onBlur={(e) => e.target.value !== d.google_review_url && set({ google_review_url: e.target.value.trim() })} /><small className="muted">{t('wa.auto.reviewUrlHelp')}</small></label>}
       <h3 style={{ margin: '14px 0 4px' }}>{t('wa.auto.marketing')}</h3>
+      <label className="chk"><span>{t('wa.auto.rebook')}<small>{t('wa.auto.rebookHelp')}</small></span><input type="checkbox" className="sw" checked={d.rebook} disabled={s.busy} onChange={(e) => set({ rebook: e.target.checked })} /></label>
       <label className="chk"><span>{t('wa.auto.winback')}<small>{t('wa.auto.winbackHelp', { n: d.winback_days })}</small></span><input type="checkbox" className="sw" checked={d.winback} disabled={s.busy} onChange={(e) => set({ winback: e.target.checked })} /></label>
       {d.winback && <div className="two">
         <label className="field">{t('wa.auto.winbackDays')}<select className="input" value={d.winback_days} onChange={(e) => set({ winback_days: Number(e.target.value) })}>

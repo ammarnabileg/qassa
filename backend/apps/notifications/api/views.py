@@ -61,6 +61,7 @@ class MessagingSettingsSerializer(serializers.Serializer):
     winback = serializers.BooleanField(required=False)
     winback_days = serializers.IntegerField(min_value=14, max_value=365, required=False)
     winback_coupon = serializers.CharField(required=False, allow_blank=True, max_length=30)
+    rebook = serializers.BooleanField(required=False)
 
     def validate_winback_coupon(self, v):
         return v.strip().upper()

@@ -6,6 +6,7 @@ import { useAuth } from '../auth'
 import { ErrorText } from '../components/ErrorText'
 import { useSave } from '../components/hooks'
 import { useNavigate } from 'react-router-dom'
+import { ImportCard } from '../components/ImportCard'
 import { Head, Icon, useToast } from '../components/ui'
 
 type Tab = 'gen' | 'rcpt' | 'tax' | 'ntf' | 'sub' | 'data'
@@ -60,6 +61,10 @@ export default function Settings() {
       </div>}
       {tab === 'ntf' && <div className="grid g2">{go(t('nav.whatsapp'), t('set.ntfHelp'), '/whatsapp', 'whatsapp')}</div>}
       {tab === 'sub' && <div className="grid g2">{go(t('nav.subscription'), t('set.subHelp'), '/subscription', 'receipt')}</div>}
+      {tab === 'data' && (can('customers.manage') || can('catalog.manage')) && <div className="grid g2" style={{ marginBottom: 14 }}>
+        {can('customers.manage') && <ImportCard kind="customers" />}
+        {can('catalog.manage') && can('catalog.price.change') && <ImportCard kind="services" />}
+      </div>}
       {tab === 'data' && <div className="card" style={{ maxWidth: 620 }}>
         <h2>{t('set.data')}</h2>
         <div className="small muted">{t('set.dataHelp')}</div>

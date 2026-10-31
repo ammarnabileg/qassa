@@ -127,6 +127,9 @@ export default function POS() {
     else setLines([...lines, { key: crypto.randomUUID(), kind, id, qty: 1, discount: '0', redeem_package_id: null,
       staff_id: kind === 'service' && staffFor(id).length === 1 ? staffFor(id)[0].id : null }])
   }
+  const inCart = new Set(lines.filter((l) => l.kind === 'service').map((l) => l.id))
+  const upsells = [...new Set(lines.filter((l) => l.kind === 'service').map((l) => services.find((x) => x.id === l.id)?.upsell).filter((x): x is number => !!x))]
+    .filter((id) => !inCart.has(id)).map((id) => branchServices.find((x) => x.id === id)).filter((x): x is NonNullable<typeof x> => !!x)
   const setLine = (k: string, p: Partial<CartLine>) => setLines(lines.map((l) => (l.key === k ? { ...l, ...p } : l)))
   const reset = () => {
     setLines([]); setAppointment(null); setCustomer(null); setBeneficiary(null); setCq(''); setCoupon(''); setPoints(''); setTip(''); setTipStaff(null)
@@ -246,6 +249,8 @@ export default function POS() {
             </div>)}
             {lines.length === 0 && <div className="empty small">{t('pos.empty')}</div>}
           </div>
+          {upsells.length > 0 && <div className="row" style={{ gap: 6, flexWrap: 'wrap', margin: '4px 0 8px' }}>
+            {upsells.map((u) => <button key={u.id} type="button" className="btn sm" style={{ borderRadius: 99, background: 'var(--brand-soft)' }} onClick={() => add('service', u.id)}>✨ {t('pos.upsell', { name: nameOf(u, lang) })}</button>)}</div>}
 
           <div className="two">
             <input className="input" dir="ltr" placeholder={t('pos.coupon')} style={{ textTransform: 'uppercase' }} value={coupon} onChange={(e) => setCoupon(e.target.value)} />

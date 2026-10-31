@@ -25,6 +25,9 @@ class Service(TenantScopedModel):
     home_visit = models.BooleanField(default=False)  # can be booked as a home visit
     art = models.CharField(max_length=20, blank=True)  # illustration key on the till (reference js/ui/service-art.js); blank = guessed from the name
     is_active = models.BooleanField(default=True)
+    # suggested add-on at the till ("cut? add a wash"); and when the next visit is usually due (0 = no reminder)
+    upsell = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    rebook_days = models.PositiveSmallIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta(TenantScopedModel.Meta):

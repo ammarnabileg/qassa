@@ -40,7 +40,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
         fields = ["id", "category", "business_type", "name_ar", "name_en", "duration_minutes", "home_visit",
-                  "art", "is_active", "current_price"]
+                  "art", "is_active", "current_price", "upsell", "rebook_days"]
         validators = []  # duplicate names are reported as service_name_exists by the view
 
     def get_current_price(self, obj) -> str | None:
@@ -50,6 +50,16 @@ class ServiceSerializer(serializers.ModelSerializer):
             if p.branch_id is None and p.valid_from <= today and (p.valid_to is None or p.valid_to > today):
                 return str(p.price)
         return None
+
+    def validate_rebook_days(self, value):
+        if value and not 7 <= value <= 180:
+            raise serializers.ValidationError("7–180 days, or 0 for none")
+        return value
+
+    def validate(self, data):
+        if data.get("upsell") and self.instance and data["upsell"].id == self.instance.id:
+            raise serializers.ValidationError({"upsell": "a service can't suggest itself"})
+        return data
 
     def validate_art(self, value):
         if value and value not in ART_KEYS:

@@ -63,7 +63,7 @@ export default function Services() {
   const [q, setQ] = useState('')
   const cats = useQuery({ queryKey: ['categories'], queryFn: () => api<Category[]>('/catalog/categories') })
   const services = useQuery({ queryKey: ['services'], queryFn: () => api<Service[]>('/catalog/services') })
-  const [svcForm, setSvcForm] = useState<{ id?: number; category: string; name_ar: string; name_en: string; duration_minutes: string; home_visit: boolean; art: string; is_active: boolean; price: string } | null>(null)
+  const [svcForm, setSvcForm] = useState<{ id?: number; category: string; name_ar: string; name_en: string; duration_minutes: string; home_visit: boolean; art: string; is_active: boolean; price: string; upsell: string; rebook_days: string } | null>(null)
   const [catForm, setCatForm] = useState<{ name_ar: string; name_en: string } | null>(null)
   const [pricesFor, setPricesFor] = useState<Service | null>(null)
   const svcSave = useSave<Service>([['services']], () => { setSvcForm(null); toast(t('common.saved')) })
@@ -76,12 +76,12 @@ export default function Services() {
 
   const openSvc = (s?: Service) => {
     svcSave.reset()
-    setSvcForm(s ? { id: s.id, category: String(s.category), name_ar: s.name_ar, name_en: s.name_en, duration_minutes: String(s.duration_minutes), home_visit: s.home_visit, art: s.art ?? '', is_active: s.is_active, price: '' }
-      : { category: myCats[0] ? String(myCats[0].id) : '', name_ar: '', name_en: '', duration_minutes: '30', home_visit: false, art: '', is_active: true, price: '' })
+    setSvcForm(s ? { id: s.id, category: String(s.category), name_ar: s.name_ar, name_en: s.name_en, duration_minutes: String(s.duration_minutes), home_visit: s.home_visit, art: s.art ?? '', is_active: s.is_active, price: '', upsell: s.upsell ? String(s.upsell) : '', rebook_days: String(s.rebook_days || 0) }
+      : { category: myCats[0] ? String(myCats[0].id) : '', name_ar: '', name_en: '', duration_minutes: '30', home_visit: false, art: '', is_active: true, price: '', upsell: '', rebook_days: '0' })
   }
   const submitSvc = () => {
     const { id, price, ...rest } = svcForm!
-    const body: Record<string, unknown> = { ...rest, category: Number(rest.category), duration_minutes: Number(rest.duration_minutes) }
+    const body: Record<string, unknown> = { ...rest, category: Number(rest.category), duration_minutes: Number(rest.duration_minutes), upsell: rest.upsell ? Number(rest.upsell) : null, rebook_days: Number(rest.rebook_days) || 0 }
     if (!id && price) body.price = price
     svcSave.save({ path: id ? `/catalog/services/${id}` : '/catalog/services', method: id ? 'PATCH' : 'POST', body })
   }
@@ -127,6 +127,15 @@ export default function Services() {
             {ART_KEYS.map((k) => <button type="button" key={k} title={k} aria-pressed={svcForm.art === k} onClick={() => setSvcForm({ ...svcForm, art: k })}
               style={{ padding: 2, borderRadius: 12, border: `2px solid ${svcForm.art === k ? 'var(--brand)' : 'transparent'}`, background: 'none', cursor: 'pointer' }}><ServiceArt art={k} size={36} /></button>)}
           </div></div>
+          <div className="two">
+            <label className="field">{t('svc.upsell')}<select className="input" value={svcForm.upsell} onChange={(e) => setSvcForm({ ...svcForm, upsell: e.target.value })}>
+              <option value="">{t('svc.none')}</option>
+              {(services.data ?? []).filter((x) => x.is_active && x.id !== svcForm.id).map((x) => <option key={x.id} value={x.id}>{nameOf(x, i18n.language)}</option>)}</select>
+              <small className="muted">{t('svc.upsellHelp')}</small></label>
+            <label className="field">{t('svc.rebook')}<select className="input" value={svcForm.rebook_days} onChange={(e) => setSvcForm({ ...svcForm, rebook_days: e.target.value })}>
+              {[0, 14, 21, 28, 30, 45, 60, 90].map((n) => <option key={n} value={n}>{n ? t('wa.auto.daysN', { n }) : t('svc.none')}</option>)}</select>
+              <small className="muted">{t('svc.rebookHelp')}</small></label>
+          </div>
           <label className="chk"><span>{t('svc.homeVisit')}<small>{t('svc.homeVisitHelp')}</small></span><input type="checkbox" className="sw" checked={svcForm.home_visit} onChange={(e) => setSvcForm({ ...svcForm, home_visit: e.target.checked })} /></label>
           {svcForm.id && <label className="chk">{t('common.active')}<input type="checkbox" className="sw" checked={svcForm.is_active} onChange={(e) => setSvcForm({ ...svcForm, is_active: e.target.checked })} /></label>}
           <ErrorText error={svcSave.error} />

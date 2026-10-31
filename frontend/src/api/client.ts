@@ -50,6 +50,19 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
   return data as T
 }
 
+/** Multipart upload (spreadsheet import); same tenant, CSRF and error handling as api(). */
+export async function upload<T>(path: string, form: FormData): Promise<T> {
+  const headers: Record<string, string> = { Accept: 'application/json', 'X-CSRFToken': await ensureCsrf(), 'Idempotency-Key': crypto.randomUUID() }
+  if (tenantId) headers['X-Tenant'] = String(tenantId)
+  const res = await fetch('/api/v1' + path, { method: 'POST', headers, credentials: 'include', body: form })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const e = data?.error ?? {}
+    throw new ApiError(res.status, e.code ?? 'unknown', e.message ?? '', e.details ?? {})
+  }
+  return data as T
+}
+
 export type Membership = { tenant_id: number; tenant_name: string; tenant_status: string; tenant_business_type: 'kids' | 'men' | 'women'; role: string; role_name: { ar: string; en: string }; permissions: string[]; all_branches: boolean; branch_ids: number[]; support?: boolean; expires_at?: string }
 export type Me = { id: number; email: string; full_name: string; language: 'ar' | 'en'; is_platform_staff: boolean; mfa_required: boolean; memberships: Membership[] }
 export type LoginResult = Me | { mfa: 'setup' | 'verify'; methods: ('totp' | 'whatsapp')[]; phone: string }
@@ -59,7 +72,7 @@ export type Account = { id: number; code: string; name_ar: string; name_en: stri
 export type TBRow = { account_id: number; code: string; name_ar: string; name_en: string; type: string; opening: string; debit: string; credit: string; closing: string; normal_side: string }
 
 export type Category = { id: number; name_ar: string; name_en: string; business_type: 'kids' | 'men' | 'women'; sort: number }
-export type Service = { id: number; category: number; business_type: string; name_ar: string; name_en: string; duration_minutes: number; home_visit: boolean; art?: string; is_active: boolean; current_price: string | null }
+export type Service = { id: number; category: number; business_type: string; name_ar: string; name_en: string; duration_minutes: number; home_visit: boolean; art?: string; is_active: boolean; current_price: string | null; upsell: number | null; rebook_days: number }
 export type Price = { id: number; branch: number | null; price: string; valid_from: string; valid_to: string | null }
 export type Staff = { id: number; full_name_ar: string; full_name_en: string; phone: string; commission_percent: string; is_active: boolean; branch_ids: number[]; service_ids: number[] }
 export type Beneficiary = { id: number; full_name: string; relation: 'self' | 'child' | 'other'; birth_date: string | null; gender: '' | 'm' | 'f'; notes: string; is_active: boolean }

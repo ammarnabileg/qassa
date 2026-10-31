@@ -5,6 +5,7 @@ import { api, type Plan } from '../api/client'
 import { ErrorText, LangToggle } from '../components/ErrorText'
 import { Icon, LogoMark, nameOf, useBizTheme } from '../components/ui'
 import { formatKWD } from '../money'
+import { SavingsCalc } from '../components/SavingsCalc'
 
 type Site = { whatsapp: string; email: string; trial_days: number; headline_ar?: string; headline_en?: string; sub_ar?: string; sub_en?: string }
 const BIZ: [('kids' | 'men' | 'women'), string][] = [['kids', '#0CD273'], ['men', '#C9A24B'], ['women', '#EC6F9A']]
@@ -89,6 +90,11 @@ export default function Landing() {
               const has = list.slice(0, i + 1).some((q) => feats(q).includes(f))
               return <td key={p.id}>{has ? <span style={{ color: 'var(--brand-700)' }}>✓</span> : <span className="muted">—</span>}</td>
             })}</tr>)}</tbody></table></div>}
+        </section>
+
+        <section className="sec" id="calc">
+          <h2 className="t">{t('calc.title')}</h2><p className="st">{t('calc.sub')}</p>
+          <SavingsCalc planPrice={list.length ? Math.min(...list.map((p) => Number(p.monthly_price))) : null} />
         </section>
 
         <section className="sec" id="signup"><div className="grid g2" style={{ alignItems: 'start' }}>

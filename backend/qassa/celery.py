@@ -12,6 +12,7 @@ app.conf.beat_schedule = {
     "deliver-outbox": {"task": "apps.core.tasks.deliver_outbox", "schedule": 5.0},
     "booking-reminders": {"task": "apps.notifications.tasks.queue_reminders", "schedule": 900.0},
     "winback": {"task": "apps.notifications.tasks.queue_winback", "schedule": crontab(hour=7, minute=40)},  # 10:40 Kuwait
+    "rebook": {"task": "apps.notifications.tasks.queue_rebook", "schedule": crontab(hour=7, minute=10)},  # 10:10 Kuwait
     "daily-loyalty": {"task": "apps.loyalty.tasks.daily_loyalty", "schedule": crontab(hour=0, minute=20)},
     "daily-billing": {"task": "apps.platform.tasks.daily_billing", "schedule": crontab(hour=1, minute=10)},
 }

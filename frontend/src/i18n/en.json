@@ -334,7 +334,12 @@
     "tendered_short": "Amount tendered is below the total",
     "points_zero": "Points must not be zero",
     "feedback_already_rated": "This rating was already sent. Thank you!",
-    "feedback_not_found": "This link is not valid."
+    "feedback_not_found": "This link is not valid.",
+    "import_bad_file": "The file must be Excel (xlsx) or CSV.",
+    "import_empty": "The file is empty.",
+    "import_no_columns": "No known columns in the first row.",
+    "import_too_many": "At most 5000 rows per file.",
+    "import_too_big": "The file is over 5 MB."
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -364,7 +369,12 @@
     "setPrice": "Set price",
     "upcoming": "Upcoming",
     "art": "Till picture",
-    "artAuto": "Auto"
+    "artAuto": "Auto",
+    "upsell": "Suggested add-on at the till",
+    "upsellHelp": "When this service is in the invoice, the cashier sees a button to add that one.",
+    "rebook": "Customers come back after",
+    "rebookHelp": "Sends a “time for the next one” reminder if turned on in WhatsApp.",
+    "none": "—"
   },
   "staff": {
     "sub": "Service providers: the branches they work in and the services they deliver",
@@ -606,7 +616,8 @@
     "childPh": "e.g. Yousef",
     "guardianPhone": "Guardian's mobile",
     "quickAdd": "Add to invoice",
-    "guardianOf": "Guardian of {{name}}"
+    "guardianOf": "Guardian of {{name}}",
+    "upsell": "Add {{name}}"
   },
   "inv": {
     "sub": "Invoices, collections and returns",
@@ -730,7 +741,9 @@
       "winbackHelp": "One message to a customer who hasn’t visited for {{n}} days. Only to customers who agreed to marketing messages.",
       "winbackDays": "After how many days away",
       "daysN": "{{n}} days",
-      "winbackCoupon": "Discount code in the message (optional)"
+      "winbackCoupon": "Discount code in the message (optional)",
+      "rebook": "“Time for the next visit”",
+      "rebookHelp": "A message when a service’s usual interval (set on Services) has passed and the customer hasn’t come back or booked. Marketing consent only."
     }
   },
   "pkg": {
@@ -1490,5 +1503,40 @@
     "happy": "Glad you enjoyed it! Would you leave a review on Google? It really helps us.",
     "sorry": "Sorry the visit fell short. The management will see your feedback.",
     "google": "Review us on Google"
+  },
+  "calc": {
+    "title": "What do no-shows cost you?",
+    "sub": "Put in your salon’s numbers.",
+    "noShows": "Customers who book and don’t come (per week)",
+    "ticket": "Average invoice (KWD)",
+    "rate": "% that reminders prevent",
+    "rateHelp": "Your own assumption — change it",
+    "lost": "Lost per month",
+    "back": "Could win back per month",
+    "plan": "Cheapest plan per month",
+    "note": "Estimate: weekly no-shows × average invoice × 4.33 weeks. The recovery rate is your assumption, not a promise."
+  },
+  "imp": {
+    "customers": "Import customers",
+    "customersHelp": "Excel or CSV with columns: name, phone, child, child birth date. Existing numbers aren’t duplicated — only the child is added. Imported customers are not opted in to marketing.",
+    "services": "Import services",
+    "servicesHelp": "Columns: service, category, duration, price, type (kids/men/women). A service with the same name in the same category only gets its price updated, from today.",
+    "choose": "Choose file",
+    "preview": "Preview — nothing saved yet",
+    "imported": "Saved",
+    "summary": "{{rows}} rows · {{created}} new",
+    "matched": "{{n}} already existed",
+    "children": "{{n}} children",
+    "repriced": "{{n}} prices changed",
+    "errors": "{{n}} rows with problems:",
+    "rowErr": "row {{row}}: {{why}}",
+    "confirm": "OK, import",
+    "done": "Import done",
+    "code": {
+      "phone_invalid": "bad number",
+      "name_missing": "no name",
+      "date_ignored": "birth date not understood (saved without it)",
+      "number_invalid": "bad duration or price"
+    }
   }
 }
