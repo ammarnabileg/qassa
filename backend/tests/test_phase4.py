@@ -228,3 +228,37 @@ def test_quote_matches_checkout_and_writes_nothing(salon):
     open_drawer(s)
     r = checkout(s, s["cashier"], body["lines"], [{"method": "cash", "amount": q["total"]}], coupon_code="Q15", expected_total=q["total"])
     assert r.status_code == 201 and r.json()["total"] == q["total"]
+
+
+def test_points_tiers_welcome_birthday_and_expiry(salon):
+    from datetime import date
+    from apps.customers.models import Customer
+    from apps.loyalty.models import PointsEntry
+    from apps.loyalty.services import points as pts
+    s = salon
+    with tenant_context(s["t"].id):
+        LoyaltySettings.objects.create(enabled=True, points_per_kd=10, point_value="0.010", min_redeem=50, welcome_points=5,
+                                       birthday_points=20, expiry_months=12)
+    r = owner(s).patch("/api/v1/loyalty/settings", {"tiers": [{"name_ar": "فضي", "min": 100, "mul": 2}, {"name_ar": "برونزي", "min": 0, "mul": 1}]},
+                       format="json")
+    assert r.status_code == 200 and [t["min"] for t in r.json()["tiers"]] == [0, 100]
+    bad = owner(s).patch("/api/v1/loyalty/settings", {"tiers": [{"name_ar": "x", "min": 5, "mul": 1}]}, format="json")
+    assert bad.status_code == 400
+    cust = manager(s).post("/api/v1/customers", {"full_name": "خالد", "phone": "55553334"}, format="json").json()
+    manager(s).post(f"/api/v1/customers/{cust['id']}/beneficiaries", {"full_name": "ليلى", "relation": "child", "birth_date": "2018-06-10"},
+                    format="json")
+    open_drawer(s)
+    checkout(s, s["cashier"], [{"service_id": s["wash"].id}], [{"method": "cash", "amount": "15.000"}], customer_id=cust["id"])
+    wallet = lambda: client_for(s["cashier"], s["t"]).get(f"/api/v1/customers/{cust['id']}/wallet").json()["points"]  # noqa: E731
+    assert wallet() == 150 + 5                          # bronze ×1 + welcome gift once
+    checkout(s, s["cashier"], [{"service_id": s["cut"].id}], [{"method": "cash", "amount": "5.000"}], customer_id=cust["id"], key="k2")
+    assert wallet() == 155 + 100                        # now silver: ×2, no second welcome
+    ov = owner(s).get("/api/v1/loyalty/points").json()
+    assert ov["balances"][0]["tier"] == "فضي" and [t["customers"] for t in ov["tiers"]] == [0, 1]
+    with tenant_context(s["t"].id):
+        assert pts.birthday_gifts(date(2026, 6, 10)) == 1 and pts.birthday_gifts(date(2026, 6, 10)) == 0
+        assert pts.birthday_gifts(date(2026, 6, 11)) == 0
+        c = Customer.objects.get(id=cust["id"])
+        assert pts.expire_inactive(business_date()) == 0                     # active customer keeps points
+        assert pts.expire_inactive(business_date().replace(year=business_date().year + 2)) == 1
+        assert pts.balance(c) == 0 and PointsEntry.objects.filter(customer=c, kind="expire").count() == 1

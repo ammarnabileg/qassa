@@ -9,6 +9,7 @@ import { Dialog, Head, Icon, nameOf, useToast } from '../components/ui'
 import { formatKWD } from '../money'
 
 type Tab = 'packages' | 'coupons' | 'points'
+const TIER_PRESET = [{ name_ar: 'برونزي', name_en: 'Bronze', min: 0, mul: 1 }, { name_ar: 'فضي', name_en: 'Silver', min: 60, mul: 1.25 }, { name_ar: 'ذهبي', name_en: 'Gold', min: 150, mul: 1.5 }]
 const today = () => new Date().toISOString().slice(0, 10)
 
 export default function Marketing({ initial = 'packages' }: { initial?: Tab }) {
@@ -68,6 +69,23 @@ export default function Marketing({ initial = 'packages' }: { initial?: Tab }) {
           <label className="field">{t('mkt.pointValue')}<input className="input" dir="ltr" inputMode="decimal" disabled={!manage} value={cfg.point_value} onChange={(e) => setCfg({ ...cfg, point_value: e.target.value })} /></label>
         </div>
         <label className="field">{t('mkt.minRedeem')}<input className="input" type="number" min={1} disabled={!manage} value={cfg.min_redeem} onChange={(e) => setCfg({ ...cfg, min_redeem: Number(e.target.value) })} /></label>
+        <div className="two">
+          <label className="field">{t('mkt.welcome')}<input className="input" type="number" min={0} disabled={!manage} value={cfg.welcome_points} onChange={(e) => setCfg({ ...cfg, welcome_points: Number(e.target.value) })} /></label>
+          <label className="field">{t('mkt.birthday')}<input className="input" type="number" min={0} disabled={!manage} value={cfg.birthday_points} onChange={(e) => setCfg({ ...cfg, birthday_points: Number(e.target.value) })} /></label>
+        </div>
+        <label className="field">{t('mkt.expiry')}<input className="input" type="number" min={0} disabled={!manage} value={cfg.expiry_months} onChange={(e) => setCfg({ ...cfg, expiry_months: Number(e.target.value) })} /><small className="muted">{t('mkt.expiryHelp')}</small></label>
+        <h3 style={{ margin: '14px 0 6px' }}>{t('mkt.tiers')}</h3>
+        <div className="small muted" style={{ marginBottom: 8 }}>{t('mkt.tiersHelp')}</div>
+        {cfg.tiers.map((tr, i) => <div key={i} className="grid" style={{ gridTemplateColumns: '2fr 1fr 1fr auto', gap: 8, alignItems: 'end' }}>
+          <label className="field">{t('common.name')}<input className="input" disabled={!manage} value={tr.name_ar} onChange={(e) => setCfg({ ...cfg, tiers: cfg.tiers.map((x, j) => j === i ? { ...x, name_ar: e.target.value } : x) })} /></label>
+          <label className="field">{t('mkt.tierMin')}<input className="input" type="number" min={0} disabled={!manage || i === 0} value={tr.min} onChange={(e) => setCfg({ ...cfg, tiers: cfg.tiers.map((x, j) => j === i ? { ...x, min: Number(e.target.value) } : x) })} /></label>
+          <label className="field">{t('mkt.tierMul')}<input className="input" type="number" min={1} max={5} step={0.05} disabled={!manage} value={tr.mul} onChange={(e) => setCfg({ ...cfg, tiers: cfg.tiers.map((x, j) => j === i ? { ...x, mul: Number(e.target.value) } : x) })} /></label>
+          {manage && <button type="button" className="btn sm ghost" style={{ marginBottom: 10 }} aria-label={t('common.delete')} onClick={() => setCfg({ ...cfg, tiers: cfg.tiers.filter((_, j) => j !== i) })}><Icon name="close" /></button>}
+        </div>)}
+        {manage && <div className="row" style={{ gap: 8, marginBottom: 10 }}>
+          {cfg.tiers.length === 0 && <button type="button" className="btn sm" onClick={() => setCfg({ ...cfg, tiers: TIER_PRESET })}>{t('mkt.tiersPreset')}</button>}
+          {cfg.tiers.length > 0 && cfg.tiers.length < 6 && <button type="button" className="btn sm" onClick={() => setCfg({ ...cfg, tiers: [...cfg.tiers, { name_ar: '', name_en: '', min: (cfg.tiers[cfg.tiers.length - 1]?.min || 0) + 100, mul: 1 }] })}>{t('mkt.addTier')}</button>}
+        </div>}
         <div className="small muted" style={{ margin: '10px 0' }}>{t('mkt.example', { pts: cfg.points_per_kd * 10, v: formatKWD((cfg.points_per_kd * 10 * Number(cfg.point_value)).toFixed(3), lang) })}</div>
         <div className="notice"><Icon name="info" />{t('mkt.accountingNote')}</div>
         <ErrorText error={lSave.error} />

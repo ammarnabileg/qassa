@@ -25,7 +25,8 @@
     "nameEn": "English name",
     "change": "Change",
     "back": "Back",
-    "delete": "Delete"
+    "delete": "Delete",
+    "name": "Name"
   },
   "auth": {
     "title": "Sign in",
@@ -801,7 +802,17 @@
     "amount": "Fixed amount",
     "value": "Value",
     "minTotalLabel": "Minimum invoice",
-    "maxUses": "Max uses"
+    "maxUses": "Max uses",
+    "welcome": "First-visit gift (points)",
+    "birthday": "Birthday gift (points)",
+    "expiry": "Points validity (months)",
+    "expiryHelp": "The balance lapses after this long with no points activity. 0 = never.",
+    "tiers": "Tiers",
+    "tiersHelp": "The tier follows lifetime earned points; its multiplier applies to each new invoice.",
+    "tierMin": "Starts at",
+    "tierMul": "Multiplier",
+    "tiersPreset": "Start with Bronze / Silver / Gold",
+    "addTier": "Add tier"
   },
   "com": {
     "sub": "Staff commissions accrued and paid",
@@ -1052,7 +1063,16 @@
     "emptyDefault": "Leave empty for the default text",
     "remind": "Remind",
     "remindText": "Hi {{name}} 👋 Qassa subscription invoice {{n}} of {{v}} is due on {{d}}. If you've paid, please send us the reference. Thanks!",
-    "previewSite": "Preview pricing page"
+    "previewSite": "Preview pricing page",
+    "gateways": "Payment gateways",
+    "gatewaysNote": "No payment gateway is connected yet, so salon payments are collected by hand (transfer or KNET outside the system) and recorded on subscription invoices. These switches turn on once a provider is chosen and connected.",
+    "gwOff": "Not connected",
+    "gw": {
+      "knet": "KNET",
+      "myfatoorah": "MyFatoorah",
+      "tap": "Tap Payments",
+      "applepay": "Apple Pay / Google Pay"
+    }
   },
   "site": {
     "tag": "Salon system",
@@ -1360,7 +1380,7 @@
     "enterBranch": "Enter branch"
   },
   "set": {
-    "sub": "Receipt and data export",
+    "sub": "Receipt, tax, notifications, subscription and data",
     "receipt": "Receipt",
     "header": "Line under the branch name",
     "headerPh": "e.g. address or phone",
@@ -1373,7 +1393,24 @@
     "dataHelp": "Download your data as CSV for Excel. Every export is audited.",
     "exportCustomers": "Customers",
     "exportInvoices": "This year's invoices",
-    "noExport": "Export needs the “Export data” permission"
+    "noExport": "Export needs the “Export data” permission",
+    "open": "Open",
+    "tab": {
+      "gen": "General",
+      "rcpt": "Receipt & printing",
+      "tax": "Tax & payments",
+      "ntf": "Notifications",
+      "sub": "Subscription",
+      "data": "Data"
+    },
+    "branches": "Branches & opening hours",
+    "branchesHelp": "Each branch’s name, address, phone, opening hours and online booking are set on the branches screen.",
+    "staffHelp": "Each employee’s hours, time off and commission rate.",
+    "showStaff": "Show the staff name on the receipt",
+    "tax": "Tax",
+    "payMethods": "Till payment methods: cash, KNET, transfer and on account. Online payment needs a payment gateway connected by the platform.",
+    "ntfHelp": "The salon’s WhatsApp number and its confirmation, reminder and receipt messages are set on the WhatsApp screen.",
+    "subHelp": "Your plan, subscription invoices and branch / user limits."
   },
   "loy": {
     "sub": "Customers earn points on every visit and redeem them as a discount at the till",
@@ -1401,12 +1438,24 @@
       "earn": "Earned",
       "redeem": "Redeemed",
       "reverse": "Return",
-      "adjust": "Manual adjustment"
+      "adjust": "Manual adjustment",
+      "gift": "Gift",
+      "expire": "Expired"
     },
     "add": "Add",
     "deduct": "Deduct",
     "points": "Points",
     "reason": "Reason",
-    "newBalance": "Done — new balance {{n}} points"
+    "newBalance": "Done — new balance {{n}} points",
+    "tierCount": "{{n}} customers",
+    "tierRange": "{{a}}–{{b}} earned points",
+    "tierFrom": "{{a}}+ earned points",
+    "tierMul": "Points multiplier:",
+    "gifts": "Automatic gifts",
+    "giftBirthday": "Birthday: {{n}} points",
+    "giftWelcome": "First visit: {{n}} points",
+    "giftExpiry": "Points valid: {{n}} months",
+    "noExpiry": "Points never expire",
+    "tier": "Tier"
   }
 }

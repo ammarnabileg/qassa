@@ -250,6 +250,10 @@ export function PlatformSettingsPage() {
           <label className="field">{t('pc.subAr')}<textarea className="input" rows={2} value={f.sub_ar} placeholder={t('site.sub')} onChange={(e) => setF({ ...f, sub_ar: e.target.value })} /></label>
           <label className="field">{t('pc.subEn')}<textarea className="input" dir="ltr" rows={2} value={f.sub_en} onChange={(e) => setF({ ...f, sub_en: e.target.value })} /></label>
           <div className="cap muted">{t('pc.emptyDefault')}</div></div>
+        <div className="card"><h2>{t('pc.gateways')}</h2>
+          <div className="notice"><Icon name="info" />{t('pc.gatewaysNote')}</div>
+          {['knet', 'myfatoorah', 'tap', 'applepay'].map((g) => <label className="chk" key={g}><span>{t(`pc.gw.${g}`)}<small>{t('pc.gwOff')}</small></span>
+            <input type="checkbox" className="sw" checked={false} disabled readOnly /></label>)}</div>
       </div>}
       <ErrorText error={s.error} />
       {f && <button className="btn primary" style={{ marginTop: 14 }} disabled={s.busy} onClick={() => s.save({ path: '/platform/settings', method: 'PATCH', body: f })}>{t('common.save')}</button>}

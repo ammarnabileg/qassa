@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { api, type Customer } from '../api/client'
+import { api, type Customer, type LoyaltySettings, type Tier } from '../api/client'
 import { useAuth } from '../auth'
 import { ErrorText } from '../components/ErrorText'
 import { useSave } from '../components/hooks'
@@ -10,11 +10,14 @@ import { Dialog, Head, Icon, Stat, useToast } from '../components/ui'
 import { formatKWD } from '../money'
 
 type Overview = {
-  settings: { enabled: boolean; points_per_kd: number; point_value: string; min_redeem: number }
+  settings: LoyaltySettings
+  tiers: (Tier & { customers: number })[]
   outstanding: number; outstanding_value: string; redeemed_month: number
-  balances: { customer_id: number; name: string; phone: string; kids: string[]; balance: number; earned: number; used: number; value: string }[]
-  recent: { id: number; name: string; kind: 'earn' | 'redeem' | 'reverse' | 'adjust'; points: number; at: string; invoice: string; note: string }[]
+  balances: { customer_id: number; name: string; phone: string; kids: string[]; tier: string; tier_en: string; balance: number; earned: number; used: number; value: string }[]
+  recent: { id: number; name: string; kind: 'earn' | 'redeem' | 'reverse' | 'adjust' | 'gift' | 'expire'; points: number; at: string; invoice: string; note: string }[]
 }
+
+const MEDALS = ['🥉', '🥈', '🥇', '💎', '👑', '🌟']
 
 /** Points & loyalty (reference v-loyal): program status, balances per family and the latest movements. */
 export default function Loyalty() {
@@ -44,14 +47,23 @@ export default function Loyalty() {
           <Stat label={t('loy.pointValue')} value={formatKWD(d.settings.point_value, lang)} sub={t('loy.minRedeem', { n: d.settings.min_redeem })} />
           <Stat label={t('loy.redeemedMonth')} value={<bdi>{d.redeemed_month}</bdi>} />
         </div>
+        {(d.tiers.length > 0 || d.settings.welcome_points > 0 || d.settings.birthday_points > 0) && <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: 12, marginTop: 16 }}>
+          {d.tiers.map((tr, i) => <div className="tier" key={tr.min}><div className="row sb"><span className="medal">{MEDALS[i] || '⭐'}</span><span className="pill mute">{t('loy.tierCount', { n: tr.customers })}</span></div>
+            <h3>{lang === 'en' && tr.name_en ? tr.name_en : tr.name_ar}</h3>
+            <div className="small muted">{d.tiers[i + 1] ? t('loy.tierRange', { a: tr.min, b: d.tiers[i + 1].min - 1 }) : t('loy.tierFrom', { a: tr.min })}</div>
+            <div className="small">{t('loy.tierMul')} <b><bdi>×{tr.mul}</bdi></b></div></div>)}
+          <div className="tier"><div className="medal">🎂</div><h3>{t('loy.gifts')}</h3><div className="small muted">
+            {t('loy.giftBirthday', { n: d.settings.birthday_points })}<br />{t('loy.giftWelcome', { n: d.settings.welcome_points })}<br />
+            {d.settings.expiry_months ? t('loy.giftExpiry', { n: d.settings.expiry_months }) : t('loy.noExpiry')}</div></div>
+        </div>}
         <div className="grid" style={{ gridTemplateColumns: 'minmax(0,2fr) minmax(0,1fr)', gap: 14, marginTop: 16, alignItems: 'start' }}>
           <div><h2 style={{ marginBottom: 10 }}>{t('loy.balances')}</h2>
-            <div className="tw"><table><thead><tr><th>{t('loy.family')}</th><th className="n">{t('loy.balance')}</th><th className="n">{t('loy.earned')}</th><th className="n">{t('loy.used')}</th><th className="n">{t('loy.worth')}</th><th></th></tr></thead>
+            <div className="tw"><table><thead><tr><th>{t('loy.family')}</th>{d.tiers.length > 0 && <th>{t('loy.tier')}</th>}<th className="n">{t('loy.balance')}</th><th className="n">{t('loy.earned')}</th><th className="n">{t('loy.used')}</th><th className="n">{t('loy.worth')}</th><th></th></tr></thead>
               <tbody>{d.balances.map((b) => <tr key={b.customer_id}><td><b>{b.kids.length ? b.kids.join('، ') : b.name}</b>{b.kids.length > 0 && <div className="cap muted">{b.name}</div>}</td>
-                <td className="n"><b><bdi>{b.balance}</bdi></b></td><td className="n"><bdi>{b.earned}</bdi></td><td className="n"><bdi>{b.used}</bdi></td>
+                {d.tiers.length > 0 && <td>{lang === 'en' && b.tier_en ? b.tier_en : b.tier}</td>}<td className="n"><b><bdi>{b.balance}</bdi></b></td><td className="n"><bdi>{b.earned}</bdi></td><td className="n"><bdi>{b.used}</bdi></td>
                 <td className="n money">{formatKWD(b.value, lang)}</td>
                 <td><a className="btn sm ghost" style={{ color: '#25D366' }} href={`https://wa.me/${b.phone}`} target="_blank" rel="noreferrer" aria-label="WhatsApp"><Icon name="whatsapp" /></a></td></tr>)}
-                {d.balances.length === 0 && <tr><td colSpan={6} className="empty">{t('loy.none')}</td></tr>}</tbody></table></div></div>
+                {d.balances.length === 0 && <tr><td colSpan={7} className="empty">{t('loy.none')}</td></tr>}</tbody></table></div></div>
           <div><h2 style={{ marginBottom: 10 }}>{t('loy.recent')}</h2>
             <div className="card"><div className="list">{d.recent.map((e) => <div className="li" key={e.id}>
               <div className="grow"><b className="small">{e.name}</b><div className="cap muted">{e.invoice ? t('loy.invoice', { n: e.invoice }) : t(`loy.k.${e.kind}`)}{e.note && !e.invoice ? ` · ${e.note}` : ''} · {when(e.at)}</div></div>

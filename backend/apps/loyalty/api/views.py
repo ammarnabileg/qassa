@@ -67,7 +67,27 @@ class CustomerWalletView(TenantAPIView):
 class SettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = LoyaltySettings
-        fields = ["enabled", "points_per_kd", "point_value", "min_redeem"]
+        fields = ["enabled", "points_per_kd", "point_value", "min_redeem", "tiers", "welcome_points", "birthday_points", "expiry_months"]
+
+    def validate_tiers(self, v):
+        if not isinstance(v, list) or len(v) > 6:
+            raise serializers.ValidationError("max 6 tiers")
+        out = []
+        for t in v:
+            try:
+                row = {"name_ar": str(t["name_ar"]).strip()[:40], "name_en": str(t.get("name_en", "")).strip()[:40],
+                       "min": int(t["min"]), "mul": float(t["mul"])}
+            except (KeyError, TypeError, ValueError):
+                raise serializers.ValidationError("each tier needs name_ar, min, mul")
+            if not row["name_ar"] or row["min"] < 0 or not (1 <= row["mul"] <= 5):
+                raise serializers.ValidationError("name required, min >= 0, multiplier 1–5")
+            out.append(row)
+        out.sort(key=lambda t: t["min"])
+        if out and out[0]["min"] != 0:
+            raise serializers.ValidationError("the first tier must start at 0")
+        if len({t["min"] for t in out}) != len(out):
+            raise serializers.ValidationError("tiers must start at different points")
+        return out
 
 
 class LoyaltySettingsView(TenantAPIView):
@@ -149,7 +169,10 @@ class PointsOverviewView(TenantAPIView):
         pv = Decimal(str(cfg.point_value))   # an unsaved default holds the string "0.010"
         month = business_date().replace(day=1)
         per = {r["customer_id"]: r for r in PointsEntry.objects.values("customer_id").annotate(
-            bal=Sum("points"), earned=Sum("points", filter=Q(kind="earn")), used=Sum("points", filter=Q(kind="redeem")))}
+            bal=Sum("points"), earned=Sum("points", filter=Q(kind="earn")), used=Sum("points", filter=Q(kind="redeem")),
+            life=Sum("points", filter=Q(kind__in=["earn", "reverse", "gift"])))}
+        tiers = sorted(cfg.tiers or [], key=lambda t: t["min"])
+        tier_of = {cid: points.tier_for(cfg, r["life"] or 0) for cid, r in per.items()}
         outstanding = sum(max(r["bal"] or 0, 0) for r in per.values())
         names = {c.id: c for c in Customer.objects.filter(id__in=list(per)).prefetch_related("beneficiaries")}
         rows = sorted(per.values(), key=lambda r: -(r["bal"] or 0))[:100]
@@ -157,9 +180,12 @@ class PointsOverviewView(TenantAPIView):
         return Response({
             "settings": SettingsSerializer(cfg).data,
             "outstanding": outstanding, "outstanding_value": str((pv * outstanding).quantize(Decimal("0.001"))),
+            "tiers": [{**t, "customers": sum(1 for x in tier_of.values() if x is not None and x["min"] == t["min"])} for t in tiers],
             "redeemed_month": -(PointsEntry.objects.filter(kind="redeem", created_at__date__gte=month).aggregate(s=Sum("points"))["s"] or 0),
             "balances": [{"customer_id": r["customer_id"], "name": names[r["customer_id"]].full_name, "phone": names[r["customer_id"]].phone,
                           "kids": [b.full_name for b in names[r["customer_id"]].beneficiaries.all() if b.relation != "self"],
+                          "tier": tier_of[r["customer_id"]]["name_ar"] if tier_of[r["customer_id"]] else "",
+                          "tier_en": (tier_of[r["customer_id"]] or {}).get("name_en", ""),
                           "balance": r["bal"] or 0, "earned": r["earned"] or 0, "used": -(r["used"] or 0),
                           "value": str((pv * max(r["bal"] or 0, 0)).quantize(Decimal("0.001")))} for r in rows],
             "recent": [{"id": e.id, "name": e.customer.full_name, "kind": e.kind, "points": e.points, "at": e.created_at,

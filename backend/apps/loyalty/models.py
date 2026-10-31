@@ -46,6 +46,11 @@ class LoyaltySettings(TenantScopedModel):
     points_per_kd = models.PositiveSmallIntegerField(default=1)      # earned per 1.000 KD paid
     point_value = models.DecimalField(**MONEY, default="0.010")      # KD discount per point redeemed
     min_redeem = models.PositiveIntegerField(default=100)
+    # tiers by lifetime earned points: [{"name_ar","name_en","min","mul"}], sorted by min; first must start at 0
+    tiers = models.JSONField(default=list, blank=True)
+    welcome_points = models.PositiveIntegerField(default=0)    # once, on the customer's first paid invoice
+    birthday_points = models.PositiveIntegerField(default=0)   # once a year, on the birthday (daily job)
+    expiry_months = models.PositiveSmallIntegerField(default=0)  # balance lapses after N months with no activity; 0 = never
 
     class Meta(TenantScopedModel.Meta):
         constraints = [models.UniqueConstraint(fields=["tenant"], name="one_loyalty_settings_per_tenant")]
@@ -57,6 +62,8 @@ class PointsEntry(TenantScopedModel):
         REDEEM = "redeem"
         REVERSE = "reverse"   # earned points taken back after a return
         ADJUST = "adjust"
+        GIFT = "gift"       # welcome / birthday
+        EXPIRE = "expire"   # balance lapsed after inactivity
 
     customer = models.ForeignKey("customers.Customer", on_delete=models.PROTECT, related_name="+")
     kind = models.CharField(max_length=8, choices=Kind.choices)
