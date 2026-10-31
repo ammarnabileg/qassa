@@ -1,11 +1,12 @@
 /** Building blocks that reproduce the approved design's markup (reference/salon-pos-demo). */
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { asset } from '../base'
 import { useTranslation } from 'react-i18next'
 
 export type Biz = 'kids' | 'men' | 'women' | ''
 
 export function Icon({ name }: { name: string }) {
-  return <svg className="icon" aria-hidden="true"><use href={`/icons/sprite.svg#i-${name}`} /></svg>
+  return <svg className="icon" aria-hidden="true"><use href={`${asset('icons/sprite.svg')}#i-${name}`} /></svg>
 }
 
 /** Same logo as the design: scissors on the brand colour, accent per business type. */

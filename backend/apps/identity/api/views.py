@@ -31,16 +31,20 @@ class MfaSerializer(serializers.Serializer):
     remember = serializers.BooleanField(default=False)  # trust this browser for TRUSTED_DEVICE_DAYS
 
 
-def me_payload(user):
+def me_payload(user, request=None):
+    """On a salon's own host (<slug>.<base>/dashboard) only that salon is offered; the API refuses the others there too."""
     ms = Membership.objects.select_related("tenant", "role").filter(user=user, is_active=True)
+    domain = getattr(request, "domain_tenant_id", None)
+    if domain:
+        ms = ms.filter(tenant_id=domain)
     return {
         "id": user.id, "email": user.email, "full_name": user.full_name, "language": user.preferred_language,
-        "is_platform_staff": user.is_platform_staff, "mfa_required": user.mfa_required,
+        "is_platform_staff": user.is_platform_staff and not domain, "mfa_required": user.mfa_required, "domain_tenant_id": domain,
         "memberships": [{"tenant_id": m.tenant_id, "tenant_name": m.tenant.name, "tenant_status": m.tenant.status,
                          "tenant_business_type": m.tenant.default_business_type,
                          "role": m.role.key, "role_name": {"ar": m.role.name_ar, "en": m.role.name_en},
                          "permissions": sorted(m.role.permissions), "all_branches": m.all_branches,
-                         "branch_ids": sorted(m.branch_ids() or []), "support": False} for m in ms] + _support(user),
+                         "branch_ids": sorted(m.branch_ids() or []), "support": False} for m in ms] + [x for x in _support(user) if not domain or x["tenant_id"] == domain],
     }
 
 
@@ -68,7 +72,7 @@ MembershipOut = inline_serializer("MembershipOut", {
 MeOut = inline_serializer("MeOut", {
     "id": serializers.IntegerField(), "email": serializers.EmailField(), "full_name": serializers.CharField(),
     "language": serializers.CharField(), "is_platform_staff": serializers.BooleanField(), "mfa_required": serializers.BooleanField(),
-    "memberships": MembershipOut})
+    "domain_tenant_id": serializers.IntegerField(allow_null=True), "memberships": MembershipOut})
 MfaStep = inline_serializer("MfaStep", {"mfa": serializers.ChoiceField(choices=["setup", "verify"]),
                                         "methods": serializers.ListField(child=serializers.CharField()),
                                         "phone": serializers.CharField()})
@@ -101,7 +105,7 @@ class LoginView(APIView):
             if f2.trusted(request, user):  # "remember this device"
                 login(request, user)
                 audit("auth.login", actor=user, data={"mfa": "trusted_device"}, ip=request.META.get("REMOTE_ADDR"))
-                return Response(me_payload(user))
+                return Response(me_payload(user, request))
             request.session.flush()
             request.session[PENDING] = user.id
             has_device = TOTPDevice.objects.filter(user=user, confirmed=True).exists()
@@ -110,7 +114,7 @@ class LoginView(APIView):
                              "phone": f2.mask(user.phone) if "whatsapp" in methods else ""}, status=status.HTTP_200_OK)
         login(request, user)
         audit("auth.login", actor=user, ip=request.META.get("REMOTE_ADDR"))
-        return Response(me_payload(user))
+        return Response(me_payload(user, request))
 
 
 def _pending_user(request):
@@ -181,7 +185,7 @@ class MfaVerifyView(APIView):
 
 
     def _done(self, request, user, remember):
-        response = Response(me_payload(user))
+        response = Response(me_payload(user, request))
         if remember:
             f2.remember(response, user, request.META.get("HTTP_USER_AGENT", ""))
             audit("auth.device_trusted", actor=user, ip=request.META.get("REMOTE_ADDR"))
@@ -283,4 +287,4 @@ class MeView(APIView):
 
     @extend_schema(responses=MeOut)
     def get(self, request):
-        return Response(me_payload(request.user))
+        return Response(me_payload(request.user, request))

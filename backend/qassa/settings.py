@@ -25,6 +25,9 @@ SECRET_KEY = env("DJANGO_SECRET_KEY", "dev-only-insecure-key" if ENVIRONMENT in 
 PLATFORM_HOSTS = [h for h in env("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",") if h]
 ALLOWED_HOSTS = ["*"]
 TENANT_BASE_DOMAIN = env("QASSA_TENANT_BASE_DOMAIN", "localhost")  # company subdomains: <slug>.<base>
+# names a salon can never get as <slug>.<base>: our own, and any the base domain already uses for other services
+RESERVED_SUBDOMAINS = {"www", "api", "app", "admin", "dashboard", "mail", "smtp", "ftp", "static", "cdn", "cool", "status", "help",
+                       "support", "blog", "docs", "qassa"} | {s.strip().lower() for s in env("QASSA_RESERVED_SUBDOMAINS", "").split(",") if s.strip()}
 CSRF_TRUSTED_ORIGINS = [o for o in env("DJANGO_CSRF_TRUSTED_ORIGINS", "http://localhost:5173").split(",") if o]
 
 INSTALLED_APPS = [

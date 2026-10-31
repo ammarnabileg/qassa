@@ -1,3 +1,4 @@
+import { BASE, here, link } from './base'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
@@ -102,7 +103,7 @@ function SupportBanner() {
   const end = async () => {
     await api(`/platform/tenants/${membership!.tenant_id}/support`, { method: 'DELETE' }).catch(() => undefined)
     sessionStorage.removeItem('qassa.tenant')
-    window.location.assign('/platform/tenants')
+    window.location.assign(link('/platform/tenants'))
   }
   return <div className="notice bad" style={{ margin: '12px 16px 0' }}><Icon name="shield" />
     <span className="grow">{t('pc.supportBanner', { name: membership!.tenant_name, until: new Date(membership!.expires_at!).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kuwait' }) })}</span>
@@ -149,9 +150,9 @@ export default function App() {
   const { t } = useTranslation()
   const { me, loading, membership, can } = useAuth()
   if (loading) return <div className="center muted">{t('common.loading')}</div>
-  if (window.location.pathname === '/set-password') return <SetPassword />
-  if (window.location.pathname.startsWith('/rate/')) return <Rate />
-  if (!me) return window.location.pathname === '/login' ? <Login /> : <Landing />
+  if (here() === '/set-password') return <SetPassword />
+  if (here().startsWith('/rate/')) return <Rate />
+  if (!me) return here() === '/login' || BASE ? <Login /> : <Landing />
 
   if (me.is_platform_staff && !membership?.support) {
     return (

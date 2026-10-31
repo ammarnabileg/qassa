@@ -67,3 +67,35 @@ def test_custom_domain_needs_plan_then_activation(settings_hosts, company_a):
     owner = User.objects.get(memberships__tenant=ta, memberships__role__key="owner")
     assert client_for(owner).post(f"/api/v1/platform/tenants/{ta.id}/domains", {"host": "a.mykids.com"},
                                   format="json").status_code == 403
+
+
+def test_dashboard_on_salon_host_is_locked_to_that_salon(settings_hosts, company_a, company_b):
+    from tests.conftest import add_member
+    ta, _, _ = company_a
+    tb, _, _ = company_b
+    TenantDomain.objects.filter(tenant=ta).update(host=f"{ta.slug}.qassa.test")
+    u = add_member(ta, "both@x.test", "branch_manager")
+    add_member(tb, "both@x.test", "branch_manager")
+    c = APIClient(HTTP_HOST=f"{ta.slug}.qassa.test")
+    c.force_login(User.objects.get(email="both@x.test"))
+    me = c.get("/api/v1/auth/me").json()
+    assert me["domain_tenant_id"] == ta.id and [m["tenant_id"] for m in me["memberships"]] == [ta.id]
+    assert c.get("/api/v1/customers", HTTP_X_TENANT=str(ta.id)).status_code == 200
+    assert c.get("/api/v1/customers", HTTP_X_TENANT=str(tb.id)).status_code == 403    # other salon refused on this address
+    p = APIClient(HTTP_HOST="qassa.test")
+    p.force_login(u)
+    assert len(p.get("/api/v1/auth/me").json()["memberships"]) == 2                    # platform address: all of them
+
+
+def test_new_base_domain_command_adds_subdomains_and_skips_reserved(settings_hosts, company_a):
+    from django.core.management import call_command
+    ta, _, _ = company_a
+    settings_hosts.TENANT_BASE_DOMAIN = "kuw.test"
+    call_command("add_subdomains")
+    call_command("add_subdomains")                    # idempotent
+    assert TenantDomain.objects.filter(tenant=ta, host=f"{ta.slug}.kuw.test", is_active=True).count() == 1
+    assert TenantDomain.objects.filter(tenant=ta).count() == 2                          # the old address keeps working
+    settings_hosts.RESERVED_SUBDOMAINS = {ta.slug}
+    settings_hosts.TENANT_BASE_DOMAIN = "other.test"
+    call_command("add_subdomains")
+    assert not TenantDomain.objects.filter(host=f"{ta.slug}.other.test").exists()

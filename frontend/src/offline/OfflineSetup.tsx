@@ -1,3 +1,4 @@
+import { link } from '../base'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth'
@@ -47,7 +48,7 @@ export function OfflineBanner() {
       <span className="grow">{!online ? t('off.noInternet', { n: pendingCount }) : pendingCount > 0 ? t('off.sending', { n: pendingCount })
         : t('off.syncedWithIssues', { r: lastSync!.review, c: lastSync!.conflict + lastSync!.rejected })}</span>
       {online && pendingCount > 0 && <button className="btn sm" onClick={() => sync()}>{t('off.sendNow')}</button>}
-      {online && pendingCount === 0 && <a className="btn sm" href="/offline-receipts">{t('off.review')}</a>}
+      {online && pendingCount === 0 && <a className="btn sm" href={link('/offline-receipts')}>{t('off.review')}</a>}
     </div>
   )
 }

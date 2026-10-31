@@ -1,3 +1,4 @@
+import { BASE } from '../base'
 import QRCode from 'qrcode'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -88,7 +89,7 @@ export default function Login() {
             {forgotSent && <div className="notice good">{t('auth.forgotSent')}</div>}
             <ErrorText error={err} />
             <button className="btn primary lg" disabled={busy}>{t('auth.submit')}</button>
-            <div className="row" style={{ justifyContent: 'center' }}><a className="small" style={{ color: 'var(--brand-700)' }} href="/#price">{t('auth.prices')}</a></div>
+            {!BASE && <div className="row" style={{ justifyContent: 'center' }}><a className="small" style={{ color: 'var(--brand-700)' }} href="/#price">{t('auth.prices')}</a></div>}
           </form>
         ) : (
           <form onSubmit={submitToken}>

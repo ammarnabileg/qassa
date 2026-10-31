@@ -1,3 +1,4 @@
+import { here } from '../base'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../api/client'
@@ -9,7 +10,7 @@ type Info = { salon: string; branch_ar: string; branch_en: string; rating: numbe
 /** Public page behind the WhatsApp rating link (/rate/<token>): five stars and an optional comment, once. */
 export default function Rate() {
   const { t, i18n } = useTranslation()
-  const token = window.location.pathname.split('/')[2] || ''
+  const token = here().split('/')[2] || ''
   const [info, setInfo] = useState<Info | null>(null)
   const [stars, setStars] = useState(0)
   const [comment, setComment] = useState('')

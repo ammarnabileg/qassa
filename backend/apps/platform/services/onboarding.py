@@ -50,7 +50,7 @@ def onboard_tenant(spec: OnboardingSpec, actor=None) -> Tenant:
     with transaction.atomic():
         base = slugify(spec.legal_name_en or spec.tenant_name, allow_unicode=False) or "tenant"
         slug, n = base, 1
-        while Tenant.objects.filter(slug=slug).exists():
+        while Tenant.objects.filter(slug=slug).exists() or slug in settings.RESERVED_SUBDOMAINS:
             n += 1
             slug = f"{base}-{n}"
         tenant = Tenant.objects.create(name=spec.tenant_name, slug=slug, default_business_type=spec.business_type)

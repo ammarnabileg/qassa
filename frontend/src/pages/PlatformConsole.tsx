@@ -1,3 +1,4 @@
+import { link } from '../base'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -214,7 +215,7 @@ export function SupportAccessDialog({ tenant, onClose }: { tenant: { id: number;
   const { t } = useTranslation()
   const { chooseTenant } = useAuth()
   const [reason, setReason] = useState('')
-  const s = useSave<unknown>([], () => { chooseTenant(tenant!.id); window.location.assign('/') })
+  const s = useSave<unknown>([], () => { chooseTenant(tenant!.id); window.location.assign(link('/')) })
   return (
     <Dialog open={!!tenant} title={tenant ? `${t('pc.viewAs')}: ${tenant.name}` : ''} onClose={onClose} busy={s.busy} submitLabel={t('pc.startSupport')}
       onSubmit={() => s.save({ path: `/platform/tenants/${tenant!.id}/support`, body: { reason } })}>

@@ -21,6 +21,8 @@ class TenantAPIView(APIView):
         raw = request.headers.get("X-Tenant", "")
         if not raw.isdigit():
             raise PermissionDenied("X-Tenant header is required")
+        if getattr(request, "domain_tenant_id", None) and int(raw) != request.domain_tenant_id:
+            raise PermissionDenied("This address belongs to another salon")
         membership = (Membership.objects.select_related("role", "tenant")
                       .filter(user=request.user, tenant_id=int(raw), is_active=True).first())
         support = False

@@ -6,9 +6,11 @@ const run = (args: string) => { try { return execSync(`python3 ../scripts/versio
 const version = process.env.QASSA_VERSION || run('') || 'unknown'
 const channel = process.env.QASSA_CHANNEL || run('--channel') || 'debug'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // built files live under /_q/ so the same build serves the platform root and <salon>/dashboard (nginx maps both)
+  base: command === 'build' ? '/_q/' : '/',
   plugins: [react()],
   define: { __APP_VERSION__: JSON.stringify(version), __APP_CHANNEL__: JSON.stringify(channel) },
   server: { port: 5173, proxy: { '/api': { target: process.env.API_URL ?? 'http://localhost:8000', changeOrigin: false } } },
   test: { environment: 'node' },
-})
+}))
