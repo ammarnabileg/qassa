@@ -56,6 +56,14 @@ class MessagingSettingsSerializer(serializers.Serializer):
     reminder = serializers.BooleanField(required=False)
     reminder_hours = serializers.IntegerField(min_value=1, max_value=48, required=False)
     receipt = serializers.BooleanField(required=False)
+    feedback = serializers.BooleanField(required=False)
+    google_review_url = serializers.URLField(required=False, allow_blank=True, max_length=200)
+    winback = serializers.BooleanField(required=False)
+    winback_days = serializers.IntegerField(min_value=14, max_value=365, required=False)
+    winback_coupon = serializers.CharField(required=False, allow_blank=True, max_length=30)
+
+    def validate_winback_coupon(self, v):
+        return v.strip().upper()
 
 
 class MessagingSettingsView(TenantAPIView):

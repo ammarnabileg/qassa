@@ -118,7 +118,8 @@
       "customers": "Customers & marketing",
       "services": "Services",
       "accounts": "Accounts"
-    }
+    },
+    "feedback": "Ratings"
   },
   "org": {
     "entities": "Legal entities",
@@ -331,7 +332,9 @@
     "offline_total_invalid": "The receipt total does not match the server's calculation",
     "offline_payload_invalid": "Receipt data is incomplete",
     "tendered_short": "Amount tendered is below the total",
-    "points_zero": "Points must not be zero"
+    "points_zero": "Points must not be zero",
+    "feedback_already_rated": "This rating was already sent. Thank you!",
+    "feedback_not_found": "This link is not valid."
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -717,7 +720,17 @@
       "hours": "How long before",
       "hoursN": "{{n}} hours",
       "receipt": "Receipt summary",
-      "receiptHelp": "Invoice number, total and points balance after payment"
+      "receiptHelp": "Invoice number, total and points balance after payment",
+      "feedback": "Rating after the visit",
+      "feedbackHelp": "Two hours after the invoice the customer gets a link to rate 1–5 stars.",
+      "reviewUrl": "Google review link",
+      "reviewUrlHelp": "4–5 star ratings are asked to post a review here. Low ratings only go to the ratings screen.",
+      "marketing": "Marketing messages",
+      "winback": "“We miss you” for customers who stopped coming",
+      "winbackHelp": "One message to a customer who hasn’t visited for {{n}} days. Only to customers who agreed to marketing messages.",
+      "winbackDays": "After how many days away",
+      "daysN": "{{n}} days",
+      "winbackCoupon": "Discount code in the message (optional)"
     }
   },
   "pkg": {
@@ -1457,5 +1470,25 @@
     "giftExpiry": "Points valid: {{n}} months",
     "noExpiry": "Points never expire",
     "tier": "Tier"
+  },
+  "fb": {
+    "sub": "Customer ratings after each visit, over WhatsApp",
+    "average": "Average rating",
+    "ratedOf": "{{n}} rated of {{m}} asked",
+    "low": "Low ratings",
+    "lowHelp": "3 stars or less: call the customer",
+    "rating": "Rating",
+    "comment": "Comment",
+    "invoice": "Invoice",
+    "none": "No ratings yet. Turn on “Rating after the visit” on the WhatsApp screen."
+  },
+  "rate": {
+    "title": "How was your visit?",
+    "comment": "Anything to add? (optional)",
+    "send": "Send",
+    "thanks": "Thanks for your rating 💚",
+    "happy": "Glad you enjoyed it! Would you leave a review on Google? It really helps us.",
+    "sorry": "Sorry the visit fell short. The management will see your feedback.",
+    "google": "Review us on Google"
   }
 }

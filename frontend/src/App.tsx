@@ -36,6 +36,8 @@ import Marketing from './pages/Marketing'
 import Commissions from './pages/Commissions'
 import Users from './pages/Users'
 import SetPassword from './pages/SetPassword'
+import Rate from './pages/Rate'
+import Feedback from './pages/Feedback'
 import XbrlReport from './pages/XbrlReport'
 import { Assets, Expenses, Periods, Settlements, Statements } from './pages/Finance'
 
@@ -148,6 +150,7 @@ export default function App() {
   const { me, loading, membership, can } = useAuth()
   if (loading) return <div className="center muted">{t('common.loading')}</div>
   if (window.location.pathname === '/set-password') return <SetPassword />
+  if (window.location.pathname.startsWith('/rate/')) return <Rate />
   if (!me) return window.location.pathname === '/login' ? <Login /> : <Landing />
 
   if (me.is_platform_staff && !membership?.support) {
@@ -216,6 +219,7 @@ function TenantApp() {
       { path: '/services', label: t('nav.services'), icon: 'sparkle', show: can('catalog.view') },
       { path: '/marketing', label: t('nav.offers'), icon: 'tag', show: can('catalog.view') },
       { path: '/loyalty', label: t('nav.loyalty'), icon: 'award', show: can('customers.view') },
+      { path: '/feedback', label: t('nav.feedback'), icon: 'star', show: can('customers.view') },
       { path: '/customers', label: t('nav.customers'), icon: 'users', show: can('customers.view') },
       { path: '/staff', label: t('nav.staff'), icon: 'user', show: can('staff.view') },
       { path: '/commissions', label: t('nav.commissions'), icon: 'percent', show: can('commission.view.all') },
@@ -234,6 +238,7 @@ function TenantApp() {
     [t('nav.g.customers'), [
       { path: '/customers', label: t('nav.customers'), icon: 'users', show: can('customers.view') },
       { path: '/loyalty', label: t('nav.loyalty'), icon: 'award', show: can('customers.view') },
+      { path: '/feedback', label: t('nav.feedback'), icon: 'star', show: can('customers.view') },
       { path: '/marketing', label: t('nav.marketing'), icon: 'tag', show: can('catalog.view') && !canCo },
     ]],
     [t('nav.g.services'), [
@@ -270,6 +275,7 @@ function TenantApp() {
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/marketing" element={<Marketing />} />
         <Route path="/loyalty" element={<Loyalty />} />
+        <Route path="/feedback" element={<Feedback />} />
         <Route path="/commissions" element={<Commissions />} />
         <Route path="/users" element={<Users />} />
         <Route path="/support" element={<Support />} />

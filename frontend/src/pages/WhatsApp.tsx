@@ -57,7 +57,7 @@ export default function WhatsApp() {
   )
 }
 
-type Auto = { booking_confirmation: boolean; reminder: boolean; reminder_hours: number; receipt: boolean }
+type Auto = { booking_confirmation: boolean; reminder: boolean; reminder_hours: number; receipt: boolean; feedback: boolean; google_review_url: string; winback: boolean; winback_days: number; winback_coupon: string }
 
 /** Automatic service messages from the salon's own number (D-012). */
 function AutoMessages() {
@@ -76,6 +76,17 @@ function AutoMessages() {
       {d.reminder && <label className="field" style={{ maxWidth: 220 }}>{t('wa.auto.hours')}<select className="input" value={d.reminder_hours} onChange={(e) => set({ reminder_hours: Number(e.target.value) })}>
         {[1, 2, 3, 6, 12, 24].map((h) => <option key={h} value={h}>{t('wa.auto.hoursN', { n: h })}</option>)}</select></label>}
       <label className="chk"><span>{t('wa.auto.receipt')}<small>{t('wa.auto.receiptHelp')}</small></span><input type="checkbox" className="sw" checked={d.receipt} disabled={s.busy} onChange={(e) => set({ receipt: e.target.checked })} /></label>
+      <label className="chk"><span>{t('wa.auto.feedback')}<small>{t('wa.auto.feedbackHelp')}</small></span><input type="checkbox" className="sw" checked={d.feedback} disabled={s.busy} onChange={(e) => set({ feedback: e.target.checked })} /></label>
+      {d.feedback && <label className="field">{t('wa.auto.reviewUrl')}<input className="input" dir="ltr" type="url" placeholder="https://g.page/r/…/review" defaultValue={d.google_review_url}
+        onBlur={(e) => e.target.value !== d.google_review_url && set({ google_review_url: e.target.value.trim() })} /><small className="muted">{t('wa.auto.reviewUrlHelp')}</small></label>}
+      <h3 style={{ margin: '14px 0 4px' }}>{t('wa.auto.marketing')}</h3>
+      <label className="chk"><span>{t('wa.auto.winback')}<small>{t('wa.auto.winbackHelp', { n: d.winback_days })}</small></span><input type="checkbox" className="sw" checked={d.winback} disabled={s.busy} onChange={(e) => set({ winback: e.target.checked })} /></label>
+      {d.winback && <div className="two">
+        <label className="field">{t('wa.auto.winbackDays')}<select className="input" value={d.winback_days} onChange={(e) => set({ winback_days: Number(e.target.value) })}>
+          {[21, 30, 45, 60, 90].map((n) => <option key={n} value={n}>{t('wa.auto.daysN', { n })}</option>)}</select></label>
+        <label className="field">{t('wa.auto.winbackCoupon')}<input className="input" dir="ltr" placeholder="BACK10" defaultValue={d.winback_coupon}
+          onBlur={(e) => e.target.value.trim().toUpperCase() !== d.winback_coupon && set({ winback_coupon: e.target.value.trim() })} /></label>
+      </div>}
       <ErrorText error={s.error} />
     </div>
   )

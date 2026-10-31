@@ -93,6 +93,8 @@ def test_settings_api(salon):
     from tests.conftest import client_for
     owner = User.objects.get(memberships__tenant=salon["t"], memberships__role__key="owner")
     c = client_for(owner, salon["t"])
-    assert c.get("/api/v1/whatsapp/auto-settings").json() == {"booking_confirmation": True, "reminder": True, "reminder_hours": 3, "receipt": False}
+    assert c.get("/api/v1/whatsapp/auto-settings").json() == {"booking_confirmation": True, "reminder": True, "reminder_hours": 3, "receipt": False,
+                                                                 "feedback": False, "google_review_url": "", "winback": False,
+                                                                 "winback_days": 45, "winback_coupon": ""}
     assert c.patch("/api/v1/whatsapp/auto-settings", {"receipt": True, "reminder_hours": 24}, format="json").json()["reminder_hours"] == 24
     assert c.patch("/api/v1/whatsapp/auto-settings", {"reminder_hours": 99}, format="json").status_code == 400
