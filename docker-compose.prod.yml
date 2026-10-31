@@ -13,7 +13,7 @@ services:
     healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, retries: 20 }
   backend:
     build: { context: ., dockerfile: deploy/backend.Dockerfile }
-    command: sh -c "python manage.py migrate --noinput && if [ -n \"$$SEED_PASSWORD\" ]; then python manage.py seed_dev; fi && python manage.py e2e_users && exec gunicorn qassa.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
+    command: sh -c "python manage.py migrate --noinput && python manage.py add_subdomains && if [ -n \"$$SEED_PASSWORD\" ]; then python manage.py seed_dev; fi && python manage.py e2e_users && exec gunicorn qassa.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
     environment: &env
       QASSA_ENV: ${QASSA_ENV:-staging}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?}
@@ -26,6 +26,8 @@ services:
       REDIS_URL: redis://redis:6379/1
       SEED_PASSWORD: ${SEED_PASSWORD:-}
       QASSA_TENANT_BASE_DOMAIN: ${QASSA_TENANT_BASE_DOMAIN:?}
+      QASSA_RESERVED_SUBDOMAINS: ${QASSA_RESERVED_SUBDOMAINS:-}  # names other services on the base domain already use
+      QASSA_PUBLIC_ADMIN_URL: ${QASSA_PUBLIC_ADMIN_URL:?}        # invitation / reset / rating links
       QASSA_WHATSAPP_ADAPTER: ${QASSA_WHATSAPP_ADAPTER:-disabled}
       QASSA_WHATSAPP_URL: ${QASSA_WHATSAPP_URL:-}
       QASSA_WHATSAPP_TOKEN: ${QASSA_WHATSAPP_TOKEN:-}
@@ -43,7 +45,7 @@ services:
   web:
     build: { context: ., dockerfile: deploy/web.Dockerfile }
     environment:
-      PLATFORM_HOST: ${PLATFORM_HOST:?}
+      PLATFORM_HOST: ${PLATFORM_HOST:?}  # space-separated names, e.g. "kuw1.com www.kuw1.com"
       NGINX_ENVSUBST_FILTER: PLATFORM_HOST  # only substitute this; keep nginx's own $variables
     depends_on: { backend: { condition: service_healthy } }
 volumes:
