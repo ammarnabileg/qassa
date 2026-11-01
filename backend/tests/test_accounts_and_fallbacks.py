@@ -101,3 +101,19 @@ def test_invite_link_goes_out_on_the_salons_connected_number(company_a, gw):  # 
     assert gw.sent[-1][1] == "96555511133" and "/set-password?" in gw.sent[-1][2]
     with tenant_context(t.id):
         assert "set-password" not in WhatsAppMessage.objects.get(kind="staff_invite").preview      # the link isn't kept in the log
+
+
+def test_two_step_is_the_users_choice_but_not_for_platform_staff(company_a):
+    t, _, _ = company_a
+    owner = User.objects.get(memberships__tenant=t, memberships__role__key="owner")
+    owner.set_password("Owner-Pass-2026!!"); owner.mfa_required = False; owner.save()
+    c = client_for(owner, t)
+    assert c.post("/api/v1/auth/mfa/preference", {"enabled": True, "password": "wrong"}, format="json").json()["error"]["code"] == "invalid_credentials"
+    assert c.post("/api/v1/auth/mfa/preference", {"enabled": True, "password": "Owner-Pass-2026!!"}, format="json").json()["mfa_required"] is True
+    r = APIClient().post("/api/v1/auth/login", {"email": owner.email, "password": "Owner-Pass-2026!!"}, format="json").json()
+    assert r["mfa"] == "setup"                                                # next sign-in asks to set it up
+    assert c.post("/api/v1/auth/mfa/preference", {"enabled": False, "password": "Owner-Pass-2026!!"}, format="json").json()["mfa_required"] is False
+    assert "id" in APIClient().post("/api/v1/auth/login", {"email": owner.email, "password": "Owner-Pass-2026!!"}, format="json").json()
+    staff = User.objects.create_user("ops9@q.test", "Ops-Pass-2026!!", is_platform_staff=True, mfa_required=True)
+    assert client_for(staff).post("/api/v1/auth/mfa/preference", {"enabled": False, "password": "Ops-Pass-2026!!"},
+                                  format="json").json()["error"]["code"] == "mfa_mandatory"

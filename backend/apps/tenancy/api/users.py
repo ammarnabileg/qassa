@@ -87,8 +87,7 @@ class UsersView(TenantAPIView):
                         validate_password(v["password"], User(email=v["email"], full_name=v["full_name"]))
                     except ValidationError as e:
                         raise DomainError(code="password_weak", details={"reasons": e.messages})
-                user = User.objects.create_user(v["email"], v["password"] or None, full_name=v["full_name"], phone=phone,
-                                                mfa_required=role.key in {"owner", "finance_manager", "accountant"})
+                user = User.objects.create_user(v["email"], v["password"] or None, full_name=v["full_name"], phone=phone)
                 set_now = bool(v["password"])
             else:
                 set_now = False

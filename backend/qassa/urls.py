@@ -49,6 +49,7 @@ urlpatterns = [
     path(api + "auth/mfa/verify", auth.MfaVerifyView.as_view()),
     path(api + "auth/mfa/whatsapp", auth.MfaWhatsAppView.as_view()),
     path(api + "auth/devices", auth.TrustedDevicesView.as_view()),
+    path(api + "auth/mfa/preference", auth.MfaPreferenceView.as_view()),
     path(api + "auth/password/set", auth.SetPasswordView.as_view()),
     path(api + "auth/password/forgot", auth.ForgotPasswordView.as_view()),
     path(api + "auth/logout", auth.LogoutView.as_view()),

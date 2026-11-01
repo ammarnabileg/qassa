@@ -21,6 +21,7 @@ def platform_wa(monkeypatch, settings):
 def owner_with_phone(t):
     u = User.objects.get(memberships__tenant=t, memberships__role__key="owner")
     u.phone = "96550001111"
+    u.mfa_required = True   # optional for owners; these tests cover an owner who turned it on
     u.save()
     return u
 
@@ -58,6 +59,7 @@ def test_whatsapp_code_instead_of_authenticator_app(platform_wa, company_a):
 def test_no_phone_means_no_whatsapp_option(platform_wa, company_a):
     t, _, _ = company_a
     u = User.objects.get(memberships__tenant=t, memberships__role__key="owner")
+    User.objects.filter(id=u.id).update(mfa_required=True)
     c = APIClient()
     assert login(c, u.email)["methods"] == ["totp"]
     r = c.post("/api/v1/auth/mfa/whatsapp")
@@ -96,6 +98,7 @@ def test_cookie_for_another_user_is_ignored(platform_wa, company_a, company_b):
     c.post("/api/v1/auth/mfa/verify", {"token": code_from(platform_wa), "method": "whatsapp", "remember": True}, format="json")
     c.post("/api/v1/auth/logout")
     ub = User.objects.get(memberships__tenant=tb, memberships__role__key="owner")
+    User.objects.filter(id=ub.id).update(mfa_required=True)
     assert login(c, ub.email)["mfa"] == "setup"
 
 

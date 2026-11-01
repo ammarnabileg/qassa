@@ -75,10 +75,11 @@ def test_onboarding_creates_full_structure(company_a):
         assert {b.business_type for b in Branch.objects.all()} == {"kids", "women", "men"}
         assert e.accounts.filter(code="4101").exists()
     owner = t.memberships.get().user
-    assert owner.mfa_required and t.memberships.get().role.key == "owner"
+    assert not owner.mfa_required and t.memberships.get().role.key == "owner"   # optional: the owner turns it on
 
 
 def test_login_rejects_bad_password_and_requires_mfa_for_owner(company_a):
+    User.objects.filter(email="owner@mykids.test").update(mfa_required=True)   # the owner turned it on (it is optional)
     c = APIClient()
     assert c.post("/api/v1/auth/login", {"email": "owner@mykids.test", "password": "nope"}, format="json").status_code == 401
     r = c.post("/api/v1/auth/login", {"email": "owner@mykids.test", "password": "Owner-Pass-2026!"}, format="json")

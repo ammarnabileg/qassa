@@ -372,7 +372,8 @@
     "refund_no_online_payment": "This invoice has no online payment.",
     "deposit_not_pending": "This deposit is not awaiting payment.",
     "officer_phone_missing": "Set the KlickPay officer’s WhatsApp number in platform settings first.",
-    "contract_not_signed": "The signed contract must be accepted before activating."
+    "contract_not_signed": "The signed contract must be accepted before activating.",
+    "mfa_mandatory": "Two-step verification is mandatory for platform staff."
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -1533,7 +1534,13 @@
     "tax": "Tax",
     "payMethods": "Till payment methods: cash, KNET, transfer and on account. Online payment needs a payment gateway connected by the platform.",
     "ntfHelp": "The salon’s WhatsApp number and its confirmation, reminder and receipt messages are set on the WhatsApp screen.",
-    "subHelp": "Your plan, subscription invoices and branch / user limits."
+    "subHelp": "Your plan, subscription invoices and branch / user limits.",
+    "mfa": "Two-step verification",
+    "mfaHelp": "Optional: when on, sign-in asks for a code from an authenticator app or WhatsApp after the password.",
+    "mfaPassword": "Enter your password to confirm",
+    "mfaOn": "Two-step verification is on — your next sign-in sets it up",
+    "mfaOff": "Two-step verification is off",
+    "mfaRisk": "Without it, anyone who knows the password can reach the accounts and the money."
   },
   "loy": {
     "sub": "Customers earn points on every visit and redeem them as a discount at the till",

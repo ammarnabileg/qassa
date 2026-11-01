@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { api, getTenant } from '../api/client'
+import { api, getTenant, type Me } from '../api/client'
 import { useAuth } from '../auth'
 import { ErrorText } from '../components/ErrorText'
 import { useSave } from '../components/hooks'
@@ -40,6 +40,7 @@ export default function Settings() {
     <>
       <Head title={t('nav.settings')} sub={t('set.sub')} />
       <div className="tabs">{(['gen', 'rcpt', 'tax', 'ntf', 'sub', 'data'] as Tab[]).map((x) => <button key={x} className={tab === x ? 'on' : ''} onClick={() => setTab(x)}>{t(`set.tab.${x}`)}</button>)}</div>
+      {tab === 'gen' && <TwoStep />}
       {tab === 'gen' && <div className="grid g2">
         {go(t('set.branches'), t('set.branchesHelp'), '/org', 'store')}
         {go(t('nav.staff'), t('set.staffHelp'), '/staff', 'users')}
@@ -75,4 +76,26 @@ export default function Settings() {
       </div>}
     </>
   )
+}
+
+/** Two-step verification is each user's choice (platform staff excepted); changing it asks for the password. */
+function TwoStep() {
+  const { t } = useTranslation()
+  const { me, setMe } = useAuth()
+  const toast = useToast()
+  const [want, setWant] = useState<boolean | null>(null)
+  const [pw, setPw] = useState('')
+  const s = useSave<Me>([], (r) => { setMe(r); setWant(null); setPw(''); toast(r.mfa_required ? t('set.mfaOn') : t('set.mfaOff')) })
+  if (!me) return null
+  return <div className="card" style={{ marginBottom: 14, maxWidth: 620 }}>
+    <label className="chk"><span>{t('set.mfa')}<small>{t('set.mfaHelp')}</small></span>
+      <input type="checkbox" className="sw" checked={want ?? me.mfa_required} onChange={(e) => setWant(e.target.checked)} /></label>
+    {want !== null && want !== me.mfa_required && <div className="row" style={{ gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+      <label className="field" style={{ flex: 1 }}>{t('set.mfaPassword')}<input className="input" type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} /></label>
+      <button className="btn primary" disabled={!pw || s.busy} onClick={() => s.save({ path: '/auth/mfa/preference', body: { enabled: want, password: pw } })}>{t('common.save')}</button>
+      <button className="btn" onClick={() => { setWant(null); setPw('') }}>{t('common.cancel')}</button>
+    </div>}
+    {want === false && me.mfa_required && <div className="cap muted">{t('set.mfaRisk')}</div>}
+    <ErrorText error={s.error} />
+  </div>
 }

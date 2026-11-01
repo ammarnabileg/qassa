@@ -288,3 +288,30 @@ class MeView(APIView):
     @extend_schema(responses=MeOut)
     def get(self, request):
         return Response(me_payload(request.user, request))
+
+
+class MfaPreferenceIn(serializers.Serializer):
+    enabled = serializers.BooleanField()
+    password = serializers.CharField(max_length=128)
+
+
+class MfaPreferenceView(APIView):
+    """Each salon user chooses whether to use two-step verification. Changing it needs the current password.
+    Platform staff cannot turn it off. Turned on: the next sign-in asks to set it up."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=MfaPreferenceIn, responses=MeOut)
+    def post(self, request):
+        s = MfaPreferenceIn(data=request.data)
+        s.is_valid(raise_exception=True)
+        user = request.user
+        if not user.check_password(s.validated_data["password"]):
+            return Response({"error": {"code": "invalid_credentials", "message": "", "details": {}}}, status=status.HTTP_400_BAD_REQUEST)
+        if user.is_platform_staff and not s.validated_data["enabled"]:
+            return Response({"error": {"code": "mfa_mandatory", "message": "", "details": {}}}, status=status.HTTP_400_BAD_REQUEST)
+        user.mfa_required = s.validated_data["enabled"]
+        user.save(update_fields=["mfa_required"])
+        if not user.mfa_required:
+            f2.revoke_all(user)   # remembered devices no longer matter
+        audit("auth.mfa_preference", actor=user, data={"enabled": user.mfa_required})
+        return Response(me_payload(user, request))

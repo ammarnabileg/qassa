@@ -100,8 +100,8 @@ def onboard_tenant(spec: OnboardingSpec, actor=None) -> Tenant:
                      for key, t in ROLE_TEMPLATES.items()}
             owner = User.objects.filter(email=spec.owner_email.lower()).first()
             if owner is None:
-                owner = User.objects.create_user(spec.owner_email, spec.owner_password, full_name=spec.owner_name,
-                                                 mfa_required=True)
+                # two-step verification is the owner's choice (they can turn it on from Settings); platform staff keep it mandatory
+                owner = User.objects.create_user(spec.owner_email, spec.owner_password, full_name=spec.owner_name)
             Membership.objects.create(user=owner, tenant=tenant, role=roles["owner"], all_branches=True)
             install_chart(entity)
             create_fiscal_year(entity, timezone.localdate().year)
