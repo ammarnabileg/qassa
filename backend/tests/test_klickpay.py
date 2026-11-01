@@ -403,3 +403,32 @@ def test_contract_cycle_and_officer_links(salon, kp):
     up = owner.post("/api/v1/payments/kyc", {"doc_type": signed["type"]["id"], "file": pdf("signed2.pdf")}, format="multipart").json()
     p.post(f"/api/v1/platform/payments/kyc/{up['id']}/review", {"accept": True}, format="json")
     assert p.patch(f"/api/v1/platform/payments/accounts/{s['t'].id}", {"status": "active"}, format="json").json()["status"] == "active"
+
+
+def test_booking_confirmation_waits_for_the_deposit(salon, kpr, monkeypatch):
+    from apps.notifications import auto, whatsapp
+    from apps.notifications.models import MessagingSettings
+    sent = []
+    monkeypatch.setattr(whatsapp, "send_text", lambda phone, text, **k: sent.append((k.get("kind"), text)) or "fake")
+    s = salon
+    with tenant_context(s["t"].id):
+        MessagingSettings.objects.get_or_create(tenant_id=s["t"].id)
+    p, app, b, c = _app_booking(s, kpr)
+    process_outbox()
+    assert not [k for k, _ in sent if k == "booking.confirmed"]                  # nothing while the deposit is unpaid
+    with tenant_context(s["t"].id):
+        op = OnlinePayment.objects.get(purpose="deposit")
+    kpr.status = {"status": "paid", "result": "CAPTURED", "amount": "7.500"}
+    APIClient().get(f"/api/v1/public/pay/{op.reference}")
+    process_outbox()
+    process_outbox()
+    assert [k for k, _ in sent].count("booking.confirmed") == 1
+
+
+def test_no_deposit_booking_is_confirmed_at_once(salon, kpr, monkeypatch):
+    from apps.notifications import whatsapp
+    sent = []
+    monkeypatch.setattr(whatsapp, "send_text", lambda phone, text, **k: sent.append(k.get("kind")) or "fake")
+    p, app, b, c = _app_booking(salon, kpr, set_policy=False)
+    process_outbox()
+    assert sent.count("booking.confirmed") == 1

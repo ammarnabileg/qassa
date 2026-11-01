@@ -293,12 +293,16 @@ class MyBookingsView(AppView):
         if not opening:
             raise DomainError(code="slot_unavailable", message="This time is no longer available")
         staff_id = v.get("staff_id") or opening[0]["staff_ids"][0]
-        appt = create_appointment(branch=branch, starts_at=start, items=[ItemSpec(service.id, staff_id)],
-                                  customer_id=request.customer.id, beneficiary_id=v["beneficiary_id"],
-                                  source=Appointment.Source.ONLINE, notes=v["notes"])
+        from django.db import transaction
         from apps.catalog.services.pricing import price_on
         from apps.payments.services import deposits
         amount = deposits.required(price_on(service, branch.id, local.date()) or 0)
+        with transaction.atomic():   # "deposit pending" commits with the booking: no confirmation message before payment
+            appt = create_appointment(branch=branch, starts_at=start, items=[ItemSpec(service.id, staff_id)],
+                                      customer_id=request.customer.id, beneficiary_id=v["beneficiary_id"],
+                                      source=Appointment.Source.ONLINE, notes=v["notes"])
+            if amount > 0:
+                Appointment.objects.filter(id=appt.id).update(deposit_amount=amount, deposit_status="pending")
         if amount > 0:   # D-017: the salon asks for a deposit; unpaid within the hold, the slot is released
             try:
                 deposits.start(appt, amount)

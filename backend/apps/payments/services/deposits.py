@@ -67,6 +67,9 @@ def apply_paid(op, amount, method):
         late = appt.status == Appointment.Status.CANCELLED
         Appointment.objects.filter(id=appt.id).update(deposit_status="refunding" if late else "paid")
         audit("payments.deposit_paid", tenant_id=op.tenant_id, obj=op, data={"appointment": appt.id, "amount": str(amount)})
+        if not late and appt.customer_id:   # the booking confirmation waited for the deposit
+            enqueue("wa.booking", {"appointment_id": appt.id, "kind": "booking.confirmed", "starts_at": appt.starts_at.isoformat()},
+                    tenant_id=appt.tenant_id, dedupe_key=f"appt:{appt.id}:confirmed:deposit")
     if late:   # paid after the slot was released: give it back
         from apps.payments.services import refunds
         refunds.request(op, op.amount, reason="booking released before the deposit arrived")

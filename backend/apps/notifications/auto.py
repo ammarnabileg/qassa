@@ -139,7 +139,11 @@ def handle_booking(ev):
              .prefetch_related("items__service").filter(id=ev.payload["appointment_id"]).first())
         if a is None or a.customer is None or not a.customer.whatsapp_opt_in or a.status != "booked":
             return
-        if a.starts_at.isoformat() != ev.payload["starts_at"] or a.starts_at <= timezone.now():
+        if a.deposit_status in {"pending", "expired"}:
+            return   # confirmed only once the deposit is paid (sent again from the payment confirmation)
+        from datetime import datetime
+        # compare instants, not strings: the same time can be written as +03:00 or +00:00
+        if a.starts_at != datetime.fromisoformat(ev.payload["starts_at"]) or a.starts_at <= timezone.now():
             return                                    # moved again or already past: this message is stale
         lang = a.customer.preferred_language
         services = "، ".join(i.service.name_ar if lang == "ar" else (i.service.name_en or i.service.name_ar) for i in a.items.all())
