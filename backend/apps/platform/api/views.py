@@ -56,7 +56,9 @@ def owner_link(tenant, actor) -> dict:
     if m is None:
         return {"channel": "none"}
     purpose = "reset" if m.user.has_usable_password() else "invite"
-    out = accounts.deliver(m.user, purpose)
+    from apps.tenancy.context import tenant_context
+    with tenant_context(tenant.id):   # falls back to the salon's own WhatsApp number when it is connected
+        out = accounts.deliver(m.user, purpose, tenant_whatsapp=True)
     audit(f"platform.owner_{purpose}", tenant_id=tenant.id, actor=actor, data={"email": m.user.email, "channel": out["channel"]})
     return {**out, "email": m.user.email, "purpose": purpose}
 

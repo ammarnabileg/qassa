@@ -8,6 +8,7 @@ from rest_framework.test import APIClient
 from apps.identity.models import User
 from apps.platform.models import TenantDomain
 from tests.conftest import add_member, client_for
+from tests.test_whatsapp import FakeEvolution, gw  # noqa: F401
 
 pytestmark = pytest.mark.django_db
 
@@ -68,3 +69,35 @@ def test_only_owner_adds_owner_and_cashier_cannot_manage_users(company_a):
     assert r.status_code == 422 and r.json()["error"]["code"] == "owner_only"
     cashier = add_member(t, "c@k.test", "cashier", branch=b["HAW"])
     assert client_for(cashier, t).get("/api/v1/users").status_code == 403
+
+
+def test_invite_with_a_password_set_now_or_a_ready_whatsapp_text(company_a):
+    t, _, b = company_a
+    owner = User.objects.get(memberships__tenant=t, memberships__role__key="owner")
+    c = client_for(owner, t)
+    r = c.post("/api/v1/users", {"email": "cash1@k.test", "full_name": "كاشير", "role": "cashier", "all_branches": True,
+                                 "password": "Cashier-Pass-2026!"}, format="json")
+    assert r.status_code == 201 and r.json()["delivery"] == {"channel": "password_set"} and "password" not in r.json()
+    assert APIClient().post("/api/v1/auth/login", {"email": "cash1@k.test", "password": "Cashier-Pass-2026!"}, format="json").status_code == 200
+    weak = c.post("/api/v1/users", {"email": "cash2@k.test", "full_name": "x", "role": "cashier", "all_branches": True, "password": "123"}, format="json")
+    assert weak.json()["error"]["code"] == "password_weak"
+    # nothing could send it (no email, no phone to message): the link and a ready-to-share text come back
+    r = c.post("/api/v1/users", {"email": "cash3@k.test", "full_name": "كاشير ٣", "role": "cashier", "all_branches": True},
+               format="json").json()["delivery"]
+    assert r["channel"] == "manual" and r["link"] in r["text"]
+
+
+def test_invite_link_goes_out_on_the_salons_connected_number(company_a, gw):  # noqa: F811
+    from apps.notifications.models import WhatsAppChannel, WhatsAppMessage
+    from apps.tenancy.context import tenant_context
+    t, _, _ = company_a
+    with tenant_context(t.id):
+        WhatsAppChannel.objects.create(instance_name="qassa-inv", state="open")
+    gw.instances["qassa-inv"] = "open"
+    owner = User.objects.get(memberships__tenant=t, memberships__role__key="owner")
+    r = client_for(owner, t).post("/api/v1/users", {"email": "cash4@k.test", "full_name": "ك", "phone": "55511133", "role": "cashier",
+                                                    "all_branches": True}, format="json").json()["delivery"]
+    assert r["channel"] == "whatsapp" and "link" not in r
+    assert gw.sent[-1][1] == "96555511133" and "/set-password?" in gw.sent[-1][2]
+    with tenant_context(t.id):
+        assert "set-password" not in WhatsAppMessage.objects.get(kind="staff_invite").preview      # the link isn't kept in the log

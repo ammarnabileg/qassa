@@ -21,7 +21,7 @@ def link_for(user, purpose: str) -> str:
     return f"{settings.QASSA['PUBLIC_ADMIN_URL'].rstrip('/')}/set-password?uid={uid}&token={token}&p={purpose}"
 
 
-def deliver(user, purpose: str) -> dict:
+def deliver(user, purpose: str, *, tenant_whatsapp: bool = False) -> dict:
     """Send an invitation / reset link. Returns how it went out; includes the link only when nothing could send it."""
     link = link_for(user, purpose)
     ar = user.preferred_language == "ar"
@@ -38,7 +38,13 @@ def deliver(user, purpose: str) -> dict:
             return {"channel": "whatsapp", "to": second_factor.mask(user.phone)}
         except DomainError:
             pass
-    return {"channel": "manual", "link": link}
+    if user.phone and tenant_whatsapp:
+        try:   # the salon's own connected number (inside the salon's request); the link is not kept in the message log
+            whatsapp.send_text(user.phone, body, kind=f"staff_{purpose}", preview=f"staff_{purpose}")
+            return {"channel": "whatsapp", "to": second_factor.mask(user.phone)}
+        except DomainError:
+            pass
+    return {"channel": "manual", "link": link, "text": body, "phone": user.phone}
 
 
 def set_password(uidb64: str, token: str, password: str) -> User:

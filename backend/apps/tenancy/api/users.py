@@ -28,6 +28,7 @@ class InviteIn(serializers.Serializer):
     all_branches = serializers.BooleanField(default=False)
     branch_ids = serializers.ListField(child=serializers.IntegerField(), required=False, default=list)
     discount_limit_percent = serializers.DecimalField(max_digits=5, decimal_places=2, min_value=0, max_value=100, default=0)
+    password = serializers.CharField(required=False, allow_blank=True, default="", write_only=True, max_length=128)  # set it now instead of a link
 
 
 def _set_scope(m, all_branches, branch_ids):
@@ -64,15 +65,31 @@ class UsersView(TenantAPIView):
         with transaction.atomic():
             user = User.objects.filter(email=v["email"].lower()).first()
             if user is None:
-                user = User.objects.create_user(v["email"], None, full_name=v["full_name"], phone=phone,
+                if v["password"]:
+                    from django.contrib.auth.password_validation import validate_password
+                    from django.core.exceptions import ValidationError
+                    try:
+                        validate_password(v["password"], User(email=v["email"], full_name=v["full_name"]))
+                    except ValidationError as e:
+                        raise DomainError(code="password_weak", details={"reasons": e.messages})
+                user = User.objects.create_user(v["email"], v["password"] or None, full_name=v["full_name"], phone=phone,
                                                 mfa_required=role.key in {"owner", "finance_manager", "accountant"})
+                set_now = bool(v["password"])
+            else:
+                set_now = False
             if Membership.objects.filter(user=user, tenant_id=request.tenant_id).exists():
                 raise DomainError(code="user_already_member")
             m = Membership.objects.create(user=user, tenant_id=request.tenant_id, role=role,
                                           discount_limit_percent=v["discount_limit_percent"])
             _set_scope(m, v["all_branches"], v["branch_ids"])
-            audit("users.invited", tenant_id=request.tenant_id, actor=request.user, obj=m, data={"email": user.email, "role": role.key})
-        sent = accounts.deliver(user, "invite") if not user.has_usable_password() else {"channel": "existing_account"}
+            audit("users.invited", tenant_id=request.tenant_id, actor=request.user, obj=m, data={"email": user.email, "role": role.key,
+                                                                                         "password_set_by_manager": set_now})
+        if set_now:
+            sent = {"channel": "password_set"}   # the manager hands the password over; nothing is sent
+        elif user.has_usable_password():
+            sent = {"channel": "existing_account"}
+        else:
+            sent = accounts.deliver(user, "invite", tenant_whatsapp=True)
         return Response({**member_out(m), "delivery": sent}, status=status.HTTP_201_CREATED)
 
 
@@ -124,7 +141,7 @@ class UserResendView(TenantAPIView):
         m = get_object_or_404(Membership.objects.select_related("user"), pk=pk, tenant_id=request.tenant_id)
         if m.user.has_usable_password():
             raise DomainError(code="already_active")
-        return Response({"delivery": accounts.deliver(m.user, "invite")})
+        return Response({"delivery": accounts.deliver(m.user, "invite", tenant_whatsapp=True)})
 
 
 def _raise(code):

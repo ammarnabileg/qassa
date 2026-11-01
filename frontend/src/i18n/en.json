@@ -888,7 +888,7 @@
     "byEmail": "Invitation emailed.",
     "byWhatsapp": "Invitation sent by WhatsApp to {{to}}.",
     "existing": "This person already has an account and was added.",
-    "manual": "No email or WhatsApp available — send this link yourself:",
+    "manual": "No email or connected salon number — send the link yourself on WhatsApp or copy it:",
     "copy": "Copy link",
     "copied": "Copied",
     "r": {
@@ -901,7 +901,14 @@
       "accountant": "Accountant",
       "finance_manager": "Finance manager",
       "auditor": "Auditor"
-    }
+    },
+    "howLink": "Send a link",
+    "howPassword": "Set a password now",
+    "howLinkHelp": "They get a link to set their own password: by email, on WhatsApp from the salon’s number if connected, or you send it.",
+    "password": "Password",
+    "passwordHelp": "At least 10 characters. Hand it over yourself, not in a group chat.",
+    "passwordSet": "The account is ready with the password you set. Hand it over yourself.",
+    "sendWa": "Send on WhatsApp"
   },
   "pw": {
     "inviteTitle": "Set your password",

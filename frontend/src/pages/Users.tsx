@@ -9,8 +9,8 @@ import { Dialog, Head, Icon, nameOf, useToast } from '../components/ui'
 import { useOrg } from './Org'
 
 const ROLES = ['operations_manager', 'branch_manager', 'cashier', 'service_provider', 'inventory_officer', 'accountant', 'finance_manager', 'auditor', 'owner']
-type Form = { id?: number; email: string; full_name: string; phone: string; role: string; all_branches: boolean; branch_ids: number[]; discount_limit_percent: string; is_active: boolean }
-type Delivery = { channel: 'email' | 'whatsapp' | 'manual' | 'existing_account'; to?: string; link?: string }
+type Form = { id?: number; email: string; full_name: string; phone: string; role: string; all_branches: boolean; branch_ids: number[]; discount_limit_percent: string; is_active: boolean; how?: 'link' | 'password'; password?: string }
+type Delivery = { channel: 'email' | 'whatsapp' | 'manual' | 'existing_account' | 'password_set'; to?: string; link?: string; text?: string; phone?: string }
 
 export default function Users() {
   const { t, i18n } = useTranslation()
@@ -27,8 +27,8 @@ export default function Users() {
   const resend = useSave<{ delivery: Delivery }>([['users']], (r) => setDelivery(r.delivery))
   const branchName = (id: number) => { const b = org.data?.branches.find((x) => x.id === id); return b ? nameOf(b, i18n.language) : '' }
   const submit = () => {
-    const { id, email, full_name, phone, ...rest } = form!
-    save(id ? { path: `/users/${id}`, method: 'PATCH', body: rest } : { path: '/users', body: { email, full_name, phone, ...rest } })
+    const { id, email, full_name, phone, how, password, ...rest } = form!
+    save(id ? { path: `/users/${id}`, method: 'PATCH', body: rest } : { path: '/users', body: { email, full_name, phone, ...rest, password: how === 'password' ? password : '' } })
   }
   return (
     <>
@@ -54,6 +54,11 @@ export default function Users() {
               <label className="field">{t('auth.email')}<input className="input" type="email" dir="ltr" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
             </div>
             <label className="field">{t('usr.phone')}<input className="input" dir="ltr" inputMode="tel" placeholder="5xxxxxxx" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
+            <div className="seg"><button type="button" className={form.how !== 'password' ? 'on' : ''} onClick={() => setForm({ ...form, how: 'link' })}>{t('usr.howLink')}</button>
+              <button type="button" className={form.how === 'password' ? 'on' : ''} onClick={() => setForm({ ...form, how: 'password' })}>{t('usr.howPassword')}</button></div>
+            {form.how === 'password' ? <label className="field">{t('usr.password')}<input className="input" dir="ltr" type="text" autoComplete="new-password" value={form.password ?? ''} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={10} />
+              <small className="muted">{t('usr.passwordHelp')}</small></label>
+              : <div className="small muted">{t('usr.howLinkHelp')}</div>}
           </>}
           <label className="field">{t('usr.role')}<select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
             {ROLES.map((r) => <option key={r} value={r}>{t(`usr.r.${r}`)}</option>)}</select></label>
@@ -71,10 +76,15 @@ export default function Users() {
           {delivery.channel === 'email' && <div className="notice good">{t('usr.byEmail')}</div>}
           {delivery.channel === 'whatsapp' && <div className="notice good">{t('usr.byWhatsapp', { to: delivery.to })}</div>}
           {delivery.channel === 'existing_account' && <div className="notice info">{t('usr.existing')}</div>}
+          {delivery.channel === 'password_set' && <div className="notice good">{t('usr.passwordSet')}</div>}
           {delivery.channel === 'manual' && <>
             <div className="notice">{t('usr.manual')}</div>
             <code className="code" style={{ wordBreak: 'break-all', letterSpacing: 0 }}>{delivery.link}</code>
-            <button className="btn" onClick={() => navigator.clipboard.writeText(delivery.link!).then(() => toast(t('usr.copied')))}><Icon name="copy" />{t('usr.copy')}</button>
+            <div className="row" style={{ gap: 8 }}>
+              <a className="btn primary" style={{ background: '#25D366', borderColor: '#25D366' }} target="_blank" rel="noreferrer"
+                href={`https://wa.me/${delivery.phone ?? ''}?text=${encodeURIComponent(delivery.text ?? delivery.link ?? '')}`}><Icon name="whatsapp" />{t('usr.sendWa')}</a>
+              <button className="btn" onClick={() => navigator.clipboard.writeText(delivery.link!).then(() => toast(t('usr.copied')))}><Icon name="copy" />{t('usr.copy')}</button>
+            </div>
           </>}
         </>}
       </Dialog>
