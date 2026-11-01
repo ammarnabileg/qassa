@@ -28,6 +28,9 @@ class Service(TenantScopedModel):
     # suggested add-on at the till ("cut? add a wash"); and when the next visit is usually due (0 = no reminder)
     upsell = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
     rebook_days = models.PositiveSmallIntegerField(default=0)
+    # photo shown in the customer app (resized JPEG in the private media volume, served by the public API)
+    image = models.FileField(upload_to="services/", max_length=200, blank=True)
+    image_version = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta(TenantScopedModel.Meta):

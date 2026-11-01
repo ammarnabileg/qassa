@@ -22,6 +22,7 @@ from apps.catalog.models import Service, ServiceCategory
 from apps.catalog.services.pricing import price_on
 from apps.core.dates import business_date
 from apps.core.errors import DomainError
+from apps.core.money import money
 from apps.core.services.infra import idempotent
 from apps.customers.models import Beneficiary, Customer
 from apps.customers.services import otp
@@ -177,6 +178,11 @@ def _distance_km(lat1, lng1, lat2, lng2):
     return 12742 * math.asin(math.sqrt(a))
 
 
+def image_url(service) -> str:
+    from apps.catalog.services.images import url
+    return url(service)
+
+
 class CatalogView(AppView):
     """Branches (nearest first when the app sends its location), categories and services with today's price."""
     customer_required = False
@@ -206,11 +212,16 @@ class CatalogView(AppView):
             if price is not None:
                 services.append({"id": s.id, "category": s.category_id, "business_type": s.category.business_type,
                                  "name_ar": s.name_ar, "name_en": s.name_en, "duration_minutes": s.duration_minutes,
-                                 "price": str(price)})
+                                 "price": str(price), "image": image_url(s)})
+        from apps.loyalty.models import PackagePlan
+        offers = [{"id": p.id, "name_ar": p.name_ar, "name_en": p.name_en, "service": p.service_id, "sessions": p.sessions,
+                   "price": str(p.price), "regular": str(money(p.sessions * (price_on(p.service, None, today) or 0))), "image": image_url(p.service)}
+                  for p in PackagePlan.objects.select_related("service").filter(is_active=True, service__is_active=True,
+                                                                                  service__category__business_type__in=types)]
         return Response({"salon": {"name": request.tenant.name, "business_type": request.tenant.default_business_type},
                          "branches": branches, "categories": [{"id": c.id, "name_ar": c.name_ar, "name_en": c.name_en,
                                                                "business_type": c.business_type} for c in cats],
-                         "services": services})
+                         "services": services, "offers": offers})
 
 
 def _branch_service(branch_id, service_id):

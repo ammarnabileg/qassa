@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { api, type Category, type Price, type Service } from '../api/client'
+import { api, upload, type Category, type Price, type Service } from '../api/client'
 import { useAuth } from '../auth'
 import { ErrorText } from '../components/ErrorText'
 import { useSave } from '../components/hooks'
@@ -122,6 +122,7 @@ export default function Services() {
           </div>
           {!svcForm.id && can('catalog.price.change') && <label className="field">{t('svc.price')} (KWD)<input className="input" dir="ltr" inputMode="decimal" pattern="\d+(\.\d{1,3})?" value={svcForm.price} onChange={(e) => setSvcForm({ ...svcForm, price: e.target.value })} /></label>}
           {svcForm.id && <div className="small muted">{t('svc.priceViaHistory')}</div>}
+          {svcForm.id && <ServicePhoto id={svcForm.id} url={services.data?.find((x) => x.id === svcForm.id)?.image_url ?? ''} />}
           <div className="field">{t('svc.art')}<div className="row" style={{ gap: 6 }}>
             <button type="button" className={`btn sm${svcForm.art === '' ? ' primary' : ''}`} onClick={() => setSvcForm({ ...svcForm, art: '' })}>{t('svc.artAuto')}</button>
             {ART_KEYS.map((k) => <button type="button" key={k} title={k} aria-pressed={svcForm.art === k} onClick={() => setSvcForm({ ...svcForm, art: k })}
@@ -157,4 +158,32 @@ export default function Services() {
       {pricesFor && <PriceDialog service={pricesFor} onClose={() => setPricesFor(null)} />}
     </>
   )
+}
+
+/** Photo the customer app shows for this service (resized on the server). */
+function ServicePhoto({ id, url }: { id: number; url: string }) {
+  const { t } = useTranslation()
+  const qc = useQueryClient()
+  const input = useRef<HTMLInputElement>(null)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<unknown>(null)
+  const send = async (f: File | null) => {
+    setBusy(true); setErr(null)
+    try {
+      if (f) { const body = new FormData(); body.append('file', f); await upload(`/catalog/services/${id}/image`, body) }
+      else await api(`/catalog/services/${id}/image`, { method: 'DELETE' })
+      qc.invalidateQueries({ queryKey: ['services'] })
+    } catch (e) { setErr(e) } finally { setBusy(false) }
+  }
+  return <div className="field">{t('svc.photo')}
+    <div className="row" style={{ gap: 10, alignItems: 'center' }}>
+      {url ? <img src={url} alt="" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 12, border: '1px solid var(--line)' }} />
+        : <div className="cap muted" style={{ width: 72, height: 72, display: 'grid', placeItems: 'center', borderRadius: 12, border: '1px dashed var(--line-strong)' }}>—</div>}
+      <input ref={input} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) send(f) }} />
+      <button type="button" className="btn sm" disabled={busy} onClick={() => input.current?.click()}><Icon name="file" />{url ? t('svc.photoReplace') : t('svc.photoUpload')}</button>
+      {url && <button type="button" className="btn sm ghost" disabled={busy} onClick={() => send(null)}><Icon name="trash" /></button>}
+    </div>
+    <small className="muted">{t('svc.photoHelp')}</small>
+    <ErrorText error={err} />
+  </div>
 }

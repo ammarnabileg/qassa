@@ -19,8 +19,10 @@ class Shell extends StatefulWidget {
 class _ShellState extends State<Shell> {
   int tab = 0;
   int bookingsVersion = 0;
+  ServiceItem? picked;   // a service tapped on the home screen opens the booking at that service
+  int bookNonce = 0;
 
-  void startBooking() => setState(() => tab = 1);
+  void startBooking([ServiceItem? s]) => setState(() { tab = 1; picked = s; bookNonce++; });
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +31,7 @@ class _ShellState extends State<Shell> {
     final b = Brand.of(c.biz);
     final pages = [
       HomeTab(c: c, onBook: startBooking, key: ValueKey('home$bookingsVersion')),
-      BookFlow(c: c, onDone: () => setState(() { bookingsVersion++; tab = 2; })),
+      BookFlow(c: c, initial: picked, key: ValueKey('book$bookNonce'), onDone: () => setState(() { bookingsVersion++; tab = 2; })),
       BookingsTab(c: c, key: ValueKey('bk$bookingsVersion')),
       AccountTab(c: c),
     ];
@@ -91,7 +93,7 @@ class BranchCard extends StatelessWidget {
 class HomeTab extends StatefulWidget {
   const HomeTab({super.key, required this.c, required this.onBook});
   final AppController c;
-  final VoidCallback onBook;
+  final void Function([ServiceItem? s]) onBook;
   @override
   State<HomeTab> createState() => _HomeTabState();
 }
@@ -113,31 +115,129 @@ class _HomeTabState extends State<HomeTab> {
     final c = widget.c;
     final t = c.t;
     final cat = c.catalog!;
+    final br = Brand.of(c.biz);
+    final types = cat.branches.map((x) => x.businessType).toSet();
+    final cats = cat.categories.where((x) => types.contains(x['business_type']) && cat.services.any((s) => s.category == x['id'])).toList();
     return Column(children: [
       PhHead(biz: c.biz, title: cat.salonName, subtitle: t('biz_${c.biz}'),
           trailing: TextButton(onPressed: c.toggleLang, child: Text(t('language'), style: const TextStyle(color: Tokens.ink))),
           child: Padding(padding: const EdgeInsets.only(top: 14), child: Text(t('hello', {'name': c.me!.fullName.split(' ').first}),
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Tokens.ink)))),
       Expanded(child: ListView(padding: const EdgeInsets.all(14), children: [
-        if (next != null) Container(
-          padding: const EdgeInsets.all(16), margin: const EdgeInsets.only(bottom: 14),
+        if (c.me!.points != null) Container(   // reference: dark points card
+          padding: const EdgeInsets.all(16), margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(color: Tokens.ink, borderRadius: BorderRadius.circular(20)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(t('next_booking'), style: const TextStyle(color: Colors.white70, fontSize: 13)),
-            const SizedBox(height: 4),
-            Text(whenLabel(c, next!['starts_at'] as String), style: TextStyle(color: Brand.of(c.biz).base, fontSize: 22, fontWeight: FontWeight.w700)),
-            Text('${next!['beneficiary_name']} — ${((next!['services'] as List).first as Json)[c.lang == 'en' ? 'name_en' : 'name_ar']}',
-                style: const TextStyle(color: Colors.white)),
+            Text(t('your_points'), style: const TextStyle(color: Colors.white70, fontSize: 13)),
+            Text('${c.me!.points}', style: TextStyle(color: br.base, fontSize: 34, fontWeight: FontWeight.w800, height: 1.1)),
+            Text(t('points_hint'), style: const TextStyle(color: Colors.white70, fontSize: 12)),
           ]),
         ),
-        FilledButton.icon(key: const Key('book_now'), onPressed: widget.onBook, icon: const Icon(Icons.event_available_outlined), label: Text(t('book_now'))),
+        if (next != null) Container(
+          padding: const EdgeInsets.all(14), margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(color: Tokens.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Tokens.line)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(t('next_booking'), style: cap),
+            const SizedBox(height: 2),
+            Text('${next!['beneficiary_name']} — ${((next!['services'] as List).first as Json)[c.lang == 'en' ? 'name_en' : 'name_ar']}',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            Text(whenLabel(c, next!['starts_at'] as String), style: const TextStyle(color: Tokens.ink2)),
+          ]),
+        ),
+        SizedBox(height: 56, child: FilledButton(key: const Key('book_now'), onPressed: () => widget.onBook(),
+            style: FilledButton.styleFrom(backgroundColor: br.base, foregroundColor: Tokens.ink,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
+            child: Text('${t('book_now')} ✂️', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)))),
+        if (cat.offers.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Row(children: [Expanded(child: Text(t('offers'), style: title18)), Text(t('swipe'), style: cap)]),
+          const SizedBox(height: 8),
+          SizedBox(height: 200, child: ListView(scrollDirection: Axis.horizontal, children: [
+            for (final o in cat.offers) _OfferCard(c: c, o: o, onTap: () {
+              final s = cat.services.where((x) => x.id == o['service']).firstOrNull;
+              widget.onBook(s);
+            }),
+          ])),
+        ],
+        if (cats.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Text(t('categories'), style: title18),
+          const SizedBox(height: 8),
+          GridView.count(crossAxisCount: 3, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 8, crossAxisSpacing: 8, childAspectRatio: .9, children: [
+            for (final x in cats) Material(color: Tokens.surface, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16),
+                side: const BorderSide(color: Tokens.line)), child: InkWell(borderRadius: BorderRadius.circular(16),
+                onTap: () => widget.onBook(cat.services.where((s) => s.category == x['id']).firstOrNull),
+                child: Padding(padding: const EdgeInsets.all(8), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  SvcImage(url: c.api.url(cat.services.where((s) => s.category == x['id'] && s.image.isNotEmpty).firstOrNull?.image ?? ''), biz: c.biz, size: 56),
+                  const SizedBox(height: 6),
+                  Text((c.lang == 'en' && (x['name_en'] as String).isNotEmpty ? x['name_en'] : x['name_ar']) as String,
+                      textAlign: TextAlign.center, maxLines: 2, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                ])))),
+          ]),
+        ],
+        const SizedBox(height: 20),
+        Text(t('services'), style: title18),
+        const SizedBox(height: 8),
+        for (final s in cat.services.take(6)) ServiceCard(c: c, s: s, onBook: () => widget.onBook(s)),
         const SizedBox(height: 18),
-        Text(t('branches'), style: const TextStyle(fontWeight: FontWeight.w700)),
+        Text(t('branches'), style: title18),
         const SizedBox(height: 8),
         if (c.locationDenied) Notice(t('location_off')),
-        for (final br in cat.branches) BranchCard(c: c, branch: br),
+        for (final b in cat.branches) BranchCard(c: c, branch: b),
       ])),
     ]);
+  }
+}
+
+/// Reference `.scard` for a service: photo, name, duration, price and a book button.
+class ServiceCard extends StatelessWidget {
+  const ServiceCard({super.key, required this.c, required this.s, required this.onBook});
+  final AppController c;
+  final ServiceItem s;
+  final VoidCallback onBook;
+  @override
+  Widget build(BuildContext context) => SCard(
+        onTap: onBook,
+        leading: SvcImage(url: c.api.url(s.image), biz: c.biz),
+        child: Row(children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(s.name(c.lang), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+            Text('⏱ ${s.minutes} ${c.t('min')}', style: cap),
+            Text(kwd(s.price, c.lang), style: TextStyle(fontWeight: FontWeight.w700, color: Brand.of(c.biz).dark)),
+          ])),
+          FilledButton(onPressed: onBook, style: FilledButton.styleFrom(minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 14)),
+              child: Text(c.t('book'))),
+        ]),
+      );
+}
+
+class _OfferCard extends StatelessWidget {
+  const _OfferCard({required this.c, required this.o, required this.onTap});
+  final AppController c;
+  final Json o;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) {
+    final b = Brand.of(c.biz);
+    final regular = o['regular'] as String;
+    return Container(width: 190, margin: const EdgeInsetsDirectional.only(end: 10), child: Material(
+      color: Tokens.surface, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: Tokens.line)),
+      child: InkWell(borderRadius: BorderRadius.circular(18), onTap: onTap, child: Padding(padding: const EdgeInsets.all(12),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SvcImage(url: c.api.url((o['image'] as String?) ?? ''), biz: c.biz, size: 56, radius: 14),
+          const SizedBox(height: 8),
+          Text((c.lang == 'en' && (o['name_en'] as String).isNotEmpty ? o['name_en'] : o['name_ar']) as String,
+              maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+          Text(c.t('sessions_n', {'n': '${o['sessions']}'}), style: cap),
+          const Spacer(),
+          Row(children: [
+            Text(kwd(o['price'] as String, c.lang), style: TextStyle(fontWeight: FontWeight.w800, color: b.dark, fontSize: 15)),
+            const SizedBox(width: 6),
+            if (regular != o['price']) Text(kwd(regular, c.lang), style: const TextStyle(color: Tokens.muted, fontSize: 12, decoration: TextDecoration.lineThrough)),
+          ]),
+        ]))),
+    ));
   }
 }
 

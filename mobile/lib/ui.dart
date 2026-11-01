@@ -129,3 +129,21 @@ String kwd(String v, String lang) {
   final i = parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
   return '$i.${(parts.length > 1 ? parts[1] : '000').padRight(3, '0')} ${lang == 'ar' ? 'د.ك' : 'KWD'}';
 }
+
+
+/// Service photo (rounded) or, without one, the brand-tinted tile with scissors (reference artOr()).
+class SvcImage extends StatelessWidget {
+  const SvcImage({super.key, required this.url, required this.biz, this.size = 64, this.radius = 16});
+  final String url, biz;
+  final double size, radius;
+  @override
+  Widget build(BuildContext context) {
+    final b = Brand.of(biz);
+    final fallback = Container(width: size, height: size, alignment: Alignment.center,
+        decoration: BoxDecoration(color: b.soft, borderRadius: BorderRadius.circular(radius)),
+        child: Icon(Icons.content_cut, color: b.dark, size: size * .42));
+    if (url.isEmpty) return fallback;
+    return ClipRRect(borderRadius: BorderRadius.circular(radius),
+        child: Image.network(url, width: size, height: size, fit: BoxFit.cover, errorBuilder: (_, _, _) => fallback));
+  }
+}

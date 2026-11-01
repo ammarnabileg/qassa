@@ -373,7 +373,9 @@
     "deposit_not_pending": "This deposit is not awaiting payment.",
     "officer_phone_missing": "Set the KlickPay officer’s WhatsApp number in platform settings first.",
     "contract_not_signed": "The signed contract must be accepted before activating.",
-    "mfa_mandatory": "Two-step verification is mandatory for platform staff."
+    "mfa_mandatory": "Two-step verification is mandatory for platform staff.",
+    "image_invalid": "This file is not an image.",
+    "image_too_big": "The image is over 8 MB."
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -408,7 +410,11 @@
     "upsellHelp": "When this service is in the invoice, the cashier sees a button to add that one.",
     "rebook": "Customers come back after",
     "rebookHelp": "Sends a “time for the next one” reminder if turned on in WhatsApp.",
-    "none": "—"
+    "none": "—",
+    "photo": "Photo in the customer app",
+    "photoUpload": "Upload photo",
+    "photoReplace": "Replace",
+    "photoHelp": "A clear photo of the cut or result. It is resized automatically."
   },
   "staff": {
     "sub": "Service providers: the branches they work in and the services they deliver",

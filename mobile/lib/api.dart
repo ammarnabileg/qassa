@@ -37,6 +37,7 @@ class ServiceItem {
   String name(String lang) => lang == 'en' && (j['name_en'] as String? ?? '').isNotEmpty ? j['name_en'] as String : j['name_ar'] as String;
   int get minutes => j['duration_minutes'] as int;
   String get price => j['price'] as String;
+  String get image => (j['image'] as String?) ?? '';   // relative API path, '' when the salon has no photo
 }
 
 class Catalog {
@@ -45,8 +46,10 @@ class Catalog {
         businessType = (j['salon'] as Json)['business_type'] as String,
         branches = [for (final b in j['branches'] as List) Branch(b as Json)],
         categories = [for (final c in j['categories'] as List) c as Json],
-        services = [for (final s in j['services'] as List) ServiceItem(s as Json)];
+        services = [for (final s in j['services'] as List) ServiceItem(s as Json)],
+        offers = [for (final o in (j['offers'] as List?) ?? const []) o as Json];
   final String salonName, businessType;
+  final List<Json> offers;   // session packages (reference: العروض)
   final List<Branch> branches;
   final List<Json> categories;
   final List<ServiceItem> services;
@@ -74,6 +77,8 @@ class Api {
   final http.Client _client;
   final String _base;
   final String? salonSlug;
+  /// Absolute URL for a path the API returned (e.g. a service photo).
+  String url(String path) => path.isEmpty ? '' : (path.startsWith('http') ? path : '$_base$path');
   String? token;
 
   Map<String, String> get _headers => {

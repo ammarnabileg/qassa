@@ -2,9 +2,12 @@ from datetime import date
 
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch, Q
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
 from rest_framework import serializers, status
 from rest_framework.generics import get_object_or_404
+from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from apps.catalog.models import Service, ServiceCategory, ServicePrice
@@ -35,12 +38,17 @@ ART_KEYS = {"baby", "boyBig", "boy", "trimB", "washB", "qadhla", "pixie", "bob",
 
 class ServiceSerializer(serializers.ModelSerializer):
     current_price = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
+
+    def get_image_url(self, obj) -> str:
+        from apps.catalog.services.images import url
+        return url(obj)
     business_type = serializers.CharField(source="category.business_type", read_only=True)
 
     class Meta:
         model = Service
         fields = ["id", "category", "business_type", "name_ar", "name_en", "duration_minutes", "home_visit",
-                  "art", "is_active", "current_price", "upsell", "rebook_days"]
+                  "art", "is_active", "current_price", "upsell", "rebook_days", "image_url"]
         validators = []  # duplicate names are reported as service_name_exists by the view
 
     def get_current_price(self, obj) -> str | None:
@@ -176,3 +184,42 @@ class ServicePricesView(TenantAPIView):
         row = set_price(service, price=s.validated_data["price"], branch_id=branch_id,
                         valid_from=s.validated_data.get("valid_from"), user=request.user)
         return Response(PriceSerializer(row).data, status=status.HTTP_201_CREATED)
+
+
+class ServiceImageView(TenantAPIView):
+    """Upload (multipart 'file') or remove the photo the customer app shows for this service."""
+    parser_classes = [MultiPartParser]
+    required_permissions = {"POST": "catalog.manage", "DELETE": "catalog.manage"}
+
+    @extend_schema(request={"multipart/form-data": OpenApiTypes.OBJECT}, responses=dict)
+    def post(self, request, pk):
+        from apps.catalog.services import images
+        svc = get_object_or_404(Service.objects.all(), pk=pk)
+        f = request.FILES.get("file")
+        if f is None:
+            raise DomainError(code="image_invalid")
+        images.store(svc, f)
+        return Response({"image_url": images.url(svc)})
+
+    @extend_schema(responses=dict)
+    def delete(self, request, pk):
+        from apps.catalog.services import images
+        svc = get_object_or_404(Service.objects.all(), pk=pk)
+        images.remove(svc)
+        return Response({"image_url": ""})
+
+
+class PublicServiceImageView(APIView):
+    """Service photo for the customer app and PWA. Public marketing content; cached by version in the URL."""
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    @extend_schema(responses={200: OpenApiTypes.BINARY})
+    def get(self, request, pk):
+        from django.http import FileResponse, Http404
+        svc = Service.unscoped.filter(id=pk, is_active=True).exclude(image="").first()
+        if svc is None or (request.domain_tenant_id and svc.tenant_id != request.domain_tenant_id):
+            raise Http404
+        r = FileResponse(svc.image.open("rb"), content_type="image/jpeg")
+        r["Cache-Control"] = "public, max-age=604800, immutable"
+        return r

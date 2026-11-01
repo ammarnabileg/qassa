@@ -10,8 +10,9 @@ import 'shell.dart';
 
 /// Booking in the design's steps: service → branch (nearest suggested) → time → who → confirm → done.
 class BookFlow extends StatefulWidget {
-  const BookFlow({super.key, required this.c, required this.onDone});
+  const BookFlow({super.key, required this.c, required this.onDone, this.initial});
   final AppController c;
+  final ServiceItem? initial;   // tapped on the home screen: start at the branch step
   final VoidCallback onDone;
   @override
   State<BookFlow> createState() => _BookFlowState();
@@ -63,6 +64,26 @@ class _BookFlowState extends State<BookFlow> {
     }
   }
 
+  void pick(ServiceItem s) => setState(() {
+        service = s;
+        final bs = branchesFor(s);
+        branch = bs.isEmpty ? null : bs.first; // nearest first (server-sorted)
+        step = 1;
+      });
+
+  @override
+  void initState() {
+    super.initState();
+    final s = widget.initial;
+    if (s != null) {
+      service = s;
+      category = s.category;
+      final bs = branchesFor(s);
+      branch = bs.isEmpty ? null : bs.first;
+      step = 1;
+    }
+  }
+
   void reset() => setState(() { step = 0; service = null; branch = null; staffId = null; slots = null; slot = null; who = null; done = null; error = null; notes.clear(); key = UniqueKey().toString(); });
 
   @override
@@ -106,20 +127,7 @@ class _BookFlowState extends State<BookFlow> {
                 on: category == x['id'], onTap: () => setState(() => category = x['id'] as int))),
           ])),
           const SizedBox(height: 10),
-          for (final s in cat.services.where((s) => s.category == category)) SCard(
-            onTap: () => setState(() {
-              service = s;
-              final bs = branchesFor(s);
-              branch = bs.isEmpty ? null : bs.first; // nearest first (server-sorted)
-              step = 1;
-            }),
-            leading: CircleAvatar(radius: 24, backgroundColor: Brand.of(c.biz).soft, child: Icon(Icons.content_cut, color: Brand.of(c.biz).dark)),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(s.name(c.lang), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-              Text('⏱ ${s.minutes} ${t('min')}', style: cap),
-              Text(kwd(s.price, c.lang), style: TextStyle(fontWeight: FontWeight.w700, color: Brand.of(c.biz).dark)),
-            ]),
-          ),
+          for (final s in cat.services.where((s) => s.category == category)) ServiceCard(c: c, s: s, onBook: () => pick(s)),
         ]);
       case 1:
         final bs = branchesFor(service!);

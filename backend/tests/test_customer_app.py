@@ -136,3 +136,27 @@ def test_token_from_one_salon_is_useless_on_another(app, company_b):
     token = login(app)
     r = APIClient(HTTP_HOST="men.qassa.test", HTTP_AUTHORIZATION=f"Customer {token}").get("/api/v1/app/me")
     assert r.status_code in (401, 403)
+
+
+def test_service_photo_upload_and_public_catalog(app, settings, tmp_path):
+    import io
+    from PIL import Image
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from apps.identity.models import User
+    from tests.conftest import client_for
+    settings.MEDIA_ROOT = tmp_path
+    owner = User.objects.get(memberships__tenant=app["t"], memberships__role__key="owner")
+    buf = io.BytesIO(); Image.new("RGB", (2000, 1200), (200, 30, 30)).save(buf, "PNG")
+    c = client_for(owner, app["t"])
+    r = c.post(f"/api/v1/catalog/services/{app['cut'].id}/image", {"file": SimpleUploadedFile("cut.png", buf.getvalue())}, format="multipart")
+    assert r.status_code == 200 and r.json()["image_url"].startswith(f"/api/v1/public/services/{app['cut'].id}/image?v=1")
+    assert c.post(f"/api/v1/catalog/services/{app['cut'].id}/image", {"file": SimpleUploadedFile("x.png", b"not an image")},
+                  format="multipart").json()["error"]["code"] == "image_invalid"
+    img = APIClient(HTTP_HOST="kids.qassa.test").get(f"/api/v1/public/services/{app['cut'].id}/image")
+    assert img.status_code == 200 and img["Content-Type"] == "image/jpeg" and "immutable" in img["Cache-Control"]
+    got = Image.open(io.BytesIO(b"".join(img.streaming_content)))
+    assert max(got.size) == 900                                                   # resized for the app
+    cat = APIClient(HTTP_HOST="kids.qassa.test").get("/api/v1/app/catalog").json()
+    assert next(s for s in cat["services"] if s["id"] == app["cut"].id)["image"].endswith("?v=1") and "offers" in cat
+    assert APIClient(HTTP_HOST="men.qassa.test").get(f"/api/v1/public/services/{app["cut"].id}/image").status_code in (400, 404)   # not this salon
+    assert c.delete(f"/api/v1/catalog/services/{app['cut'].id}/image").json()["image_url"] == ""

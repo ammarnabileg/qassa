@@ -83,6 +83,8 @@ urlpatterns = [
     path(api + "catalog/categories", cat.CategoriesView.as_view()),
     path(api + "catalog/services", cat.ServicesView.as_view()),
     path(api + "catalog/services/<int:pk>", cat.ServiceDetailView.as_view()),
+    path(api + "catalog/services/<int:pk>/image", cat.ServiceImageView.as_view()),
+    path(api + "public/services/<int:pk>/image", cat.PublicServiceImageView.as_view()),
     path(api + "catalog/services/<int:pk>/prices", cat.ServicePricesView.as_view()),
     path(api + "staff", stf.StaffListView.as_view()),
     path(api + "staff/<int:pk>", stf.StaffDetailView.as_view()),
