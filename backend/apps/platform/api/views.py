@@ -193,20 +193,32 @@ class TenantDomainsView(APIView):
         from apps.audit.services.log import record as audit
         from apps.core.errors import DomainError
         tenant = get_object_or_404(Tenant.objects.select_related("subscription__plan"), pk=pk)
-        if not tenant.subscription.plan.custom_domain:
-            raise DomainError(code="plan_no_custom_domain", details={"plan": tenant.subscription.plan.code})
         s = DomainSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         host = s.validated_data["host"]
         base = settings.TENANT_BASE_DOMAIN
-        if host == base or host.endswith("." + base) or host in settings.PLATFORM_HOSTS:
+        label = host[: -len(base) - 1] if host.endswith("." + base) else None
+        if host in settings.PLATFORM_HOSTS or host == base:
             raise DomainError(code="domain_reserved")
+        if label is not None:
+            # another name on our own base domain (e.g. mykids.<base> next to my-kids.<base>): any plan, active at once
+            if "." in label or label in settings.RESERVED_SUBDOMAINS:
+                raise DomainError(code="domain_reserved")
+            kind, active = TenantDomain.Kind.SUBDOMAIN, True
+        else:
+            if not tenant.subscription.plan.custom_domain:
+                raise DomainError(code="plan_no_custom_domain", details={"plan": tenant.subscription.plan.code})
+            kind, active = TenantDomain.Kind.CUSTOM, False
         from django.db import transaction
+        from django.utils import timezone
         try:
             with transaction.atomic():
-                d = TenantDomain.objects.create(tenant=tenant, host=host, kind=TenantDomain.Kind.CUSTOM)
+                d = TenantDomain.objects.create(tenant=tenant, host=host, kind=kind, is_active=active,
+                                                activated_at=timezone.now() if active else None)
         except IntegrityError:
             raise DomainError(code="domain_taken")
+        from apps.platform.middleware import forget_host
+        forget_host(host)   # an unknown host is cached as unknown for a minute
         audit("platform.domain.added", tenant_id=tenant.id, actor=request.user, obj=d, data={"host": host})
         return Response(DomainSerializer(d).data, status=status.HTTP_201_CREATED)
 

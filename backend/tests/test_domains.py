@@ -59,7 +59,9 @@ def test_custom_domain_needs_plan_then_activation(settings_hosts, company_a):
                    format="json").status_code == 200
     assert APIClient(HTTP_HOST="book.mykids.com").get("/api/v1/public/salon").json()["slug"] == ta.slug
     # reserved and duplicate hosts
-    assert c.post(f"/api/v1/platform/tenants/{ta.id}/domains", {"host": "other.qassa.test"},
+    assert c.post(f"/api/v1/platform/tenants/{ta.id}/domains", {"host": "www.qassa.test"},
+                  format="json").json()["error"]["code"] == "domain_reserved"
+    assert c.post(f"/api/v1/platform/tenants/{ta.id}/domains", {"host": "a.b.qassa.test"},
                   format="json").json()["error"]["code"] == "domain_reserved"
     assert c.post(f"/api/v1/platform/tenants/{ta.id}/domains", {"host": "book.mykids.com"},
                   format="json").json()["error"]["code"] == "domain_taken"
@@ -99,3 +101,12 @@ def test_new_base_domain_command_adds_subdomains_and_skips_reserved(settings_hos
     settings_hosts.TENANT_BASE_DOMAIN = "other.test"
     call_command("add_subdomains")
     assert not TenantDomain.objects.filter(host=f"{ta.slug}.other.test").exists()
+
+
+def test_extra_name_on_our_base_domain_any_plan_active_at_once(settings_hosts, company_a):
+    ta, _, _ = company_a
+    staff = User.objects.create_user("ops2@qassa.test", "Ops-Pass-2026!!", is_platform_staff=True)
+    assert APIClient(HTTP_HOST="kidsx.qassa.test").get("/api/v1/public/salon").status_code == 400   # cached as unknown
+    r = client_for(staff).post(f"/api/v1/platform/tenants/{ta.id}/domains", {"host": "kidsx.qassa.test"}, format="json")
+    assert r.status_code == 201 and r.json()["kind"] == "subdomain" and r.json()["is_active"] is True
+    assert APIClient(HTTP_HOST="kidsx.qassa.test").get("/api/v1/public/salon").json()["slug"] == ta.slug

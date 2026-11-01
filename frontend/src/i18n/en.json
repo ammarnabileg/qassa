@@ -499,7 +499,7 @@
     },
     "reason": "Reason (written to the audit log)",
     "domains": "Customer app domains",
-    "domainsHelp": "A custom domain is activated after the customer points DNS to us",
+    "domainsHelp": "A name on our own domain (like mykids.kuw1.com) works at once on any plan. A custom domain (like book.salon.com) needs a plan that allows it and is activated once its DNS points to us. Either way, add the name to the web service domains in Coolify for its certificate.",
     "kind": {
       "subdomain": "Subdomain",
       "custom": "Custom"
