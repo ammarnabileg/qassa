@@ -144,6 +144,8 @@ urlpatterns = [
     path(api + "users", usr.UsersView.as_view()),
     path(api + "users/<int:pk>", usr.UserDetailView.as_view()),
     path(api + "users/<int:pk>/resend", usr.UserResendView.as_view()),
+    path(api + "roles", usr.RolesView.as_view()),
+    path(api + "roles/<int:pk>", usr.RoleDetailView.as_view()),
     path(api + "inventory/products", inv.ProductsView.as_view()),
     path(api + "inventory/products/<int:pk>", inv.ProductDetailView.as_view()),
     path(api + "inventory/suppliers", inv.SuppliersView.as_view()),

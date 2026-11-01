@@ -103,6 +103,9 @@ class Membership(models.Model):
     branches = models.ManyToManyField(Branch, blank=True, through="MembershipBranch")
     is_active = models.BooleanField(default=True)
     discount_limit_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    # per-person changes on top of the role: granted extras and removed role permissions
+    extra_permissions = ArrayField(models.CharField(max_length=60), default=list, blank=True)
+    denied_permissions = ArrayField(models.CharField(max_length=60), default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -111,8 +114,15 @@ class Membership(models.Model):
             models.UniqueConstraint(fields=["tenant", "id"], name="uniq_membership_tenant_id"),
         ]
 
+    def permissions(self) -> set[str]:
+        """Effective permissions: the role's, plus this person's extras, minus what was removed for them. An owner always has all."""
+        from apps.tenancy.permissions_catalog import ALL
+        if self.role.key == "owner":
+            return set(ALL)
+        return (set(self.role.permissions) | set(self.extra_permissions or [])) - set(self.denied_permissions or [])
+
     def has_perm(self, code: str) -> bool:
-        return self.is_active and code in set(self.role.permissions)
+        return self.is_active and code in self.permissions()
 
     def branch_ids(self):
         if self.all_branches:

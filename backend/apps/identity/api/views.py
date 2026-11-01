@@ -43,7 +43,7 @@ def me_payload(user, request=None):
         "memberships": [{"tenant_id": m.tenant_id, "tenant_name": m.tenant.name, "tenant_status": m.tenant.status,
                          "tenant_business_type": m.tenant.default_business_type,
                          "role": m.role.key, "role_name": {"ar": m.role.name_ar, "en": m.role.name_en},
-                         "permissions": sorted(m.role.permissions), "all_branches": m.all_branches,
+                         "permissions": sorted(m.permissions()), "all_branches": m.all_branches,
                          "branch_ids": sorted(m.branch_ids() or []), "support": False} for m in ms] + [x for x in _support(user) if not domain or x["tenant_id"] == domain],
     }
 
