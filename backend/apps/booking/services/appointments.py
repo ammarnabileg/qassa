@@ -120,7 +120,7 @@ def reschedule(appt: Appointment, *, starts_at: datetime, items: list[ItemSpec],
     return appt
 
 
-def set_status(appt: Appointment, new: str, *, user=None, reason=""):
+def set_status(appt: Appointment, new: str, *, user=None, reason="", by_customer=False):
     with transaction.atomic():
         appt = Appointment.objects.select_for_update().get(id=appt.id)
         if new not in TRANSITIONS[appt.status]:
@@ -132,4 +132,7 @@ def set_status(appt: Appointment, new: str, *, user=None, reason=""):
         if new not in ACTIVE:
             AppointmentItem.objects.filter(appointment=appt).update(active=False)
         audit(f"booking.{new}", tenant_id=appt.tenant_id, actor=user, obj=appt, reason=reason)
+        if appt.deposit_status == "paid":
+            from apps.payments.services import deposits
+            deposits.on_status(appt, new, by_customer=by_customer)   # refund in time / keep when late or no-show
     return appt

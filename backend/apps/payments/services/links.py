@@ -76,6 +76,9 @@ def confirm(op) -> OnlinePayment:
     status = str(data.get("status", "")).lower()
     op.method = str(data.get("payment_method", ""))[:30]
     if status in PAID and str(data.get("result", "")).upper() in {"CAPTURED", "SUCCESS", ""}:
+        if op.purpose == OnlinePayment.Purpose.DEPOSIT:
+            from apps.payments.services import deposits
+            return deposits.apply_paid(op, money(Decimal(str(data.get("amount") or "0"))), op.method)
         return _apply_paid(op, money(Decimal(str(data.get("amount") or "0"))), op.method)
     if status in FAILED:
         op.status, op.detail, op.settled_at = FAILED[status], str(data.get("result", ""))[:300], timezone.now()
@@ -150,6 +153,9 @@ def accept_webhook(acc, body: dict, header_event: str):
         if acc.merchant_token and body.get("merchant_token") and body["merchant_token"] != acc.merchant_token:
             log.warning("klickpay webhook for tenant %s carries another merchant token", acc.tenant_id)
             return "foreign"
+        if event.startswith("refund."):
+            from apps.payments.services import refunds
+            refunds.on_webhook(body, event)
         if event.startswith("payment."):
             for op in OnlinePayment.objects.filter(gateway_id__in=ids, status=OnlinePayment.Status.CREATED):
                 request_check(op)

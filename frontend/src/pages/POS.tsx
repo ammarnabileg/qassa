@@ -109,7 +109,7 @@ export default function POS() {
     [l.kind === 'service' ? 'service_id' : l.kind === 'product' ? 'product_id' : 'package_plan_id']: l.id,
     staff_id: l.staff_id, qty: l.qty, discount: l.discount || '0', redeem_package_id: l.redeem_package_id })
   const cartBody = { branch_id: branch?.id, customer_id: customer?.id ?? null, coupon_code: coupon.trim(),
-    redeem_points: Number(points) || 0, lines: lines.map(payload) }
+    redeem_points: Number(points) || 0, lines: lines.map(payload), appointment_id: appointment?.id ?? null }
   // the totals always come from the server: branch prices, coupons, points and package sessions are applied there
   const quoteKey = useDebounced(JSON.stringify(cartBody))
   const quote = useQuery({ queryKey: ['quote', quoteKey], enabled: !!branch && lines.length > 0, retry: false,
@@ -136,7 +136,8 @@ export default function POS() {
     setTendered(''); setSplit({ cash: '', card: '' }); setRef(''); setPaidNow(''); setMode('cash'); setKey(crypto.randomUUID())
   }
 
-  const total = toFils(quote.data?.total ?? '0') + safeFils(tip)
+  const deposit = toFils(quote.data?.deposit ?? '0')   // paid online at booking; the server applies it first
+  const total = toFils(quote.data?.total ?? '0') - deposit + safeFils(tip)
   const totalStr = fromFils(total)
   const payments = (): { method: string; amount: string; reference?: string }[] => {
     if (total === 0n) return []
@@ -262,6 +263,7 @@ export default function POS() {
           {quote.data && <>
             <div className="tot"><span className="muted">{t('pos.subtotal')}</span><span className="money">{formatKWD(quote.data.subtotal, lang)}</span></div>
             <div className="tot"><span className="muted">{t('pos.discount')}{quote.data.coupon_discount !== '0.000' && ` (${t('pos.couponApplied')})`}{quote.data.points > 0 && ` (⭐ ${quote.data.points})`}</span><span className="money">{formatKWD(quote.data.discount_total, lang)}</span></div>
+            {deposit > 0n && <div className="tot"><span className="muted">{t('pos.depositPaid')}</span><span className="money">-{formatKWD(quote.data.deposit!, lang)}</span></div>}
           </>}
           <div className="two">
             <label className="field">{t('pos.tip')}<input className="input" dir="ltr" inputMode="decimal" placeholder="0.000" value={tip} onChange={(e) => setTip(e.target.value)} /></label>

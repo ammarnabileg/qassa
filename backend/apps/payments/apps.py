@@ -6,4 +6,4 @@ class PaymentsConfig(AppConfig):
     label = "payments"
 
     def ready(self):
-        from apps.payments.services import links  # noqa: F401  registers the outbox handler
+        from apps.payments.services import deposits, links  # noqa: F401  registers the outbox handlers

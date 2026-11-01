@@ -26,6 +26,9 @@ class Appointment(TenantScopedModel):
     walk_in_name = models.CharField(max_length=120, blank=True)  # when there is no customer record
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.BOOKED)
     source = models.CharField(max_length=10, choices=Source.choices, default=Source.RECEPTION)
+    deposit_amount = models.DecimalField(max_digits=18, decimal_places=3, default=0)
+    deposit_status = models.CharField(max_length=9, default="none", choices=[(x, x) for x in (
+        "none", "pending", "paid", "applied", "refunding", "refunded", "forfeited", "expired")])
     starts_at = models.DateTimeField()
     ends_at = models.DateTimeField()
     business_date = models.DateField(db_index=True)

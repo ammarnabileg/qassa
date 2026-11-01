@@ -10,11 +10,13 @@ import { formatKWD } from '../money'
 
 export type KycItem = { type: { id: number; code: string; name_ar: string; name_en: string; help_ar: string; help_en: string; required: boolean }
   doc: { id: number; status: 'uploaded' | 'accepted' | 'rejected'; note: string; name: string; uploaded_at: string } | null }
-type Account = { status: string; review_note: string; active: boolean; checklist: KycItem[] }
-export type OnlinePay = { id: number; reference: string; invoice: string; invoice_id: number; amount: string; status: string; method: string; detail: string; created_at: string; customer: string }
+type Deposit = { mode: 'off' | 'fixed' | 'percent'; value: string; refund_hours: number; hold_minutes: number }
+type Account = { status: string; review_note: string; active: boolean; checklist: KycItem[]; deposit: Deposit }
+export type OnlinePay = { id: number; reference: string; purpose: 'invoice' | 'deposit'; invoice: string; invoice_id: number | null; appointment_id: number | null; refundable: string; refunds: { id: number; amount: string; status: string; detail: string }[]; amount: string; status: string; method: string; detail: string; created_at: string; customer: string }
 
 export const KYC_PILL: Record<string, string> = { uploaded: 'info', accepted: 'good', rejected: 'bad' }
 export const ACC_PILL: Record<string, string> = { not_started: 'mute', collecting: 'info', under_review: 'warn', needs_changes: 'bad', active: 'good', suspended: 'mute' }
+export const REF_PILL: Record<string, string> = { requested: 'info', success: 'good', pending: 'warn', failed: 'bad' }
 export const PAY_PILL: Record<string, string> = { created: 'info', paid: 'good', declined: 'bad', failed: 'bad', voided: 'mute', review: 'warn' }
 
 /** Online payments (KlickPay, D-017): open the merchant account through us (documents), then see every payment link. */
@@ -64,12 +66,40 @@ export default function OnlinePayments() {
         {!locked && <button className="btn primary" style={{ marginTop: 10 }} disabled={submit.busy} onClick={() => submit.save({ path: '/payments/kyc/submit' })}>{t('pay.submit')}</button>}
       </div>}
       {a?.active && <div className="notice good" style={{ marginBottom: 14 }}><Icon name="check" />{t('pay.activeHelp')}</div>}
+      {a?.active && <DepositCard value={a.deposit} />}
       <h2 style={{ margin: '6px 0 10px' }}>{t('pay.links')}</h2>
       <div className="tw"><table><thead><tr><th>{t('fb.invoice')}</th><th>{t('cust.name')}</th><th className="n">{t('pos.total')}</th><th>{t('org.status')}</th><th>{t('pay.method')}</th><th>{t('pay.created')}</th></tr></thead>
-        <tbody>{list.data?.map((o) => <tr key={o.id}><td><bdi>{o.invoice}</bdi></td><td>{o.customer}</td><td className="n money">{formatKWD(o.amount, lang)}</td>
-          <td><span className={`pill ${PAY_PILL[o.status]}`}>{t(`pay.st.${o.status}`)}</span>{o.status === 'review' && <div className="cap muted">{o.detail}</div>}</td>
+        <tbody>{list.data?.map((o) => <tr key={o.id}><td>{o.purpose === 'deposit' ? <span className="pill info">{t('pay.deposit')}</span> : <bdi>{o.invoice}</bdi>}</td><td>{o.customer}</td><td className="n money">{formatKWD(o.amount, lang)}</td>
+          <td><span className={`pill ${PAY_PILL[o.status]}`}>{t(`pay.st.${o.status}`)}</span>{o.status === 'review' && <div className="cap muted">{o.detail}</div>}
+            {o.refunds.map((r) => <div key={r.id} className="cap">{t('pay.refund')} {formatKWD(r.amount, lang)} · <span className={`pill ${REF_PILL[r.status]}`}>{t(`pay.rs.${r.status}`)}</span>{r.detail && ` · ${r.detail}`}</div>)}</td>
           <td className="small">{o.method || '—'}</td><td className="small"><bdi>{new Date(o.created_at).toLocaleString(lang === 'ar' ? 'ar-KW' : 'en-GB', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Kuwait' })}</bdi></td></tr>)}
           {list.data?.length === 0 && <tr><td colSpan={6} className="empty">{t('pay.none')}</td></tr>}</tbody></table></div>
     </>
   )
+}
+
+/** Booking deposit policy for the customer app. */
+function DepositCard({ value }: { value: Deposit }) {
+  const { t } = useTranslation()
+  const toast = useToast()
+  const [f, setF] = useState<Deposit>(value)
+  const save = useSave<unknown>([['pay-account']], () => toast(t('common.saved')))
+  return <div className="card" style={{ marginBottom: 14, maxWidth: 640 }}>
+    <h2>{t('pay.depositTitle')}</h2>
+    <div className="small muted" style={{ margin: '4px 0 10px' }}>{t('pay.depositHelp')}</div>
+    <div className="two">
+      <label className="field">{t('pay.depositMode')}<select className="input" value={f.mode} onChange={(e) => setF({ ...f, mode: e.target.value as Deposit['mode'] })}>
+        {(['off', 'fixed', 'percent'] as const).map((m) => <option key={m} value={m}>{t(`pay.dm.${m}`)}</option>)}</select></label>
+      {f.mode !== 'off' && <label className="field">{f.mode === 'fixed' ? t('pay.depositKwd') : t('pay.depositPct')}<input className="input" dir="ltr" inputMode="decimal" value={f.value} onChange={(e) => setF({ ...f, value: e.target.value })} /></label>}
+    </div>
+    {f.mode !== 'off' && <div className="two">
+      <label className="field">{t('pay.refundHours')}<input className="input" type="number" min={0} max={168} value={f.refund_hours} onChange={(e) => setF({ ...f, refund_hours: Number(e.target.value) })} />
+        <small className="muted">{t('pay.refundHoursHelp', { n: f.refund_hours })}</small></label>
+      <label className="field">{t('pay.holdMinutes')}<input className="input" type="number" min={5} max={120} value={f.hold_minutes} onChange={(e) => setF({ ...f, hold_minutes: Number(e.target.value) })} />
+        <small className="muted">{t('pay.holdHelp', { n: f.hold_minutes })}</small></label>
+    </div>}
+    <ErrorText error={save.error} />
+    <button className="btn primary" disabled={save.busy} onClick={() => save.save({ path: '/payments/account', method: 'PATCH',
+      body: { deposit_mode: f.mode, deposit_value: f.value || '0', deposit_refund_hours: f.refund_hours, deposit_hold_minutes: f.hold_minutes } })}>{t('common.save')}</button>
+  </div>
 }

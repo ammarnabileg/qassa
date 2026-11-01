@@ -190,3 +190,178 @@ def test_link_needs_an_active_account(salon, kp):
     inv = _credit_invoice(s)
     r = client_for(s["manager"], s["t"]).post(f"/api/v1/pos/invoices/{inv['id']}/pay-link", {}, format="json")
     assert r.json()["error"]["code"] == "gateway_not_active"
+
+
+# ---------- refunds ----------
+class RefundingKlickPay(FakeKlickPay):
+    def __init__(self):
+        super().__init__()
+        self.refund_code = "REFUND_SUCCESS"
+
+    def __call__(self, method, url, headers, body=None):
+        if "/refunds/" in url:
+            self.calls.append((url.rsplit("/v3", 1)[-1], headers, body))
+            if self.refund_code == "REFUND_SUCCESS":
+                return 200, {"success": True, "code": "REFUND_SUCCESS", "data": {"refund_reference": "RF1", "refund_status": "success"}}
+            if self.refund_code == "INSUFFICIENT_BALANCE":
+                return 422, {"success": False, "code": "INSUFFICIENT_BALANCE", "details": {"refund_reference": "RF2", "shortfall_amount": "3.153"}}
+            return 422, {"success": False, "code": "REFUND_FAILED", "details": {"refund_reference": "RF3", "gateway": {"message": "Gateway error"}}}
+        return super().__call__(method, url, headers, body)
+
+
+@pytest.fixture
+def kpr(monkeypatch):
+    fake = RefundingKlickPay()
+    monkeypatch.setattr(klickpay, "_http", fake)
+    return fake
+
+
+def _paid_online_invoice(s, kp):
+    p, token, secret = _activate(s)
+    inv = _credit_invoice(s)
+    m = client_for(s["manager"], s["t"])
+    ref = m.post(f"/api/v1/pos/invoices/{inv['id']}/pay-link", {}, format="json").json()["reference"]
+    kp.status = {"status": "paid", "result": "CAPTURED", "amount": "15.000", "payment_method": "KNET"}
+    APIClient().get(f"/api/v1/public/pay/{ref}")
+    process_outbox()
+    return p, token, secret, inv, m
+
+
+def test_online_refund_after_a_return(salon, kpr):
+    s = salon
+    p, token, secret, inv, m = _paid_online_invoice(s, kpr)
+    # nothing owed yet: no refund without a return first
+    assert m.post(f"/api/v1/pos/invoices/{inv['id']}/online-refund", {"amount": "5.000", "reason": "x"}, format="json").json()["error"]["code"] == "refund_more_than_owed"
+    m.post(f"/api/v1/pos/invoices/{inv['id']}/credit-notes", {"lines": [{"invoice_line_id": inv["lines"][0]["id"], "amount": "5.000"}],
+                                                               "reason": "خدمة ناقصة"}, format="json", HTTP_IDEMPOTENCY_KEY="cn1")
+    r = m.post(f"/api/v1/pos/invoices/{inv['id']}/online-refund", {"amount": "5.000", "reason": "خدمة ناقصة"}, format="json").json()
+    assert r["refunds"][0]["status"] == "success" and kpr.calls[-1][0] == "/refunds/partial" and kpr.calls[-1][2]["refund_amount"] == "5.000"
+    assert balance(s, "GATEWAY_CLEARING") == D("10.000")
+    assert m.get(f"/api/v1/pos/invoices/{inv['id']}").json()["state"]["balance"] == "0.000"
+    assert client_for(s["cashier"], s["t"]).post(f"/api/v1/pos/invoices/{inv['id']}/online-refund", {"amount": "1", "reason": "x"},
+                                                 format="json").status_code == 403
+    row = next(x for x in p.get("/api/v1/platform/payments/report").json()["rows"] if x["tenant_id"] == s["t"].id)
+    assert row["refunded_amount"] == "5.000"
+
+
+def test_refund_waits_for_wallet_then_webhook_completes_it(salon, kpr):
+    s = salon
+    p, token, secret, inv, m = _paid_online_invoice(s, kpr)
+    m.post(f"/api/v1/pos/invoices/{inv['id']}/credit-notes", {"lines": [{"invoice_line_id": inv["lines"][0]["id"], "amount": "15.000"}],
+                                                               "reason": "إلغاء"}, format="json", HTTP_IDEMPOTENCY_KEY="cn2")
+    kpr.refund_code = "INSUFFICIENT_BALANCE"
+    r = m.post(f"/api/v1/pos/invoices/{inv['id']}/online-refund", {"amount": "15.000", "reason": "إلغاء"}, format="json").json()
+    assert r["refunds"][0]["status"] == "pending" and kpr.calls[-1][0] == "/refunds/full"
+    assert balance(s, "GATEWAY_CLEARING") == D("15.000")                      # nothing posted while it waits
+    assert m.post(f"/api/v1/pos/invoices/{inv['id']}/online-refund", {"amount": "1.000", "reason": "x"},
+                  format="json").json()["error"]["code"] == "refund_more_than_owed"   # no double refund while pending
+    body = {"invoice_id": "QI123ABC", "payment_id": "QI123ABC", "refund_reference": "RF2", "event_type": "refund.success", "refund_status": "success"}
+    raw, h = _signed(secret, body)
+    APIClient().post(f"/api/v1/payments/klickpay/webhook/{token}", raw, content_type="application/json", **h)
+    assert balance(s, "GATEWAY_CLEARING") == 0
+    assert m.get(f"/api/v1/pos/invoices/{inv['id']}").json()["state"]["balance"] == "0.000"
+
+
+# ---------- booking deposits ----------
+def _app_booking(s, kp, hours=48, set_policy=True):
+    from datetime import timedelta
+    from django.utils import timezone
+    from apps.catalog.services.pricing import set_price
+    from apps.customers.models import Beneficiary, Customer
+    from apps.customers.services import otp
+    from apps.platform.models import TenantDomain
+    from apps.staff.models import StaffBranch, StaffSkill, WorkingHours
+    p, token, secret = _activate(s)
+    owner = client_for(s["owner"], s["t"])
+    if set_policy:
+        assert owner.patch("/api/v1/payments/account", {"deposit_mode": "percent", "deposit_value": "50", "deposit_refund_hours": 24},
+                           format="json").json()["deposit"]["mode"] == "percent"
+    host = TenantDomain.objects.filter(tenant=s["t"]).first().host
+    with tenant_context(s["t"].id):
+        c = Customer.objects.create(full_name="سارة", phone="96555552222")
+        kid = Beneficiary.objects.create(customer=c, full_name="ليلى", relation="child")
+        tok = otp.issue_token(s["t"], c)
+        from apps.tenancy.models import Branch
+        Branch.objects.filter(id=s["b"]["HAW"].id).update(opens_at="00:00", closes_at="23:59")
+        for st in s["staff"]:
+            for d in range(7):
+                WorkingHours.objects.get_or_create(staff=st, branch=s["b"]["HAW"], weekday=d, defaults={"starts_at": "00:00", "ends_at": "23:59"})
+    app = APIClient(HTTP_HOST=host, HTTP_AUTHORIZATION=f"Customer {tok}")
+    day = (timezone.localtime() + timedelta(hours=hours)).date()
+    slots = app.get("/api/v1/app/slots", {"branch_id": s["b"]["HAW"].id, "service_id": s["wash"].id, "date": str(day)}).json()["slots"]
+    assert slots, "no free slots"
+    r = app.post("/api/v1/app/bookings", {"branch_id": s["b"]["HAW"].id, "service_id": s["wash"].id, "beneficiary_id": kid.id,
+                                          "starts_at": slots[-1]["starts_at"]}, format="json", HTTP_IDEMPOTENCY_KEY=f"b{hours}")
+    assert r.status_code == 201, r.content
+    return p, app, r.json(), c
+
+
+def test_deposit_paid_then_applied_at_checkout(salon, kpr):
+    s = salon
+    p, app, b, c = _app_booking(s, kpr)
+    assert b["deposit"]["amount"] == "7.500" and b["deposit"]["status"] == "pending" and b["pay_url"].startswith("https://")
+    with tenant_context(s["t"].id):
+        op = OnlinePayment.objects.get(purpose="deposit")
+    kpr.status = {"status": "paid", "result": "CAPTURED", "amount": "7.500", "payment_method": "KNET"}
+    APIClient().get(f"/api/v1/public/pay/{op.reference}")
+    process_outbox()
+    assert app.get("/api/v1/app/bookings").json()[0]["deposit"]["status"] == "paid"
+    assert balance(s, "CUSTOMER_DEPOSITS") == D("-7.500") and balance(s, "GATEWAY_CLEARING") == D("7.500")
+    from apps.booking.models import Appointment
+    with tenant_context(s["t"].id):
+        Appointment.objects.filter(id=b["id"]).update(status="completed")
+    from tests.test_phase3_operations import open_drawer
+    open_drawer(s)
+    r = checkout(s, s["cashier"], [{"service_id": s["wash"].id}], [{"method": "cash", "amount": "7.500"}], customer_id=c.id,
+                 appointment_id=b["id"], key="dep1")
+    assert r.status_code == 201, r.content
+    assert r.json()["state"]["balance"] == "0.000" and {x["method"] for x in r.json()["payments"]} == {"cash", "deposit"}
+    assert balance(s, "CUSTOMER_DEPOSITS") == 0
+
+
+def test_deposit_cancel_in_time_refunds_late_keeps(salon, kpr):
+    s = salon
+    p, app, b, c = _app_booking(s, kpr, hours=48)
+    with tenant_context(s["t"].id):
+        op = OnlinePayment.objects.get(purpose="deposit")
+    kpr.status = {"status": "paid", "result": "CAPTURED", "amount": "7.500"}
+    APIClient().get(f"/api/v1/public/pay/{op.reference}")
+    process_outbox()
+    assert app.post(f"/api/v1/app/bookings/{b['id']}/cancel").status_code == 200
+    process_outbox()
+    assert app.get("/api/v1/app/bookings").json()[0]["deposit"]["status"] == "refunded"
+    assert balance(s, "CUSTOMER_DEPOSITS") == 0 and balance(s, "GATEWAY_CLEARING") == 0
+    # a later booking, then a no-show: the salon keeps the deposit
+    from apps.booking.models import Appointment
+    from apps.booking.services.appointments import set_status
+    with tenant_context(s["t"].id):
+        a = Appointment.objects.get(id=b["id"])
+        a2 = Appointment.objects.create(branch=a.branch, customer=a.customer, beneficiary=a.beneficiary, starts_at=a.starts_at,
+                                        ends_at=a.ends_at, business_date=a.business_date, source="online", deposit_amount="7.500", deposit_status="paid")
+        OnlinePayment.objects.create(reference="DX-1", purpose="deposit", appointment=a2, amount="7.500", status="paid", gateway_id="QIX")
+        from apps.accounting.services.posting import Line, post_entry
+        post_entry(legal_entity_id=a.branch.legal_entity_id, entry_date=a.starts_at.date(), kind="auto", branch_id=a.branch_id,
+                   lines=[Line("GATEWAY_CLEARING", debit=D("7.500")), Line("CUSTOMER_DEPOSITS", credit=D("7.500"))])
+        set_status(a2, "no_show", reason="ما جاش")
+        assert Appointment.objects.get(id=a2.id).deposit_status == "forfeited"
+    assert balance(s, "CUSTOMER_DEPOSITS") == 0 and balance(s, "OTHER_INCOME") == D("-7.500")
+
+
+def test_unpaid_deposit_releases_the_slot(salon, kpr):
+    from apps.booking.models import Appointment
+    from apps.core.models import OutboxEvent
+    from django.utils import timezone
+    s = salon
+    p, app, b, c = _app_booking(s, kpr)
+    OutboxEvent.objects.filter(topic="deposit.expire").update(available_at=timezone.now())
+    process_outbox()
+    with tenant_context(s["t"].id):
+        a = Appointment.objects.get(id=b["id"])
+        assert a.status == "cancelled" and a.deposit_status == "expired"
+        assert OnlinePayment.objects.get(purpose="deposit").status == "voided"
+
+
+def test_no_deposit_when_policy_off(salon, kpr):
+    s = salon
+    p, app, b, c = _app_booking(s, kpr, set_policy=False)
+    assert b["deposit"] is None

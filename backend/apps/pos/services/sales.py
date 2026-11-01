@@ -162,7 +162,7 @@ def _take_payments(inv, payments: list[PaymentIn], user, session_needed_branch, 
         amount = money(p.amount)
         if amount <= 0:
             continue
-        if p.method not in Payment.Method.values or p.method == Payment.Method.ONLINE:   # online only via the gateway
+        if p.method not in Payment.Method.values or p.method in {Payment.Method.ONLINE, Payment.Method.DEPOSIT}:   # only the system records these
             raise DomainError(code="payment_method_unknown")
         if p.method != "cash" and not p.reference.strip():
             raise DomainError(code="payment_reference_required", details={"method": p.method})
@@ -336,8 +336,12 @@ def checkout(data: CheckoutIn, *, user, membership, offline: OfflineCtx | None =
         if data.expected_total is not None and money(data.expected_total) != total:
             raise ConflictError(code="price_changed", message="Prices changed; review the cart", details={"total": str(total)})
         paying = money(sum((money(p.amount) for p in data.payments), ZERO))
-        if paying > total + tip:
-            raise DomainError(code="overpayment", details={"total": str(total + tip), "paying": str(paying)})
+        from apps.payments.services import deposits
+        deposit_op = deposits.paid_deposit(appointment)
+        deposit = min(deposit_op.amount, total + tip) if deposit_op else ZERO   # paid online at booking, applied first
+        if paying + deposit > total + tip:
+            raise DomainError(code="overpayment", details={"total": str(total + tip), "paying": str(paying), "deposit": str(deposit)})
+        paying = money(paying + deposit)
         is_credit = paying < total + tip
         if is_credit:
             if not membership.has_perm("pos.credit_sale"):
@@ -389,6 +393,14 @@ def checkout(data: CheckoutIn, *, user, membership, offline: OfflineCtx | None =
         if points:
             pts.record(customer, -points, "redeem", invoice=inv)
         _take_payments(inv, data.payments, user, branch.id, offline)
+        if deposit > 0:
+            dep_pay = Payment.objects.create(branch_id=inv.branch_id, invoice=inv, direction="in", method=Payment.Method.DEPOSIT,
+                                             amount=deposit, reference=deposit_op.reference, business_date=inv.business_date, received_by=user)
+            ledger.post_payment(dep_pay, inv, user)   # Dr CUSTOMER_DEPOSITS / Cr AR
+            Appointment.objects.filter(id=appointment.id).update(deposit_status="applied")
+            if deposit < deposit_op.amount:            # bill came to less than the deposit: the rest goes back
+                rest = money(deposit_op.amount - deposit)
+                deposits.refund_rest(deposit_op.id, inv.tenant_id, rest)   # outbox: runs after this commits
         if not is_credit and customer is not None:
             pts.earn(customer, inv)
         if appointment is not None:
@@ -500,6 +512,10 @@ def quote(data: CheckoutIn) -> dict:
         subtotal = money(sum((p["gross"] for p in planned), ZERO))
         discount = money(sum((p["disc"] for p in planned), ZERO))
         transaction.set_rollback(True)  # quote only: release the coupon/package row locks, write nothing
+    from apps.payments.services import deposits
+    appt = Appointment.objects.filter(id=data.appointment_id).first() if data.appointment_id else None
+    dep = deposits.paid_deposit(appt)
     return {"subtotal": str(subtotal), "discount_total": str(discount), "total": str(money(subtotal - discount)),
+            "deposit": str(min(dep.amount, money(subtotal - discount))) if dep else "0.000",
             "coupon_discount": str(coupon_disc), "points": points, "points_discount": str(points_disc),
             "lines": [{"total": str(money(p["gross"] - p["disc"]))} for p in planned]}

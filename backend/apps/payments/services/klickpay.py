@@ -95,3 +95,11 @@ def payment_status(acc, gateway_id) -> dict:
     if status >= 400 or not data.get("success"):
         raise GatewayUnavailable(code="gateway_status_failed", message=str(data.get("message") or status)[:200])
     return data.get("data") or {}
+
+
+def refund(acc, gateway_id, amount, full: bool) -> tuple[str, dict]:
+    """Returns (code, fields): REFUND_SUCCESS / INSUFFICIENT_BALANCE (stored as pending at KlickPay) / REFUND_FAILED."""
+    body = {"payment_id": gateway_id} if full else {"payment_id": gateway_id, "refund_amount": f"{amount:.3f}"}
+    status, data = call(acc, "/refunds/full" if full else "/refunds/partial", body)
+    code = str(data.get("code") or ("REFUND_SUCCESS" if data.get("success") else "REFUND_FAILED"))
+    return code, (data.get("data") or data.get("details") or {})

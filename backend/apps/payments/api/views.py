@@ -40,21 +40,54 @@ def checklist_out():
 
 
 def op_out(op):
-    return {"id": op.id, "reference": op.reference, "invoice": op.invoice.number, "invoice_id": op.invoice_id, "amount": str(op.amount),
+    from apps.payments.services.refunds import refundable
+    return {"id": op.id, "reference": op.reference, "purpose": op.purpose, "invoice": op.invoice.number if op.invoice_id else "",
+            "invoice_id": op.invoice_id, "appointment_id": op.appointment_id, "amount": str(op.amount),
+            "refundable": str(refundable(op)) if op.status == "paid" else "0.000",
+            "refunds": [{"id": r.id, "amount": str(r.amount), "status": r.status, "detail": r.detail, "created_at": r.created_at} for r in op.refunds.all()],
             "status": op.status, "method": op.method, "detail": op.detail, "payment_url": op.payment_url,
             "created_at": op.created_at, "settled_at": op.settled_at,
-            "customer": op.invoice.customer.full_name if op.invoice.customer_id else ""}
+            "customer": (op.invoice.customer.full_name if op.invoice and op.invoice.customer_id
+                         else op.appointment.customer.full_name if op.appointment and op.appointment.customer_id else "")}
 
 
 # ---------- salon ----------
+class DepositIn(serializers.Serializer):
+    deposit_mode = serializers.ChoiceField(choices=["off", "fixed", "percent"], required=False)
+    deposit_value = serializers.DecimalField(max_digits=18, decimal_places=3, min_value=0, required=False)
+    deposit_refund_hours = serializers.IntegerField(min_value=0, max_value=168, required=False)
+    deposit_hold_minutes = serializers.IntegerField(min_value=5, max_value=120, required=False)
+
+    def validate(self, d):
+        if d.get("deposit_mode") == "percent" and d.get("deposit_value", 0) > 100:
+            raise serializers.ValidationError({"deposit_value": "max 100"})
+        return d
+
+
+def deposit_out(acc):
+    return {"mode": acc.deposit_mode, "value": str(acc.deposit_value), "refund_hours": acc.deposit_refund_hours,
+            "hold_minutes": acc.deposit_hold_minutes}
+
+
 class AccountView(TenantAPIView):
-    """The salon's KlickPay account: where the opening stands and the documents checklist."""
-    required_permissions = {"GET": "org.manage"}
+    """The salon's KlickPay account: where the opening stands, the documents checklist, and the booking-deposit policy."""
+    required_permissions = {"GET": "org.manage", "PATCH": "org.manage"}
+
+    @extend_schema(request=DepositIn, responses=dict)
+    def patch(self, request):
+        s = DepositIn(data=request.data)
+        s.is_valid(raise_exception=True)
+        acc = kyc.account()
+        for k, v in s.validated_data.items():
+            setattr(acc, k, v)
+        acc.save()
+        audit("payments.deposit_policy", tenant_id=request.tenant_id, actor=request.user, obj=acc, data={k: str(v) for k, v in s.validated_data.items()})
+        return Response({"deposit": deposit_out(acc)})
 
     @extend_schema(responses=dict)
     def get(self, request):
         acc = kyc.account()
-        return Response({"status": acc.status, "review_note": acc.review_note, "active": acc.status == GatewayAccount.Status.ACTIVE,
+        return Response({"deposit": deposit_out(acc), "status": acc.status, "review_note": acc.review_note, "active": acc.status == GatewayAccount.Status.ACTIVE,
                          "submitted_at": acc.submitted_at, "activated_at": acc.activated_at, "checklist": checklist_out()})
 
 
@@ -96,10 +129,10 @@ class OnlinePaymentsView(TenantAPIView):
 
     @extend_schema(responses=dict)
     def get(self, request):
-        qs = OnlinePayment.objects.select_related("invoice__customer").order_by("-id")
+        qs = OnlinePayment.objects.select_related("invoice__customer", "appointment__customer").prefetch_related("refunds").order_by("-id")
         allowed = request.membership.branch_ids()
         if allowed is not None:
-            qs = qs.filter(invoice__branch_id__in=allowed)
+            qs = qs.filter(Q(invoice__branch_id__in=allowed) | Q(appointment__branch_id__in=allowed))
         if request.query_params.get("invoice"):
             qs = qs.filter(invoice_id=request.query_params["invoice"])
         return Response([op_out(o) for o in qs[:200]])
@@ -134,6 +167,43 @@ class InvoicePayLinkView(TenantAPIView):
         return Response({**op_out(op), "sent": sent, "text": text, "phone": inv.customer.phone})
 
 
+class RefundIn(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=18, decimal_places=3, min_value=0)
+    reason = serializers.CharField(max_length=200)
+
+
+class InvoiceOnlineRefundView(TenantAPIView):
+    """Send money back to the card/KNET it came from. First issue the return (credit note) without a cash refund: the
+    invoice then owes the customer; this refunds up to that, from the invoice's online payments."""
+    required_permissions = {"POST": "pos.return"}
+
+    @extend_schema(request=RefundIn, responses=dict)
+    def post(self, request, pk):
+        from apps.pos.api.views import _invoice
+        from apps.pos.services.sales import invoice_state
+        from apps.payments.services import refunds
+        s = RefundIn(data=request.data)
+        s.is_valid(raise_exception=True)
+        inv = _invoice(request, pk)
+        owed = -invoice_state(inv)["balance"]
+        amount = s.validated_data["amount"]
+        pending = sum((r.amount for op in OnlinePayment.objects.filter(invoice=inv) for r in op.refunds.filter(status__in=["requested", "pending"])), 0)
+        if amount <= 0 or amount > owed - pending:
+            raise DomainError(code="refund_more_than_owed", details={"owed": str(max(owed - pending, 0))})
+        out, left = [], amount
+        for op in OnlinePayment.objects.filter(invoice=inv, status="paid").order_by("-id"):
+            part = min(left, refunds.refundable(op))
+            if part > 0:
+                out.append(refunds.request(op, part, reason=s.validated_data["reason"], user=request.user))
+                left -= part
+            if left <= 0:
+                break
+        if left > 0 and not out:
+            raise DomainError(code="refund_no_online_payment")
+        return Response({"refunds": [{"id": r.id, "amount": str(r.amount), "status": r.status, "detail": r.detail} for r in out],
+                         "not_refunded": str(left)})
+
+
 # ---------- public ----------
 class PublicPayResultView(APIView):
     """The page KlickPay redirects to: shows the state and asks for a server-side check (never trusts the redirect)."""
@@ -153,7 +223,8 @@ class PublicPayResultView(APIView):
                 import time
                 enqueue("klickpay.confirm", {"online_payment_id": op.id}, tenant_id=op.tenant_id,
                         dedupe_key=f"op:{op.id}:check:{int(time.time()) // 20}")
-            return Response({"status": op.status, "amount": str(op.amount), "invoice": op.invoice.number, "salon": op.tenant.name})
+            return Response({"status": op.status, "amount": str(op.amount), "invoice": op.invoice.number if op.invoice_id else "",
+                             "purpose": op.purpose, "salon": op.tenant.name})
 
 
 def _not_found():
@@ -320,6 +391,9 @@ class PlatformPaymentsReportView(APIView):
                     failed_n=Count("id", filter=Q(status__in=["declined", "failed", "voided"])),
                     failed=Sum("amount", filter=Q(status__in=["declined", "failed", "voided"])),
                     pending_n=Count("id", filter=Q(status="created")), review_n=Count("id", filter=Q(status="review")))}
+        from apps.payments.models import OnlineRefund
+        refunded = dict(OnlineRefund.unscoped.filter(status="success", settled_at__date__gte=start, settled_at__date__lt=end)
+                        .values("tenant_id").annotate(s=Sum("amount")).values_list("tenant_id", "s"))
         accs = {a.tenant_id: a for a in GatewayAccount.unscoped.all()}
         names = dict(Tenant.objects.values_list("id", "name"))
         out, tot = [], {"paid": Decimal(0), "commission": Decimal(0), "paid_n": 0, "failed_n": 0}
@@ -331,6 +405,7 @@ class PlatformPaymentsReportView(APIView):
             out.append({"tenant_id": tid, "tenant": names.get(tid, ""), "paid_count": r.get("paid_n", 0), "paid_amount": str(paid),
                         "failed_count": r.get("failed_n", 0), "failed_amount": str(money(r.get("failed") or 0)),
                         "pending_count": r.get("pending_n", 0), "review_count": r.get("review_n", 0),
+                        "refunded_amount": str(money(refunded.get(tid) or 0)),
                         "commission_percent": str(pct), "commission_fixed": str(fixed), "commission": str(comm)})
             tot["paid"] += paid; tot["commission"] += comm; tot["paid_n"] += r.get("paid_n", 0); tot["failed_n"] += r.get("failed_n", 0)
         return Response({"month": m, "rows": out, "totals": {k: (str(money(v)) if isinstance(v, Decimal) else v) for k, v in tot.items()}})

@@ -255,7 +255,19 @@ def booking_payload(a: Appointment) -> dict:
             "beneficiary_name": a.beneficiary.full_name if a.beneficiary_id else "",
             "services": [{"name_ar": i.service.name_ar, "name_en": i.service.name_en, "staff_ar": i.staff.full_name_ar,
                           "staff_en": i.staff.full_name_en} for i in items],
-            "can_cancel": a.status == Appointment.Status.BOOKED and a.starts_at - timezone.now() > CANCEL_BEFORE}
+            "can_cancel": a.status == Appointment.Status.BOOKED and a.starts_at - timezone.now() > CANCEL_BEFORE,
+            **_deposit(a)}
+
+
+def _deposit(a) -> dict:
+    if a.deposit_status == "none":
+        return {"deposit": None}
+    from apps.payments.models import GatewayAccount, OnlinePayment
+    op = OnlinePayment.objects.filter(appointment=a, purpose="deposit").order_by("-id").first()
+    acc = GatewayAccount.objects.first()
+    return {"deposit": {"amount": str(a.deposit_amount), "status": a.deposit_status,
+                        "refund_hours": acc.deposit_refund_hours if acc else 24, "hold_minutes": acc.deposit_hold_minutes if acc else 15},
+            "pay_url": op.payment_url if op and a.deposit_status == "pending" and op.status == "created" else ""}
 
 
 class MyBookingsView(AppView):
@@ -284,8 +296,30 @@ class MyBookingsView(AppView):
         appt = create_appointment(branch=branch, starts_at=start, items=[ItemSpec(service.id, staff_id)],
                                   customer_id=request.customer.id, beneficiary_id=v["beneficiary_id"],
                                   source=Appointment.Source.ONLINE, notes=v["notes"])
+        from apps.catalog.services.pricing import price_on
+        from apps.payments.services import deposits
+        amount = deposits.required(price_on(service, branch.id, local.date()) or 0)
+        if amount > 0:   # D-017: the salon asks for a deposit; unpaid within the hold, the slot is released
+            try:
+                deposits.start(appt, amount)
+            except DomainError:
+                set_status(appt, Appointment.Status.CANCELLED, reason="deposit link could not be created")
+                raise
         appt = Appointment.objects.select_related("beneficiary").prefetch_related("items__service", "items__staff").get(id=appt.id)
         return Response(booking_payload(appt), status=status.HTTP_201_CREATED)
+
+
+class MyBookingPayView(AppView):
+    """The open deposit link for one of my bookings (to pay again after closing the payment page)."""
+    @extend_schema(request=None, responses=dict)
+    def post(self, request, pk):
+        a = Appointment.objects.filter(id=pk, customer=request.customer).first()
+        if a is None:
+            raise DomainError(code="appointment_unknown")
+        a = Appointment.objects.select_related("beneficiary").prefetch_related("items__service", "items__staff").get(id=a.id)
+        if a.deposit_status != "pending" or not booking_payload(a).get("pay_url"):
+            raise DomainError(code="deposit_not_pending")
+        return Response(booking_payload(a))
 
 
 class MyBookingCancelView(AppView):
@@ -296,6 +330,6 @@ class MyBookingCancelView(AppView):
             raise DomainError(code="appointment_unknown")
         if not booking_payload(a)["can_cancel"]:
             raise DomainError(code="cancel_too_late", message="Bookings can be cancelled up to 1 hour before")
-        set_status(a, Appointment.Status.CANCELLED, reason="cancelled by customer (app)")
+        set_status(a, Appointment.Status.CANCELLED, reason="cancelled by customer (app)", by_customer=True)
         a = Appointment.objects.select_related("beneficiary").prefetch_related("items__service", "items__staff").get(id=pk)
         return Response(booking_payload(a))

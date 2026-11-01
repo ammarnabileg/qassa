@@ -39,6 +39,11 @@ class GatewayAccount(TenantScopedModel):
     commission_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     commission_fixed = models.DecimalField(**MONEY, default=0)      # per successful payment
     review_note = models.CharField(max_length=500, blank=True)
+    # booking deposit (customer app), set by the salon
+    deposit_mode = models.CharField(max_length=7, choices=[("off", "off"), ("fixed", "fixed"), ("percent", "percent")], default="off")
+    deposit_value = models.DecimalField(**MONEY, default=0)          # KWD, or % of the booking price
+    deposit_refund_hours = models.PositiveSmallIntegerField(default=24)  # cancel at least this long before: refunded; later or no-show: kept
+    deposit_hold_minutes = models.PositiveSmallIntegerField(default=15)  # unpaid this long after booking: the booking is released
     submitted_at = models.DateTimeField(null=True, blank=True)
     activated_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -90,21 +95,50 @@ class OnlinePayment(TenantScopedModel):
         VOIDED = "voided"
         NEEDS_REVIEW = "review"  # paid at KlickPay but could not be applied (amount mismatch / invoice already settled)
 
+    class Purpose(models.TextChoices):
+        INVOICE = "invoice"
+        DEPOSIT = "deposit"   # booking deposit from the customer app
+
     reference = models.CharField(max_length=40, unique=True)   # our transction_reference (KlickPay echoes it back)
-    invoice = models.ForeignKey("pos.Invoice", on_delete=models.PROTECT, related_name="+")
+    purpose = models.CharField(max_length=8, choices=Purpose.choices, default=Purpose.INVOICE)
+    invoice = models.ForeignKey("pos.Invoice", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
+    appointment = models.ForeignKey("booking.Appointment", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
     amount = models.DecimalField(**MONEY)
     status = models.CharField(max_length=8, choices=Status.choices, default=Status.CREATED)
     gateway_id = models.CharField(max_length=60, blank=True, db_index=True)   # KlickPay payment_id (QI...)
     payment_url = models.URLField(max_length=1000, blank=True)
     method = models.CharField(max_length=30, blank=True)       # as reported by KlickPay (KNET, CREDIT_DEBIT_CARD, ...)
     detail = models.CharField(max_length=300, blank=True)
-    created_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="+")
+    created_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, null=True, blank=True, related_name="+")  # empty: the customer (app)
     created_at = models.DateTimeField(auto_now_add=True)
     settled_at = models.DateTimeField(null=True, blank=True)
     payment = models.OneToOneField("pos.Payment", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
 
     class Meta(TenantScopedModel.Meta):
         indexes = [models.Index(fields=["tenant", "status", "created_at"])]
+        constraints = [models.UniqueConstraint(fields=["tenant", "id"], name="uniq_onlinepayment_tenant_id"),
+                       models.CheckConstraint(condition=(models.Q(purpose="invoice") & models.Q(invoice__isnull=False))
+                                              | (models.Q(purpose="deposit") & models.Q(appointment__isnull=False)), name="online_payment_target")]
+
+
+class OnlineRefund(TenantScopedModel):
+    """Money sent back through KlickPay. Written as a refund (and posted) only when KlickPay reports success."""
+    class Status(models.TextChoices):
+        REQUESTED = "requested"
+        SUCCESS = "success"
+        PENDING_BALANCE = "pending"   # salon's KlickPay wallet too low: KlickPay retries once it is funded
+        FAILED = "failed"
+
+    online_payment = models.ForeignKey(OnlinePayment, on_delete=models.PROTECT, related_name="refunds")
+    amount = models.DecimalField(**MONEY)
+    status = models.CharField(max_length=9, choices=Status.choices, default=Status.REQUESTED)
+    refund_reference = models.CharField(max_length=80, blank=True, db_index=True)
+    reason = models.CharField(max_length=200)
+    detail = models.CharField(max_length=300, blank=True)
+    created_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+    settled_at = models.DateTimeField(null=True, blank=True)
+    payment = models.OneToOneField("pos.Payment", on_delete=models.PROTECT, null=True, blank=True, related_name="+")
 
 
 class GatewayEvent(TenantScopedModel):

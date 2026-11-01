@@ -142,6 +142,7 @@ urlpatterns = [
     path(api + "payments/kyc/<int:pk>/file", pay.KycFileView.as_view()),
     path(api + "payments/online", pay.OnlinePaymentsView.as_view()),
     path(api + "pos/invoices/<int:pk>/pay-link", pay.InvoicePayLinkView.as_view()),
+    path(api + "pos/invoices/<int:pk>/online-refund", pay.InvoiceOnlineRefundView.as_view()),
     path(api + "public/pay/<str:ref>", pay.PublicPayResultView.as_view()),
     path(api + "payments/klickpay/webhook/<str:token>", pay.klickpay_webhook),
     path(api + "platform/payments/accounts", pay.PlatformAccountsView.as_view()),
@@ -190,5 +191,6 @@ urlpatterns = [
     path(api + "app/catalog", capp.CatalogView.as_view()),
     path(api + "app/slots", capp.SlotsView.as_view()),
     path(api + "app/bookings", capp.MyBookingsView.as_view()),
+    path(api + "app/bookings/<int:pk>/pay", capp.MyBookingPayView.as_view()),
     path(api + "app/bookings/<int:pk>/cancel", capp.MyBookingCancelView.as_view()),
 ]

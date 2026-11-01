@@ -365,7 +365,12 @@
     "kyc_missing_documents": "Some required documents are missing or rejected.",
     "kyc_note_required": "Write why it is rejected so the salon can fix it.",
     "payment_not_found": "Payment not found.",
-    "month_invalid": "Invalid month."
+    "month_invalid": "Invalid month.",
+    "refund_not_paid": "This payment is not paid.",
+    "refund_too_much": "More than can be refunded.",
+    "refund_more_than_owed": "More than the customer is owed. Issue the return first.",
+    "refund_no_online_payment": "This invoice has no online payment.",
+    "deposit_not_pending": "This deposit is not awaiting payment."
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -629,7 +634,9 @@
       "knet": "KNET",
       "transfer": "Transfer",
       "split": "Cash + KNET",
-      "credit": "Credit"
+      "credit": "Credit",
+      "online": "Online (KlickPay)",
+      "deposit": "Booking deposit"
     },
     "tendered": "Cash tendered",
     "change": "Change",
@@ -664,7 +671,8 @@
     "guardianPhone": "Guardian's mobile",
     "quickAdd": "Add to invoice",
     "guardianOf": "Guardian of {{name}}",
-    "upsell": "Add {{name}}"
+    "upsell": "Add {{name}}",
+    "depositPaid": "Deposit paid online"
   },
   "inv": {
     "sub": "Invoices, collections and returns",
@@ -703,7 +711,13 @@
     "waFallback": "The salon’s WhatsApp number isn’t connected right now — tap “Send on WhatsApp” again to open WhatsApp on this device.",
     "payLink": "Online payment link",
     "linkSent": "The payment link was sent to the customer on WhatsApp from the salon’s number.",
-    "linkManual": "The salon’s number isn’t connected — send the customer this link:"
+    "linkManual": "The salon’s number isn’t connected — send the customer this link:",
+    "onlineRefund": "Online refund",
+    "onlineRefundHelp": "The money goes back to the card or KNET the customer paid with. Issue the return (credit note) first.",
+    "onlineRefundGo": "Refund",
+    "onlineRefunded": "Refunded to the customer ✓",
+    "onlineRefundPending": "The refund waits for the salon’s KlickPay wallet balance and runs by itself once funded.",
+    "onlineRefundFailed": "Refund failed:"
   },
   "cash": {
     "sub": "Open with a float and count the drawer at close to find shortages or overages",
@@ -1699,7 +1713,29 @@
       "failed": "Failed",
       "voided": "Voided",
       "review": "Needs review"
-    }
+    },
+    "deposit": "Booking deposit",
+    "refund": "Refund",
+    "rs": {
+      "requested": "Requested",
+      "success": "Refunded",
+      "pending": "Waiting for wallet balance",
+      "failed": "Failed"
+    },
+    "depositTitle": "Booking deposit in the app",
+    "depositHelp": "The customer pays the deposit online when booking; it is deducted from the bill at the till.",
+    "depositMode": "Deposit",
+    "dm": {
+      "off": "No deposit",
+      "fixed": "Fixed amount",
+      "percent": "Percent of the service price"
+    },
+    "depositKwd": "Amount (KWD)",
+    "depositPct": "Percent %",
+    "refundHours": "Free cancellation up to (hours before)",
+    "refundHoursHelp": "Cancelled {{n}} hours or more before: refunded automatically. Later, or a no-show: the salon keeps it.",
+    "holdMinutes": "Time to pay (minutes)",
+    "holdHelp": "Unpaid after {{n}} minutes: the booking is released."
   },
   "payp": {
     "ok": "Payment received ✓",
@@ -1747,6 +1783,7 @@
     "webhookHelp": "Set this URL and secret as this company’s webhook at KlickPay (POST /webhooks/config or their dashboard).",
     "makeSecret": "Create webhook secret",
     "rotate": "Rotate secret",
-    "secretOnce": "Copy this secret now: it will not be shown again."
+    "secretOnce": "Copy this secret now: it will not be shown again.",
+    "refunded": "Refunded"
   }
 }

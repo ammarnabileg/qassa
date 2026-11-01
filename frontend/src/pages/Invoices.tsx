@@ -107,6 +107,11 @@ function InvoiceDialog({ id, onClose }: { id: number; onClose: () => void }) {
   const [key, setKey] = useState(() => crypto.randomUUID())
   const done = () => { toast(t('common.saved')); setMode('view'); setKey(crypto.randomUUID()) }
   const collect = useSave<Invoice>([['invoice', id], ['invoices'], ['session']], done)
+  const [onl, setOnl] = useState<{ amount: string; reason: string } | null>(null)
+  const onlineRefund = useSave<{ refunds: { status: string; detail: string }[]; not_refunded: string }>([['invoice', id], ['invoices']], (r) => {
+    setOnl(null); const st = r.refunds[0]?.status
+    toast(st === 'success' ? t('inv.onlineRefunded') : st === 'pending' ? t('inv.onlineRefundPending') : `${t('inv.onlineRefundFailed')} ${r.refunds[0]?.detail ?? ''}`)
+  })
   const credit = useSave<Invoice>([['invoice', id], ['invoices'], ['session']], done)
   const inv = q.data
   if (!inv) return <Dialog open title={t('common.loading')} onClose={onClose}><ErrorText error={q.error} /></Dialog>
@@ -143,6 +148,18 @@ function InvoiceDialog({ id, onClose }: { id: number; onClose: () => void }) {
         <button type="button" className="btn" onClick={() => setMode('receipt')}><Icon name="printer" />{t('inv.receipt')}</button>
         {can('pos.sell') && inv.state.balance !== '0.000' && <button type="button" className="btn primary" onClick={() => { setPay({ method: 'cash', amount: inv.state.balance, reference: '' }); setMode('collect') }}>{t('inv.collect')}</button>}
         {can('pos.return') && <button type="button" className="btn danger" onClick={() => setMode('return')}><Icon name="undo" />{t('inv.return')}</button>}
+        {can('pos.return') && inv.state.balance.startsWith('-') && inv.payments.some((p) => p.method === 'online' && p.direction === 'in') && !onl &&
+          <button type="button" className="btn" onClick={() => setOnl({ amount: inv.state.balance.slice(1), reason: '' })}><Icon name="undo" />{t('inv.onlineRefund')}</button>}
+      </div>}
+      {mode === 'view' && onl && <div className="card" style={{ padding: 10 }}>
+        <div className="small muted">{t('inv.onlineRefundHelp')}</div>
+        <div className="two">
+          <label className="field">{t('inv.refundAmount')}<input className="input" dir="ltr" inputMode="decimal" value={onl.amount} onChange={(e) => setOnl({ ...onl, amount: e.target.value })} /></label>
+          <label className="field">{t('book.reason')}<input className="input" value={onl.reason} onChange={(e) => setOnl({ ...onl, reason: e.target.value })} /></label>
+        </div>
+        <ErrorText error={onlineRefund.error} />
+        <div className="row"><button type="button" className="btn primary" disabled={onlineRefund.busy || !onl.reason.trim()} onClick={() => onlineRefund.save({ path: `/pos/invoices/${id}/online-refund`, body: onl })}>{t('inv.onlineRefundGo')}</button>
+          <button type="button" className="btn" onClick={() => setOnl(null)}>{t('common.cancel')}</button></div>
       </div>}
       {mode === 'collect' && <div className="two">
         <label className="field">{t('inv.method')}<select className="input" value={pay.method} onChange={(e) => setPay({ ...pay, method: e.target.value })}>

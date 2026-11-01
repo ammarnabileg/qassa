@@ -10,7 +10,7 @@ import { ACC_PILL, KYC_PILL, type KycItem } from './OnlinePayments'
 
 type Row = { tenant_id: number; tenant: string; slug: string; status: string; environment: string; docs: number; accepted: number; rejected: number; has_credentials: boolean; commission_percent: string; commission_fixed: string; submitted_at: string | null }
 type Detail = { tenant_id: number; status: string; review_note: string; environment: string; client_id: string; has_secret: boolean; merchant_token: string; commission_percent: string; commission_fixed: string; webhook_url: string; has_webhook_secret: boolean; webhook_secret?: string; checklist: KycItem[] }
-type Report = { month: string; rows: { tenant_id: number; tenant: string; paid_count: number; paid_amount: string; failed_count: number; failed_amount: string; pending_count: number; review_count: number; commission_percent: string; commission_fixed: string; commission: string }[]; totals: { paid: string; commission: string; paid_n: number; failed_n: number } }
+type Report = { month: string; rows: { tenant_id: number; tenant: string; paid_count: number; paid_amount: string; failed_count: number; failed_amount: string; refunded_amount: string; pending_count: number; review_count: number; commission_percent: string; commission_fixed: string; commission: string }[]; totals: { paid: string; commission: string; paid_n: number; failed_n: number } }
 const STATUSES = ['collecting', 'under_review', 'needs_changes', 'active', 'suspended']
 
 /** Platform: open each salon's KlickPay account as their agent (review documents, enter credentials, set commission),
@@ -44,13 +44,13 @@ export default function PlatformPayments() {
             <Stat label={t('pp.failed')} value={<bdi>{report.data.totals.failed_n}</bdi>} />
             <Stat label={t('pp.commissionDue')} value={formatKWD(report.data.totals.commission, lang)} />
           </div>
-          <div className="tw" style={{ marginTop: 14 }}><table><thead><tr><th>{t('platform.company')}</th><th className="n">{t('pp.paidN')}</th><th className="n">{t('pp.paid')}</th><th className="n">{t('pp.failedN')}</th><th className="n">{t('pp.failedAmt')}</th><th className="n">{t('pp.pending')}</th><th>{t('pp.commission')}</th><th className="n">{t('pp.commissionDue')}</th></tr></thead>
+          <div className="tw" style={{ marginTop: 14 }}><table><thead><tr><th>{t('platform.company')}</th><th className="n">{t('pp.paidN')}</th><th className="n">{t('pp.paid')}</th><th className="n">{t('pp.failedN')}</th><th className="n">{t('pp.failedAmt')}</th><th className="n">{t('pp.pending')}</th><th className="n">{t('pp.refunded')}</th><th>{t('pp.commission')}</th><th className="n">{t('pp.commissionDue')}</th></tr></thead>
             <tbody>{report.data.rows.map((r) => <tr key={r.tenant_id}><td><b>{r.tenant}</b>{r.review_count > 0 && <div className="cap" style={{ color: 'var(--danger, #c0392b)' }}>{t('pp.reviewN', { n: r.review_count })}</div>}</td>
               <td className="n"><bdi>{r.paid_count}</bdi></td><td className="n money">{formatKWD(r.paid_amount, lang)}</td>
-              <td className="n"><bdi>{r.failed_count}</bdi></td><td className="n money">{formatKWD(r.failed_amount, lang)}</td><td className="n"><bdi>{r.pending_count}</bdi></td>
+              <td className="n"><bdi>{r.failed_count}</bdi></td><td className="n money">{formatKWD(r.failed_amount, lang)}</td><td className="n"><bdi>{r.pending_count}</bdi></td><td className="n money">{formatKWD(r.refunded_amount, lang)}</td>
               <td className="small"><bdi>{Number(r.commission_percent)}%</bdi>{Number(r.commission_fixed) > 0 && <> + {formatKWD(r.commission_fixed, lang)}</>}</td>
               <td className="n money"><b>{formatKWD(r.commission, lang)}</b></td></tr>)}
-              {report.data.rows.length === 0 && <tr><td colSpan={8} className="empty">{t('pp.noPayments')}</td></tr>}</tbody></table></div>
+              {report.data.rows.length === 0 && <tr><td colSpan={9} className="empty">{t('pp.noPayments')}</td></tr>}</tbody></table></div>
           <div className="cap muted" style={{ marginTop: 8 }}>{t('pp.reportNote')}</div>
         </>}
       </>}
