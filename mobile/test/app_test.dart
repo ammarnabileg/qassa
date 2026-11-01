@@ -90,7 +90,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(tr('ar', 'hello', {'name': 'أم'})), findsOneWidget);
     // nearest branch first, marked as recommended (branches sit below the services on the home screen)
-    await tester.scrollUntilVisible(find.text('حولي'), 300);
+    await tester.scrollUntilVisible(find.text('حولي'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text(tr('ar', 'nearest')), findsOneWidget);
     expect(tester.getTopLeft(find.text('الجهراء')).dy, lessThan(tester.getTopLeft(find.text('حولي')).dy));
   });
