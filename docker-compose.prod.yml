@@ -28,6 +28,9 @@ services:
       QASSA_TENANT_BASE_DOMAIN: ${QASSA_TENANT_BASE_DOMAIN:?}
       QASSA_RESERVED_SUBDOMAINS: ${QASSA_RESERVED_SUBDOMAINS:-}  # names other services on the base domain already use
       QASSA_PUBLIC_ADMIN_URL: ${QASSA_PUBLIC_ADMIN_URL:?}        # invitation / reset / rating links
+      COOLIFY_API_URL: ${COOLIFY_API_URL:-}      # D-016 (optional): new company domains are added to this app in Coolify
+      COOLIFY_API_TOKEN: ${COOLIFY_API_TOKEN:-}
+      COOLIFY_APP_UUID: ${COOLIFY_APP_UUID:-}
       QASSA_WHATSAPP_ADAPTER: ${QASSA_WHATSAPP_ADAPTER:-disabled}
       QASSA_WHATSAPP_URL: ${QASSA_WHATSAPP_URL:-}
       QASSA_WHATSAPP_TOKEN: ${QASSA_WHATSAPP_TOKEN:-}

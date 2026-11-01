@@ -27,6 +27,8 @@ class TenantIn(serializers.Serializer):
     business_type = serializers.ChoiceField(choices=BusinessType.choices)
     branches = BranchIn(many=True, required=False, default=list)
     plan_code = serializers.SlugField(default="basic")
+    subdomain = serializers.CharField(max_length=40, required=False, allow_blank=True, default="")
+    custom_domain = serializers.CharField(max_length=253, required=False, allow_blank=True, default="")
 
 
 class TenantCreateView(APIView):
@@ -219,6 +221,9 @@ class TenantDomainsView(APIView):
             raise DomainError(code="domain_taken")
         from apps.platform.middleware import forget_host
         forget_host(host)   # an unknown host is cached as unknown for a minute
+        if active:
+            from apps.platform.services import coolify
+            coolify.request_sync()
         audit("platform.domain.added", tenant_id=tenant.id, actor=request.user, obj=d, data={"host": host})
         return Response(DomainSerializer(d).data, status=status.HTTP_201_CREATED)
 
@@ -248,7 +253,30 @@ class DomainDetailView(APIView):
         d.is_active = on
         d.activated_at = timezone.now() if on else None
         d.save(update_fields=["is_active", "activated_at"])
+        if d.is_active:
+            from apps.platform.services import coolify
+            coolify.request_sync()
         forget_host(d.host)
         audit("platform.domain.activated" if on else "platform.domain.deactivated", tenant_id=d.tenant_id,
               actor=request.user, obj=d, reason=s.validated_data["reason"], data={"host": d.host})
         return Response(DomainSerializer(d).data)
+
+
+class SubdomainCheckView(APIView):
+    """While creating a company: is <name>.<base> free? Also says whether new names reach Coolify by themselves."""
+    permission_classes = [IsPlatformStaff]
+
+    @extend_schema(responses=dict)
+    def get(self, request):
+        from apps.core.errors import DomainError
+        from apps.platform.services import coolify
+        from django.conf import settings
+
+        from apps.platform.services.onboarding import check_subdomain
+        name = request.query_params.get("name", "")
+        try:
+            label, code = check_subdomain(name), ""
+        except DomainError as e:
+            label, code = name.strip().lower(), e.code
+        return Response({"available": not code, "code": code, "host": f"{label}.{settings.TENANT_BASE_DOMAIN}",
+                         "base": settings.TENANT_BASE_DOMAIN, "auto_coolify": coolify.enabled()})

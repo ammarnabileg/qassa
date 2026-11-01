@@ -110,3 +110,48 @@ def test_extra_name_on_our_base_domain_any_plan_active_at_once(settings_hosts, c
     r = client_for(staff).post(f"/api/v1/platform/tenants/{ta.id}/domains", {"host": "kidsx.qassa.test"}, format="json")
     assert r.status_code == 201 and r.json()["kind"] == "subdomain" and r.json()["is_active"] is True
     assert APIClient(HTTP_HOST="kidsx.qassa.test").get("/api/v1/public/salon").json()["slug"] == ta.slug
+
+
+def _new_company(c, key, **extra):
+    from tests.conftest import ensure_plans
+    ensure_plans()
+    body = {"tenant_name": "صالون", "owner_email": f"{key}@x.test", "owner_name": "O", "legal_name_ar": "ش", "legal_name_en": "Salon Co",
+            "business_type": "kids", "plan_code": "basic", **extra}
+    return c.post("/api/v1/platform/tenants", body, format="json", HTTP_IDEMPOTENCY_KEY=key)
+
+
+def test_company_chooses_its_address_at_creation(settings_hosts, company_a):
+    settings_hosts.RESERVED_SUBDOMAINS = {"www", "mona"}
+    c = client_for(User.objects.create_user("ops3@qassa.test", "Ops-Pass-2026!!", is_platform_staff=True))
+    assert c.get("/api/v1/platform/subdomain-check?name=mona").json()["code"] == "domain_reserved"
+    assert c.get("/api/v1/platform/subdomain-check?name=Ab").json()["code"] == "subdomain_invalid"
+    ok = c.get("/api/v1/platform/subdomain-check?name=BeautyQ8").json()
+    assert ok["available"] and ok["host"] == "beautyq8.qassa.test"
+    r = _new_company(c, "s1", subdomain="beautyq8")
+    assert r.status_code == 201 and r.json()["slug"] == "beautyq8"
+    assert APIClient(HTTP_HOST="beautyq8.qassa.test").get("/api/v1/public/salon").json()["slug"] == "beautyq8"
+    assert _new_company(c, "s2", subdomain="beautyq8").json()["error"]["code"] == "domain_taken"
+    assert _new_company(c, "s3", custom_domain="book.beauty.com").json()["error"]["code"] == "plan_no_custom_domain"
+
+
+def test_coolify_sync_only_adds_names_to_this_app_and_redeploys(settings_hosts, company_a, monkeypatch):
+    import json as _j
+    from apps.platform.services import coolify
+    settings_hosts.QASSA = {**settings_hosts.QASSA, "COOLIFY_API_URL": "https://cool.test", "COOLIFY_API_TOKEN": "x", "COOLIFY_APP_UUID": "app1"}
+    ta, _, _ = company_a
+    TenantDomain.objects.filter(tenant=ta).update(host=f"{ta.slug}.qassa.test")
+    calls = []
+    state = {"docker_compose_domains": {"web": {"domain": "https://qassa.test"}, "backend": {"domain": ""}}}
+
+    def fake(method, path, body=None):
+        calls.append((method, path, _j.dumps(body) if body else ""))
+        return state
+    monkeypatch.setattr(coolify, "_call", fake)
+    assert coolify.sync() == [f"{ta.slug}.qassa.test"]
+    patch = _j.loads(calls[1][2])["docker_compose_domains"]
+    assert {"name": "backend", "domain": ""} in patch
+    assert next(x for x in patch if x["name"] == "web")["domain"] == f"https://qassa.test,https://{ta.slug}.qassa.test"
+    assert calls[2][0] == "POST" and calls[2][1] == "/deploy?uuid=app1&force=false"
+    state["docker_compose_domains"]["web"]["domain"] = f"https://qassa.test,https://{ta.slug}.qassa.test"
+    calls.clear()
+    assert coolify.sync() == [] and len(calls) == 1                        # nothing new: no patch, no redeploy

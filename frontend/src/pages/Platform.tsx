@@ -17,10 +17,12 @@ function OnboardDialog({ onClose }: { onClose: () => void }) {
   const toast = useToast()
   const plans = usePlans()
   const [key] = useState(() => crypto.randomUUID())
-  const [f, setF] = useState({ tenant_name: '', legal_name_ar: '', legal_name_en: '', commercial_registration: '', owner_name: '', owner_email: '', business_type: 'kids' as BizT, plan_code: 'basic' })
+  const [f, setF] = useState({ tenant_name: '', legal_name_ar: '', legal_name_en: '', commercial_registration: '', owner_name: '', owner_email: '', business_type: 'kids' as BizT, plan_code: 'basic', subdomain: '', custom_domain: '' })
   const [branches, setBranches] = useState([{ name_ar: '', name_en: '', code: 'MAIN', business_type: 'kids' as BizT }])
   const { save, busy, error } = useSave<{ id: number; slug: string }>([['tenants']], (r) => { toast(t('platform.created', { slug: r.slug })); onClose() })
   const plan = plans.data?.find((p) => p.code === f.plan_code)
+  const sub = f.subdomain.trim().toLowerCase()
+  const check = useQuery({ queryKey: ['subcheck', sub], queryFn: () => api<{ available: boolean; code: string; host: string; base: string; auto_coolify: boolean }>(`/platform/subdomain-check?name=${encodeURIComponent(sub || 'x')}`) })
   const set = (k: keyof typeof f, v: string) => setF({ ...f, [k]: v })
   const setB = (i: number, k: string, v: string) => setBranches(branches.map((b, j) => (j === i ? { ...b, [k]: v } : b)))
   return (
@@ -41,6 +43,17 @@ function OnboardDialog({ onClose }: { onClose: () => void }) {
         <label className="field">{t('platform.mainType')}<select className="input" value={f.business_type} onChange={(e) => set('business_type', e.target.value)}>
           {(['kids', 'men', 'women'] as const).map((x) => <option key={x} value={x}>{t(`biz.${x}`)}</option>)}</select></label>
       </div>
+      <h3>{t('platform.address')}</h3>
+      <div className="two">
+        <label className="field">{t('platform.subdomain')}
+          <div className="row" style={{ gap: 6, alignItems: 'center' }} dir="ltr"><input className="input" style={{ flex: 1 }} placeholder="mykids" value={f.subdomain}
+            onChange={(e) => set('subdomain', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} /><span className="small muted">.{check.data?.base ?? ''}</span></div>
+          <small className={sub && check.data && !check.data.available ? '' : 'muted'} style={sub && check.data && !check.data.available ? { color: 'var(--danger, #c0392b)' } : undefined}>
+            {!sub ? t('platform.subdomainAuto') : check.data ? (check.data.available ? t('platform.subdomainFree', { host: check.data.host }) : t(`errors.${check.data.code}`)) : ''}</small></label>
+        <label className="field">{t('platform.customDomain')}<input className="input" dir="ltr" placeholder="book.salon.com" disabled={!plan?.custom_domain} value={f.custom_domain} onChange={(e) => set('custom_domain', e.target.value.trim().toLowerCase())} />
+          <small className="muted">{plan?.custom_domain ? t('platform.customDomainHelp') : t('platform.customDomainPlan')}</small></label>
+      </div>
+      {check.data && <div className="notice"><Icon name="info" />{check.data.auto_coolify ? t('platform.coolifyAuto') : t('platform.coolifyManual')}</div>}
       <h3>{t('platform.owner')}</h3>
       <div className="two">
         <label className="field">{t('platform.ownerName')}<input className="input" value={f.owner_name} onChange={(e) => set('owner_name', e.target.value)} required /></label>

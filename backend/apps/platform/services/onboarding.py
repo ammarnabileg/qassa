@@ -39,6 +39,22 @@ class OnboardingSpec:
     commercial_registration: str = ""
     plan_code: str = "basic"
     owner_password: str | None = None  # None → unusable password + invitation (email delivery is phase 2)
+    subdomain: str = ""      # chosen <name>.<base>; blank → from the English name
+    custom_domain: str = ""  # optional own domain (plans with custom_domain); added inactive until its DNS points to us
+
+
+def check_subdomain(name: str) -> str:
+    """The salon's address label: lower-case letters, digits and hyphens; not reserved, not taken. Returns it cleaned."""
+    import re
+    from apps.platform.models import TenantDomain
+    label = (name or "").strip().lower()
+    if not re.fullmatch(r"[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?", label) or len(label) < 3:
+        raise DomainError(code="subdomain_invalid")
+    if label in settings.RESERVED_SUBDOMAINS:
+        raise DomainError(code="domain_reserved")
+    if Tenant.objects.filter(slug=label).exists() or TenantDomain.objects.filter(host=f"{label}.{settings.TENANT_BASE_DOMAIN}").exists():
+        raise DomainError(code="domain_taken")
+    return label
 
 
 def onboard_tenant(spec: OnboardingSpec, actor=None) -> Tenant:
@@ -50,12 +66,25 @@ def onboard_tenant(spec: OnboardingSpec, actor=None) -> Tenant:
     with transaction.atomic():
         base = slugify(spec.legal_name_en or spec.tenant_name, allow_unicode=False) or "tenant"
         slug, n = base, 1
+        if spec.subdomain:
+            slug = base = check_subdomain(spec.subdomain)
         while Tenant.objects.filter(slug=slug).exists() or slug in settings.RESERVED_SUBDOMAINS:
             n += 1
             slug = f"{base}-{n}"
         tenant = Tenant.objects.create(name=spec.tenant_name, slug=slug, default_business_type=spec.business_type)
         TenantDomain.objects.create(tenant=tenant, host=f"{slug}.{settings.TENANT_BASE_DOMAIN}",
                                     kind=TenantDomain.Kind.SUBDOMAIN, is_active=True, activated_at=timezone.now())
+        if spec.custom_domain:
+            if not plan.custom_domain:
+                raise DomainError(code="plan_no_custom_domain", details={"plan": plan.code})
+            host = spec.custom_domain.strip().lower().rstrip(".")
+            if host.endswith("." + settings.TENANT_BASE_DOMAIN) or host in settings.PLATFORM_HOSTS or host == settings.TENANT_BASE_DOMAIN:
+                raise DomainError(code="domain_reserved")
+            if TenantDomain.objects.filter(host=host).exists():
+                raise DomainError(code="domain_taken")
+            TenantDomain.objects.create(tenant=tenant, host=host, kind=TenantDomain.Kind.CUSTOM, is_active=False)
+        from apps.platform.services import coolify
+        coolify.request_sync()
         today = timezone.localdate()
         Subscription.objects.create(tenant=tenant, plan=plan, started_on=today,
                                     current_period_end=today + datetime.timedelta(days=_trial_days()))

@@ -91,6 +91,7 @@ urlpatterns = [
     path(api + "platform/tenants/<int:pk>", plat.TenantAdminView.as_view()),
     path(api + "platform/tenants/<int:pk>/domains", plat.TenantDomainsView.as_view()),
     path(api + "platform/domains/<int:pk>", plat.DomainDetailView.as_view()),
+    path(api + "platform/subdomain-check", plat.SubdomainCheckView.as_view()),
     path(api + "platform/plans", plat.PlansView.as_view()),
     path(api + "platform/dashboard", con.DashboardView.as_view()),
     path(api + "platform/invoices", con.PlatformInvoicesView.as_view()),

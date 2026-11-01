@@ -339,7 +339,8 @@
     "import_empty": "The file is empty.",
     "import_no_columns": "No known columns in the first row.",
     "import_too_many": "At most 5000 rows per file.",
-    "import_too_big": "The file is over 5 MB."
+    "import_too_big": "The file is over 5 MB.",
+    "subdomain_invalid": "Lower-case English letters, digits and hyphens only, 3–40 characters."
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -520,7 +521,16 @@
     "ownerPhone": "Owner's WhatsApp",
     "ownerPhoneHelp": "Login codes are sent here from the platform number. Only changeable here (account security).",
     "search": "Search company or phone",
-    "subscribers": "{{n}} companies subscribed"
+    "subscribers": "{{n}} companies subscribed",
+    "address": "Salon address",
+    "subdomain": "Subdomain",
+    "subdomainAuto": "Leave empty to make it from the English name.",
+    "subdomainFree": "Available: {{host}}",
+    "customDomain": "Own domain (optional)",
+    "customDomainHelp": "Activated once its DNS points to our server.",
+    "customDomainPlan": "This plan doesn’t allow an own domain.",
+    "coolifyAuto": "The address will be added to Coolify by itself and the app redeployed (a few minutes).",
+    "coolifyManual": "Automatic Coolify updates are off: after creating, add the address to the web service domains in Coolify and Deploy."
   },
   "book": {
     "sub": "Book, move to the chair, and send to checkout when done",
