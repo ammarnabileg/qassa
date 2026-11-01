@@ -42,7 +42,33 @@ class TenantCreateView(APIView):
         v = s.validated_data
         tenant = onboard_tenant(OnboardingSpec(**{**v, "branches": [BranchSpec(**b) for b in v["branches"]]}),
                                 actor=request.user)
-        return Response({"id": tenant.id, "slug": tenant.slug, "status": tenant.status}, status=status.HTTP_201_CREATED)
+        return Response({"id": tenant.id, "slug": tenant.slug, "status": tenant.status, "owner_invite": owner_link(tenant, request.user)},
+                        status=status.HTTP_201_CREATED)
+
+
+def owner_link(tenant, actor) -> dict:
+    """Invitation for an owner who has no password yet (or a reset link if they have one). Email → platform WhatsApp →
+    the link itself for the platform team to hand over; never silently dropped."""
+    from apps.audit.services.log import record as audit
+    from apps.identity.services import accounts
+    from apps.tenancy.models import Membership
+    m = Membership.objects.select_related("user").filter(tenant=tenant, role__key="owner", is_active=True).order_by("id").first()
+    if m is None:
+        return {"channel": "none"}
+    purpose = "reset" if m.user.has_usable_password() else "invite"
+    out = accounts.deliver(m.user, purpose)
+    audit(f"platform.owner_{purpose}", tenant_id=tenant.id, actor=actor, data={"email": m.user.email, "channel": out["channel"]})
+    return {**out, "email": m.user.email, "purpose": purpose}
+
+
+class OwnerInviteView(APIView):
+    """Platform staff: (re)send the owner's set-password link — e.g. a company created without a password."""
+    permission_classes = [IsPlatformStaff]
+
+    @extend_schema(request=None, responses=dict)
+    def post(self, request, pk):
+        from rest_framework.generics import get_object_or_404
+        return Response(owner_link(get_object_or_404(Tenant.objects.all(), pk=pk), request.user))
 
 
 class PlanSerializer(serializers.ModelSerializer):

@@ -530,7 +530,19 @@
     "customDomainHelp": "Activated once its DNS points to our server.",
     "customDomainPlan": "This plan doesn’t allow an own domain.",
     "coolifyAuto": "The address will be added to Coolify by itself and the app redeployed (a few minutes).",
-    "coolifyManual": "Automatic Coolify updates are off: after creating, add the address to the web service domains in Coolify and Deploy."
+    "coolifyManual": "Automatic Coolify updates are off: after creating, add the address to the web service domains in Coolify and Deploy.",
+    "noOwner": "This company has no active owner.",
+    "inviteSent": {
+      "email": "The set-password link was emailed to {{to}}.",
+      "whatsapp": "The set-password link was sent on WhatsApp to {{to}}."
+    },
+    "inviteManual": "No email or WhatsApp is set up for the owner ({{email}}). Send them this link yourself:",
+    "copy": "Copy",
+    "copied": "Copied",
+    "inviteOnce": "The link works once and stops as soon as the password is set.",
+    "ownerAccess": "Owner access",
+    "ownerLink": "Owner set-password link",
+    "ownerLinkHelp": "For an owner who has no password yet or forgot it."
   },
   "book": {
     "sub": "Book, move to the chair, and send to checkout when done",

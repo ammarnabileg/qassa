@@ -155,3 +155,19 @@ def test_coolify_sync_only_adds_names_to_this_app_and_redeploys(settings_hosts, 
     state["docker_compose_domains"]["web"]["domain"] = f"https://qassa.test,https://{ta.slug}.qassa.test"
     calls.clear()
     assert coolify.sync() == [] and len(calls) == 1                        # nothing new: no patch, no redeploy
+
+
+def test_company_created_without_password_gives_the_owner_a_link(settings_hosts, company_a):
+    from urllib.parse import parse_qs, urlparse
+    c = client_for(User.objects.create_user("ops4@qassa.test", "Ops-Pass-2026!!", is_platform_staff=True))
+    r = _new_company(c, "o1", subdomain="ownerlink")
+    inv = r.json()["owner_invite"]
+    assert inv["channel"] == "manual" and inv["purpose"] == "invite" and inv["email"] == "o1@x.test" and "/set-password?" in inv["link"]
+    tid = r.json()["id"]
+    again = c.post(f"/api/v1/platform/tenants/{tid}/owner-invite").json()
+    assert again["channel"] == "manual" and again["link"]
+    q = parse_qs(urlparse(again["link"]).query)
+    ok = APIClient().post("/api/v1/auth/password/set", {"uid": q["uid"][0], "token": q["token"][0], "password": "Salon-Owner-2026!"}, format="json")
+    assert ok.status_code in (200, 204), ok.content
+    assert c.post(f"/api/v1/platform/tenants/{tid}/owner-invite").json()["purpose"] == "reset"
+    assert client_for(User.objects.get(email="o1@x.test")).post(f"/api/v1/platform/tenants/{tid}/owner-invite").status_code == 403

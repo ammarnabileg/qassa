@@ -12,6 +12,21 @@ type BizT = 'kids' | 'men' | 'women'
 const STATUS_PILL: Record<string, string> = { trial: 'info', active: 'good', past_due: 'warn', read_only: 'warn', suspended: 'bad' }
 const usePlans = () => useQuery({ queryKey: ['plans'], queryFn: () => api<Plan[]>('/platform/plans') })
 
+type Invite = { channel: string; link?: string; to?: string; email?: string; purpose?: string }
+
+/** Where the owner's set-password link went; when nothing could send it, the link itself to copy and hand over. */
+function InviteResult({ r }: { r: Invite }) {
+  const { t } = useTranslation()
+  const toast = useToast()
+  if (r.channel === 'none') return <div className="notice">{t('platform.noOwner')}</div>
+  if (r.channel !== 'manual') return <div className="notice"><Icon name="check" />{t(`platform.inviteSent.${r.channel}`, { to: r.to ?? r.email })}</div>
+  return <div className="notice" style={{ display: 'block' }}>
+    <div className="small">{t('platform.inviteManual', { email: r.email })}</div>
+    <div className="row" style={{ gap: 6, marginTop: 6 }}><input className="input" dir="ltr" readOnly value={r.link} onFocus={(e) => e.target.select()} style={{ flex: 1 }} />
+      <button type="button" className="btn sm" onClick={() => { navigator.clipboard?.writeText(r.link ?? ''); toast(t('platform.copied')) }}><Icon name="copy" />{t('platform.copy')}</button></div>
+    <div className="cap muted" style={{ marginTop: 4 }}>{t('platform.inviteOnce')}</div></div>
+}
+
 function OnboardDialog({ onClose }: { onClose: () => void }) {
   const { t, i18n } = useTranslation()
   const toast = useToast()
@@ -19,12 +34,14 @@ function OnboardDialog({ onClose }: { onClose: () => void }) {
   const [key] = useState(() => crypto.randomUUID())
   const [f, setF] = useState({ tenant_name: '', legal_name_ar: '', legal_name_en: '', commercial_registration: '', owner_name: '', owner_email: '', business_type: 'kids' as BizT, plan_code: 'basic', subdomain: '', custom_domain: '' })
   const [branches, setBranches] = useState([{ name_ar: '', name_en: '', code: 'MAIN', business_type: 'kids' as BizT }])
-  const { save, busy, error } = useSave<{ id: number; slug: string }>([['tenants']], (r) => { toast(t('platform.created', { slug: r.slug })); onClose() })
+  const [done, setDone] = useState<{ slug: string; owner_invite: Invite } | null>(null)
+  const { save, busy, error } = useSave<{ id: number; slug: string; owner_invite: Invite }>([['tenants']], (r) => { toast(t('platform.created', { slug: r.slug })); setDone(r) })
   const plan = plans.data?.find((p) => p.code === f.plan_code)
   const sub = f.subdomain.trim().toLowerCase()
   const check = useQuery({ queryKey: ['subcheck', sub], queryFn: () => api<{ available: boolean; code: string; host: string; base: string; auto_coolify: boolean }>(`/platform/subdomain-check?name=${encodeURIComponent(sub || 'x')}`) })
   const set = (k: keyof typeof f, v: string) => setF({ ...f, [k]: v })
   const setB = (i: number, k: string, v: string) => setBranches(branches.map((b, j) => (j === i ? { ...b, [k]: v } : b)))
+  if (done) return <Dialog open title={t('platform.created', { slug: done.slug })} onClose={onClose}><InviteResult r={done.owner_invite} /></Dialog>
   return (
     <Dialog open wide title={t('platform.onboard')} onClose={onClose} busy={busy} submitLabel={t('platform.create')}
       onSubmit={() => save({ path: '/platform/tenants', idempotencyKey: key, body: { ...f, branches } })}>
@@ -87,6 +104,8 @@ function ManageDialog({ tenant, onClose }: { tenant: TenantRow; onClose: () => v
   const addDomain = useSave<Domain>([['domains', tenant.id]], () => { setHost(''); toast(t('common.saved')) })
   const toggle = useSave<Domain>([['domains', tenant.id], ['tenants']], () => toast(t('common.saved')))
   const plan = plans.data?.find((p) => p.code === f.plan_code)
+  const [inv, setInv] = useState<Invite | null>(null)
+  const invite = useSave<Invite>([], (r) => setInv(r))
   return (
     <Dialog open wide title={tenant.name} onClose={onClose} busy={change.busy}
       onSubmit={() => change.save({ path: `/platform/tenants/${tenant.id}`, method: 'PATCH', body: f })}>
@@ -100,6 +119,11 @@ function ManageDialog({ tenant, onClose }: { tenant: TenantRow; onClose: () => v
       <div className="small muted">{t('platform.ownerPhoneHelp')}</div>
       <label className="field">{t('platform.reason')}<input className="input" value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} required /></label>
       <ErrorText error={change.error} />
+      <h3>{t('platform.ownerAccess')}</h3>
+      <div className="row" style={{ gap: 8 }}><button type="button" className="btn" disabled={invite.busy} onClick={() => invite.save({ path: `/platform/tenants/${tenant.id}/owner-invite` })}><Icon name="key" />{t('platform.ownerLink')}</button>
+        <span className="small muted">{t('platform.ownerLinkHelp')}</span></div>
+      {inv && <InviteResult r={inv} />}
+      <ErrorText error={invite.error} />
       <h3>{t('platform.domains')}</h3>
       <div className="small muted">{t('platform.domainsHelp')}</div>
       <div className="list">{domains.data?.map((d) => <div className="li" key={d.id}>
