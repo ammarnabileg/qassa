@@ -380,6 +380,7 @@ class PlatformSettingsSerializer(serializers.Serializer):
     sub_ar = serializers.CharField(max_length=400, required=False, allow_blank=True)
     sub_en = serializers.CharField(max_length=400, required=False, allow_blank=True)
     trial_days = serializers.IntegerField(min_value=0, max_value=90, required=False)
+    klickpay_officer_whatsapp = serializers.CharField(max_length=20, required=False, allow_blank=True)
 
 
 class PlatformSettingsView(APIView):
@@ -398,7 +399,7 @@ class PlatformSettingsView(APIView):
         s.is_valid(raise_exception=True)
         c = PlatformSettings.get()
         for k, v in s.validated_data.items():
-            setattr(c, k, normalize_phone(v) if k == "sales_whatsapp" and v else v)
+            setattr(c, k, normalize_phone(v) if k in {"sales_whatsapp", "klickpay_officer_whatsapp"} and v else v)
         c.save()
         audit("platform.settings", actor=request.user, data={k: str(v) for k, v in s.validated_data.items()})
         return Response(PlatformSettingsSerializer(c).data)

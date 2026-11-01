@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { api, openFile } from '../api/client'
+import { api, openFile, upload } from '../api/client'
 import { ErrorText } from '../components/ErrorText'
 import { useSave } from '../components/hooks'
 import { Dialog, Head, Icon, Stat, useToast } from '../components/ui'
@@ -9,9 +9,9 @@ import { formatKWD } from '../money'
 import { ACC_PILL, KYC_PILL, type KycItem } from './OnlinePayments'
 
 type Row = { tenant_id: number; tenant: string; slug: string; status: string; environment: string; docs: number; accepted: number; rejected: number; has_credentials: boolean; commission_percent: string; commission_fixed: string; submitted_at: string | null }
-type Detail = { tenant_id: number; status: string; review_note: string; environment: string; client_id: string; has_secret: boolean; merchant_token: string; commission_percent: string; commission_fixed: string; webhook_url: string; has_webhook_secret: boolean; webhook_secret?: string; checklist: KycItem[] }
+type Detail = { tenant_id: number; status: string; review_note: string; environment: string; client_id: string; has_secret: boolean; merchant_token: string; commission_percent: string; commission_fixed: string; webhook_url: string; has_webhook_secret: boolean; webhook_secret?: string; checklist: KycItem[]; contract: { name: string; sent_at: string } | null; sent_to_officer_at: string | null }
 type Report = { month: string; rows: { tenant_id: number; tenant: string; paid_count: number; paid_amount: string; failed_count: number; failed_amount: string; refunded_amount: string; pending_count: number; review_count: number; commission_percent: string; commission_fixed: string; commission: string }[]; totals: { paid: string; commission: string; paid_n: number; failed_n: number } }
-const STATUSES = ['collecting', 'under_review', 'needs_changes', 'active', 'suspended']
+const STATUSES = ['collecting', 'under_review', 'needs_changes', 'contract', 'active', 'suspended']
 
 /** Platform: open each salon's KlickPay account as their agent (review documents, enter credentials, set commission),
  *  and see per salon how many online payments succeeded or failed and the commission due. */
@@ -63,6 +63,7 @@ function AccountDialog({ tenantId, onClose }: { tenantId: number; onClose: () =>
   const { t, i18n } = useTranslation()
   const lang = i18n.language as 'ar' | 'en'
   const toast = useToast()
+  const qc = useQueryClient()
   const q = useQuery({ queryKey: ['pp-account', tenantId], queryFn: () => api<Detail>(`/platform/payments/accounts/${tenantId}`) })
   const [f, setF] = useState<{ status?: string; review_note?: string; environment?: string; client_id?: string; client_secret?: string; merchant_token?: string; commission_percent?: string; commission_fixed?: string }>({})
   const [secret, setSecret] = useState<{ url: string; secret: string } | null>(null)
@@ -70,6 +71,16 @@ function AccountDialog({ tenantId, onClose }: { tenantId: number; onClose: () =>
   const save = useSave<Detail>([['pp-account', tenantId], ['pp-accounts']], (r) => { toast(t('common.saved')); setF({}); if (r.webhook_secret) setSecret({ url: r.webhook_url, secret: r.webhook_secret }) })
   const review = useSave<unknown>([['pp-account', tenantId], ['pp-accounts']], () => toast(t('common.saved')))
   const [fileErr, setFileErr] = useState<unknown>(null)
+  const [officer, setOfficer] = useState<{ sent: boolean; phone: string; text: string } | null>(null)
+  const sendOfficer = useSave<{ sent: boolean; phone: string; text: string }>([['pp-account', tenantId]], (r) => { setOfficer(r); if (r.sent) toast(t('pp.officerSent')) })
+  const contractInput = useRef<HTMLInputElement>(null)
+  const [cBusy, setCBusy] = useState(false)
+  const sendContract = async (file: File) => {
+    setCBusy(true); setFileErr(null)
+    const body = new FormData(); body.append('file', file)
+    try { await upload(`/platform/payments/accounts/${tenantId}/contract`, body); qc.invalidateQueries({ queryKey: ['pp-account', tenantId] }); qc.invalidateQueries({ queryKey: ['pp-accounts'] }); toast(t('pp.contractSent')) }
+    catch (e) { setFileErr(e) } finally { setCBusy(false) }
+  }
   const d = q.data
   const v = <K extends keyof typeof f>(k: K, fallback: string) => f[k] ?? fallback
   return (
@@ -89,6 +100,16 @@ function AccountDialog({ tenantId, onClose }: { tenantId: number; onClose: () =>
           </div>}
         </div>)}</div>
         <ErrorText error={review.error ?? fileErr} />
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+          <button type="button" className="btn sm" disabled={sendOfficer.busy} onClick={() => sendOfficer.save({ path: `/platform/payments/accounts/${tenantId}/send-officer` })}><Icon name="whatsapp" />{t('pp.sendOfficer')}</button>
+          <input ref={contractInput} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" hidden onChange={(e) => { const x = e.target.files?.[0]; e.target.value = ''; if (x) sendContract(x) }} />
+          <button type="button" className="btn sm" disabled={cBusy} onClick={() => contractInput.current?.click()}><Icon name="file" />{d.contract ? t('pp.contractReplace') : t('pp.contractUpload')}</button>
+          {d.contract && <button type="button" className="btn sm ghost" onClick={() => openFile(`/platform/payments/accounts/${tenantId}/contract`).catch(setFileErr)}><Icon name="download" />{d.contract.name}</button>}
+        </div>
+        {d.sent_to_officer_at && <div className="cap muted">{t('pp.officerLast', { d: new Date(d.sent_to_officer_at).toLocaleString(lang === 'ar' ? 'ar-KW' : 'en-GB', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Kuwait' }) })}</div>}
+        {officer && !officer.sent && <div className="notice" style={{ display: 'block' }}><div className="small">{t('pp.officerManual')}</div>
+          <a className="btn sm" style={{ color: '#25D366', marginTop: 6 }} target="_blank" rel="noreferrer" href={`https://wa.me/${officer.phone}?text=${encodeURIComponent(officer.text)}`}><Icon name="whatsapp" />{t('pp.officerOpen')}</a></div>}
+        <ErrorText error={sendOfficer.error} />
         <h3 style={{ marginTop: 12 }}>{t('pp.account')}</h3>
         <div className="two">
           <label className="field">{t('org.status')}<select className="input" value={v('status', d.status)} onChange={(e) => setF({ ...f, status: e.target.value })}>

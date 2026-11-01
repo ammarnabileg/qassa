@@ -8,10 +8,10 @@ import { useSave } from '../components/hooks'
 import { Head, Icon, useToast } from '../components/ui'
 import { formatKWD } from '../money'
 
-export type KycItem = { type: { id: number; code: string; name_ar: string; name_en: string; help_ar: string; help_en: string; required: boolean }
+export type KycItem = { type: { id: number; code: string; stage: 'kyc' | 'contract'; name_ar: string; name_en: string; help_ar: string; help_en: string; required: boolean }
   doc: { id: number; status: 'uploaded' | 'accepted' | 'rejected'; note: string; name: string; uploaded_at: string } | null }
 type Deposit = { mode: 'off' | 'fixed' | 'percent'; value: string; refund_hours: number; hold_minutes: number }
-type Account = { status: string; review_note: string; active: boolean; checklist: KycItem[]; deposit: Deposit }
+type Account = { status: string; review_note: string; active: boolean; checklist: KycItem[]; deposit: Deposit; contract: { name: string; sent_at: string } | null }
 export type OnlinePay = { id: number; reference: string; purpose: 'invoice' | 'deposit'; invoice: string; invoice_id: number | null; appointment_id: number | null; refundable: string; refunds: { id: number; amount: string; status: string; detail: string }[]; amount: string; status: string; method: string; detail: string; created_at: string; customer: string }
 
 export const KYC_PILL: Record<string, string> = { uploaded: 'info', accepted: 'good', rejected: 'bad' }
@@ -40,7 +40,8 @@ export default function OnlinePayments() {
   }
   const view = (id: number) => openFile(`/payments/kyc/${id}/file`).catch(setErr)
   const a = acc.data
-  const locked = a && ['under_review', 'active'].includes(a.status)
+  const locked = a && ['under_review', 'active', 'contract'].includes(a.status)
+  const canUpload = (stage: string) => !!a && (stage === 'contract' ? a.status === 'contract' : !locked)
   return (
     <>
       <Head title={t('nav.onlinePay')} sub={t('pay.sub')} />
@@ -48,6 +49,9 @@ export default function OnlinePayments() {
         <div className="row sb"><h2>{t('pay.openTitle')}</h2><span className={`pill ${ACC_PILL[a.status]}`}>{t(`pay.acc.${a.status}`)}</span></div>
         <div className="small muted" style={{ margin: '6px 0 10px' }}>{t('pay.openHelp')}</div>
         {a.review_note && <div className="notice"><Icon name="alert" />{a.review_note}</div>}
+        {a.contract && <div className="notice" style={{ display: 'block' }}><b className="small">{t('pay.contractTitle')}</b>
+          <div className="small">{t('pay.contractHelp')}</div>
+          <button className="btn sm" style={{ marginTop: 6 }} onClick={() => openFile('/payments/contract').catch(setErr)}><Icon name="download" />{t('pay.contractDownload')}</button></div>}
         <input ref={input} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) send(f) }} />
         <div className="list">{a.checklist.map(({ type, doc }) => <div className="li" key={type.id} style={{ alignItems: 'flex-start' }}>
           <div className="grow">
@@ -58,7 +62,7 @@ export default function OnlinePayments() {
           </div>
           <div className="row" style={{ gap: 6 }}>
             {doc && <button className="btn sm ghost" onClick={() => view(doc.id)}><Icon name="eye" /></button>}
-            {!locked && <button className="btn sm" disabled={busy !== null} onClick={() => { pick.current = type.id; input.current?.click() }}>
+            {canUpload(type.stage) && <button className="btn sm" disabled={busy !== null} onClick={() => { pick.current = type.id; input.current?.click() }}>
               <Icon name="file" />{busy === type.id ? '…' : doc ? t('pay.replace') : t('pay.upload')}</button>}
           </div>
         </div>)}</div>

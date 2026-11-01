@@ -370,7 +370,9 @@
     "refund_too_much": "المبلغ أكبر من المتاح للاسترجاع.",
     "refund_more_than_owed": "المبلغ أكبر من المستحق للعميل. اعمل المرتجع الأول.",
     "refund_no_online_payment": "الفاتورة دي مفيهاش دفع أونلاين.",
-    "deposit_not_pending": "العربون ده مش مستني دفع."
+    "deposit_not_pending": "العربون ده مش مستني دفع.",
+    "officer_phone_missing": "حط رقم واتساب مسؤول KlickPay في إعدادات المنصة الأول.",
+    "contract_not_signed": "لازم العقد الموقّع يتقبل قبل التفعيل."
   },
   "svc": {
     "sub": "الخدمات والأسعار اللي بتظهر في الكاشير والحجز",
@@ -1191,7 +1193,9 @@
       "myfatoorah": "MyFatoorah",
       "tap": "Tap Payments",
       "applepay": "Apple Pay / Google Pay"
-    }
+    },
+    "officerWa": "واتساب مسؤول الحسابات في KlickPay",
+    "officerHelp": "بيوصله لينكات أوراق الصالونات من شاشة «الدفع الأونلاين»."
   },
   "site": {
     "tag": "سيستم الصالونات",
@@ -1699,7 +1703,8 @@
       "under_review": "تحت المراجعة",
       "needs_changes": "محتاج تعديل",
       "active": "شغال",
-      "suspended": "موقوف"
+      "suspended": "موقوف",
+      "contract": "مستني توقيع العقد"
     },
     "doc": {
       "uploaded": "مرفوع",
@@ -1735,7 +1740,10 @@
     "refundHours": "الإلغاء المجاني قبلها بكام ساعة",
     "refundHoursHelp": "لو العميل لغى قبل الميعاد بـ {{n}} ساعة أو أكتر العربون بيرجع لوحده. بعد كده أو لو ما جاش، بيفضل للصالون.",
     "holdMinutes": "مهلة الدفع (دقيقة)",
-    "holdHelp": "لو العربون ما اتدفعش خلال {{n}} دقيقة الحجز بيتلغي والميعاد يرجع متاح."
+    "holdHelp": "لو العربون ما اتدفعش خلال {{n}} دقيقة الحجز بيتلغي والميعاد يرجع متاح.",
+    "contractTitle": "عقد KlickPay",
+    "contractHelp": "نزّل العقد، اطبعه، وقّعه واختمه، وارفعه في خانة «عقد KlickPay موقّع» تحت.",
+    "contractDownload": "تنزيل العقد"
   },
   "payp": {
     "ok": "تم الدفع ✓",
@@ -1784,6 +1792,14 @@
     "makeSecret": "إنشاء سر الـ webhook",
     "rotate": "تغيير السر",
     "secretOnce": "انسخ السر ده دلوقتي: مش هيظهر تاني.",
-    "refunded": "اتسترجع"
+    "refunded": "اتسترجع",
+    "sendOfficer": "ابعت الأوراق لمسؤول KlickPay",
+    "officerSent": "الأوراق اتبعتت لمسؤول KlickPay على الواتساب",
+    "officerManual": "رقم واتساب المنصة مش متصل — ابعت الرسالة من موبايلك:",
+    "officerOpen": "افتح الواتساب",
+    "officerLast": "آخر إرسال للمسؤول: {{d}}",
+    "contractUpload": "رفع عقد KlickPay للصالون",
+    "contractReplace": "تغيير العقد",
+    "contractSent": "العقد اترفع والصالون يقدر ينزّله"
   }
 }

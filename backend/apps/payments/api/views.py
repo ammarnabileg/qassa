@@ -34,9 +34,13 @@ def doc_out(d):
                                    "uploaded_at": d.uploaded_at, "reviewed_at": d.reviewed_at}
 
 
-def checklist_out():
-    return [{"type": {"id": t.id, "code": t.code, "name_ar": t.name_ar, "name_en": t.name_en, "help_ar": t.help_ar,
-                      "help_en": t.help_en, "required": t.required}, "doc": doc_out(d)} for t, d in kyc.checklist()]
+def checklist_out(acc=None):
+    return [{"type": {"id": t.id, "code": t.code, "stage": t.stage, "name_ar": t.name_ar, "name_en": t.name_en, "help_ar": t.help_ar,
+                      "help_en": t.help_en, "required": t.required}, "doc": doc_out(d)} for t, d in kyc.checklist(acc)]
+
+
+def contract_out(acc):
+    return {"name": acc.contract_name, "sent_at": acc.contract_sent_at} if acc.contract_sent_at else None
 
 
 def op_out(op):
@@ -88,7 +92,20 @@ class AccountView(TenantAPIView):
     def get(self, request):
         acc = kyc.account()
         return Response({"deposit": deposit_out(acc), "status": acc.status, "review_note": acc.review_note, "active": acc.status == GatewayAccount.Status.ACTIVE,
-                         "submitted_at": acc.submitted_at, "activated_at": acc.activated_at, "checklist": checklist_out()})
+                         "submitted_at": acc.submitted_at, "activated_at": acc.activated_at, "checklist": checklist_out(acc),
+                         "contract": contract_out(acc)})
+
+
+class ContractFileView(TenantAPIView):
+    """The contract the platform uploaded, for the salon to download and sign."""
+    required_permissions = {"GET": "org.manage"}
+
+    @extend_schema(responses={200: OpenApiTypes.BINARY})
+    def get(self, request):
+        acc = kyc.account()
+        if not acc.contract_file:
+            _not_found()
+        return FileResponse(acc.contract_file.open("rb"), as_attachment=True, filename=acc.contract_name)
 
 
 class KycUploadView(TenantAPIView):
@@ -296,7 +313,8 @@ class PlatformAccountView(APIView):
                     "client_id": acc.client_id, "has_secret": bool(acc.client_secret_enc), "merchant_token": acc.merchant_token,
                     "commission_percent": str(acc.commission_percent), "commission_fixed": str(acc.commission_fixed),
                     "webhook_url": webhook_url(acc), "has_webhook_secret": bool(acc.webhook_secret_enc),
-                    **({"webhook_secret": secret} if secret else {}), "checklist": checklist_out()}
+                    **({"webhook_secret": secret} if secret else {}), "checklist": checklist_out(acc),
+                    "contract": contract_out(acc), "sent_to_officer_at": acc.sent_to_officer_at}
 
     @extend_schema(responses=dict)
     def get(self, request, tenant_id):
@@ -323,6 +341,8 @@ class PlatformAccountView(APIView):
             if "status" in v:
                 if v["status"] == GatewayAccount.Status.ACTIVE and not (acc.client_id and acc.client_secret_enc and acc.webhook_secret_enc):
                     raise DomainError(code="gateway_incomplete")
+                if v["status"] == GatewayAccount.Status.ACTIVE and not kyc.contract_ok(acc):
+                    raise DomainError(code="contract_not_signed")
                 if v["status"] == GatewayAccount.Status.NEEDS_CHANGES and not (v.get("review_note") or acc.review_note):
                     raise DomainError(code="kyc_note_required")
                 if v["status"] == GatewayAccount.Status.ACTIVE and acc.status != GatewayAccount.Status.ACTIVE:
@@ -351,7 +371,9 @@ class PlatformKycReviewView(APIView):
             kyc.review(d, s.validated_data["accept"], s.validated_data["note"])
             acc = kyc.account()
             if not s.validated_data["accept"] and acc.status == GatewayAccount.Status.UNDER_REVIEW:
-                acc.status = GatewayAccount.Status.NEEDS_CHANGES   # the salon sees exactly which document to fix
+                # the salon sees exactly which document to fix; a rejected signed contract goes back to signing
+                acc.status = (GatewayAccount.Status.CONTRACT if d.doc_type.stage == KycDocumentType.Stage.CONTRACT
+                              else GatewayAccount.Status.NEEDS_CHANGES)
                 acc.save(update_fields=["status", "updated_at"])
             audit("platform.kyc_review", tenant_id=d.tenant_id, actor=request.user, obj=d,
                   data={"accept": s.validated_data["accept"], "note": s.validated_data["note"]})
@@ -409,3 +431,88 @@ class PlatformPaymentsReportView(APIView):
                         "commission_percent": str(pct), "commission_fixed": str(fixed), "commission": str(comm)})
             tot["paid"] += paid; tot["commission"] += comm; tot["paid_n"] += r.get("paid_n", 0); tot["failed_n"] += r.get("failed_n", 0)
         return Response({"month": m, "rows": out, "totals": {k: (str(money(v)) if isinstance(v, Decimal) else v) for k, v in tot.items()}})
+
+
+class PlatformContractView(APIView):
+    """Upload KlickPay's contract for the salon to sign (POST, multipart) or download it (GET)."""
+    permission_classes = [IsPlatformStaff]
+    parser_classes = [MultiPartParser]
+
+    @extend_schema(request={"multipart/form-data": OpenApiTypes.OBJECT}, responses=dict)
+    def post(self, request, tenant_id):
+        f = request.FILES.get("file")
+        if f is None:
+            raise DomainError(code="kyc_file_type")
+        with tenant_context(tenant_id):
+            acc = kyc.send_contract(kyc.account(), f, request.user)
+            audit("platform.contract_sent", tenant_id=tenant_id, actor=request.user, obj=acc, data={"name": acc.contract_name})
+            return Response({"status": acc.status, "contract": contract_out(acc)})
+
+    @extend_schema(responses={200: OpenApiTypes.BINARY})
+    def get(self, request, tenant_id):
+        with tenant_context(tenant_id):
+            acc = kyc.account()
+            if not acc.contract_file:
+                _not_found()
+            return FileResponse(acc.contract_file.open("rb"), as_attachment=True, filename=acc.contract_name)
+
+
+OFFICER_SALT, OFFICER_DAYS = "kyc-officer", 7
+
+
+class SendToOfficerView(APIView):
+    """Send KlickPay's accounts officer the salon's documents on WhatsApp: links that open each file for 7 days.
+    From the platform number when it is connected; otherwise the ready message comes back to send by hand."""
+    permission_classes = [IsPlatformStaff]
+
+    @extend_schema(request=None, responses=dict)
+    def post(self, request, tenant_id):
+        from django.core import signing
+        from django.utils import timezone
+        from apps.notifications import whatsapp
+        from apps.platform.models import PlatformSettings
+        from apps.tenancy.models import Tenant
+        phone = PlatformSettings.get().klickpay_officer_whatsapp
+        if not phone:
+            raise DomainError(code="officer_phone_missing")
+        tenant = get_object_or_404(Tenant.objects.all(), pk=tenant_id)
+        base = settings.QASSA["PUBLIC_ADMIN_URL"].rstrip("/")
+        with tenant_context(tenant_id):
+            acc = kyc.account()
+            links = [(t.name_ar, f"{base}/api/v1/public/kyc/{signing.dumps({'d': d.id, 't': tenant_id}, salt=OFFICER_SALT)}")
+                     for t, d in kyc.checklist(acc) if d is not None and d.status != KycDocument.Status.REJECTED]
+            if not links:
+                raise DomainError(code="kyc_missing_documents", details={"missing": ["*"]})
+            text = kyc.officer_message(acc, tenant, links)
+            sent = False
+            if whatsapp.platform_available():
+                try:
+                    whatsapp.send_platform_text(phone, text, kind="klickpay_officer")
+                    sent = True
+                except DomainError:
+                    sent = False
+            acc.sent_to_officer_at = timezone.now()
+            acc.save(update_fields=["sent_to_officer_at", "updated_at"])
+            audit("platform.kyc_sent_to_officer", tenant_id=tenant_id, actor=request.user, obj=acc, data={"documents": len(links), "sent": sent})
+        return Response({"sent": sent, "phone": phone, "text": text, "documents": len(links)})
+
+
+class PublicOfficerFileView(APIView):
+    """A document opened from the officer's WhatsApp link (signed, 7 days). Every opening is audited."""
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "public"
+
+    @extend_schema(responses={200: OpenApiTypes.BINARY})
+    def get(self, request, token):
+        from django.core import signing
+        try:
+            data = signing.loads(token, salt=OFFICER_SALT, max_age=OFFICER_DAYS * 86400)
+        except signing.BadSignature:
+            _not_found()
+        d = KycDocument.unscoped.filter(id=data.get("d"), tenant_id=data.get("t"), is_current=True).first()
+        if d is None:
+            _not_found()
+        audit("payments.kyc_opened_by_officer", tenant_id=d.tenant_id, obj=d, ip=request.META.get("REMOTE_ADDR"))
+        return FileResponse(d.file.open("rb"), as_attachment=False, filename=d.original_name)

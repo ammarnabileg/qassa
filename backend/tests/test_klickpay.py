@@ -62,7 +62,7 @@ def test_documents_review_and_activation(salon, kp):
     s = salon
     owner = client_for(s["owner"], s["t"])
     a = owner.get("/api/v1/payments/account").json()
-    assert a["status"] == "not_started" and len(a["checklist"]) == KycDocumentType.objects.count() >= 4
+    assert a["status"] == "not_started" and len(a["checklist"]) == KycDocumentType.objects.filter(stage="kyc").count() >= 4
     required = [i["type"]["id"] for i in a["checklist"] if i["type"]["required"]]
     owner.post("/api/v1/payments/kyc", {"doc_type": required[0], "file": pdf()}, format="multipart")
     assert owner.post("/api/v1/payments/kyc/submit").json()["error"]["code"] == "kyc_missing_documents"
@@ -365,3 +365,41 @@ def test_no_deposit_when_policy_off(salon, kpr):
     s = salon
     p, app, b, c = _app_booking(s, kpr, set_policy=False)
     assert b["deposit"] is None
+
+
+def test_contract_cycle_and_officer_links(salon, kp):
+    from apps.platform.models import PlatformSettings
+    s = salon
+    owner = client_for(s["owner"], s["t"])
+    a = owner.get("/api/v1/payments/account").json()
+    assert all(i["type"]["stage"] == "kyc" for i in a["checklist"]) and a["contract"] is None   # no contract item yet
+    for i in a["checklist"]:
+        if i["type"]["required"]:
+            owner.post("/api/v1/payments/kyc", {"doc_type": i["type"]["id"], "file": pdf()}, format="multipart")
+    owner.post("/api/v1/payments/kyc/submit")
+    p = ops()
+    # the officer's number is set once in platform settings; documents go to them as 7-day links
+    assert p.post(f"/api/v1/platform/payments/accounts/{s['t'].id}/send-officer").json()["error"]["code"] == "officer_phone_missing"
+    p.patch("/api/v1/platform/settings", {"klickpay_officer_whatsapp": "55500099"}, format="json")
+    assert PlatformSettings.get().klickpay_officer_whatsapp == "96555500099"
+    r = p.post(f"/api/v1/platform/payments/accounts/{s['t'].id}/send-officer").json()
+    assert r["documents"] == 4 and "/api/v1/public/kyc/" in r["text"]
+    link = r["text"].split("/api/v1/public/kyc/")[1].split()[0]
+    assert APIClient().get(f"/api/v1/public/kyc/{link}").status_code == 200
+    assert APIClient().get(f"/api/v1/public/kyc/{link}x").status_code == 404
+    # KlickPay's contract: platform uploads it, the salon downloads, signs and uploads it back
+    r = p.post(f"/api/v1/platform/payments/accounts/{s['t'].id}/contract", {"file": pdf("contract.pdf")}, format="multipart").json()
+    assert r["status"] == "contract"
+    a = owner.get("/api/v1/payments/account").json()
+    signed = next(i for i in a["checklist"] if i["type"]["code"] == "signed_contract")
+    assert a["contract"]["name"] == "contract.pdf" and signed["doc"] is None
+    assert owner.get("/api/v1/payments/contract").status_code == 200
+    up = owner.post("/api/v1/payments/kyc", {"doc_type": signed["type"]["id"], "file": pdf("signed.pdf")}, format="multipart").json()
+    assert owner.get("/api/v1/payments/account").json()["status"] == "under_review"
+    # a rejected signature sends the salon back to signing; activation waits for an accepted signed contract
+    p.patch(f"/api/v1/platform/payments/accounts/{s['t'].id}", {"client_id": "c", "client_secret": "s", "new_webhook_secret": True}, format="json")
+    assert p.patch(f"/api/v1/platform/payments/accounts/{s['t'].id}", {"status": "active"}, format="json").json()["error"]["code"] == "contract_not_signed"
+    assert p.post(f"/api/v1/platform/payments/kyc/{up['id']}/review", {"accept": False, "note": "ناقص الختم"}, format="json").json()["account_status"] == "contract"
+    up = owner.post("/api/v1/payments/kyc", {"doc_type": signed["type"]["id"], "file": pdf("signed2.pdf")}, format="multipart").json()
+    p.post(f"/api/v1/platform/payments/kyc/{up['id']}/review", {"accept": True}, format="json")
+    assert p.patch(f"/api/v1/platform/payments/accounts/{s['t'].id}", {"status": "active"}, format="json").json()["status"] == "active"

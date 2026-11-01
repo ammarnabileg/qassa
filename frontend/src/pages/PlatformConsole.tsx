@@ -226,7 +226,7 @@ export function SupportAccessDialog({ tenant, onClose }: { tenant: { id: number;
   )
 }
 
-type PSettings = { support_email: string; sales_whatsapp: string; headline_ar: string; headline_en: string; sub_ar: string; sub_en: string; trial_days: number }
+type PSettings = { support_email: string; sales_whatsapp: string; headline_ar: string; headline_en: string; sub_ar: string; sub_en: string; trial_days: number ; klickpay_officer_whatsapp: string }
 
 /** Platform settings (reference v-p-set): what the public site shows and the trial length. */
 export function PlatformSettingsPage() {
@@ -244,7 +244,9 @@ export function PlatformSettingsPage() {
           <label className="field">{t('pc.supportEmail')}<input className="input" dir="ltr" type="email" value={f.support_email} onChange={(e) => setF({ ...f, support_email: e.target.value })} /></label>
           <label className="field">{t('pc.salesWa')}<input className="input" dir="ltr" inputMode="tel" placeholder="5xxxxxxx" value={f.sales_whatsapp} onChange={(e) => setF({ ...f, sales_whatsapp: e.target.value })} /></label>
           <label className="field">{t('pc.trialDays')}<input className="input" type="number" min={0} max={90} value={f.trial_days} onChange={(e) => setF({ ...f, trial_days: Number(e.target.value) })} /></label>
-          <div className="cap muted">{t('pc.trialHelp')}</div></div>
+          <div className="cap muted">{t('pc.trialHelp')}</div>
+          <label className="field">{t('pc.officerWa')}<input className="input" dir="ltr" inputMode="tel" placeholder="5xxxxxxx" value={f.klickpay_officer_whatsapp ?? ''} onChange={(e) => setF({ ...f, klickpay_officer_whatsapp: e.target.value })} /></label>
+          <div className="cap muted">{t('pc.officerHelp')}</div></div>
         <div className="card"><h2>{t('pc.pricingPage')}</h2>
           <label className="field">{t('pc.headlineAr')}<input className="input" value={f.headline_ar} placeholder={t('site.headline')} onChange={(e) => setF({ ...f, headline_ar: e.target.value })} /></label>
           <label className="field">{t('pc.headlineEn')}<input className="input" dir="ltr" value={f.headline_en} onChange={(e) => setF({ ...f, headline_en: e.target.value })} /></label>

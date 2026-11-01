@@ -196,6 +196,18 @@ class _BookingsTabState extends State<BookingsTab> {
                   fg: b['status'] == 'booked' ? Brand.of(c.biz).dark : Tokens.muted),
             ]),
             Text('${whenLabel(c, b['starts_at'] as String)} · ${c.catalog!.branches.where((x) => x.id == b['branch_id']).map((x) => x.name(c.lang)).join()}', style: cap),
+            if (b['deposit'] != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(
+                t('deposit_line', {'amount': (b['deposit'] as Json)['amount'] as String, 'state': t('dep_${(b['deposit'] as Json)['status']}')}), style: cap)),
+            if ((b['pay_url'] ?? '') != '') Align(alignment: AlignmentDirectional.centerEnd, child: FilledButton.icon(
+              onPressed: () async {
+                try {
+                  final r = await c.api.payDeposit(b['id'] as int);
+                  await launchUrl(Uri.parse(r['pay_url'] as String), mode: LaunchMode.externalApplication);
+                } on ApiError catch (e) {
+                  setState(() => error = errKey(e.code));
+                }
+              },
+              icon: const Icon(Icons.credit_card, size: 16), label: Text(t('pay_deposit')))),
             if (b['can_cancel'] == true) Align(alignment: AlignmentDirectional.centerEnd, child: TextButton(
               onPressed: () async {
                 try {

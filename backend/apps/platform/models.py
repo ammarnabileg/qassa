@@ -151,6 +151,7 @@ class PlatformSettings(models.Model):
     sub_ar = models.CharField(max_length=400, blank=True)
     sub_en = models.CharField(max_length=400, blank=True)
     trial_days = models.PositiveSmallIntegerField(default=30)
+    klickpay_officer_whatsapp = models.CharField(max_length=20, blank=True)   # KlickPay's accounts officer: receives salons' documents
     updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod

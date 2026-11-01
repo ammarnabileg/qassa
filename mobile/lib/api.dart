@@ -114,4 +114,5 @@ class Api {
   Future<Json> book(Json body, String key) async => await _send('POST', '/bookings', body: body, idempotencyKey: key) as Json;
   Future<List<Json>> bookings() async => [for (final b in await _send('GET', '/bookings') as List) b as Json];
   Future<Json> cancel(int id) async => await _send('POST', '/bookings/$id/cancel') as Json;
+  Future<Json> payDeposit(int id) async => await _send('POST', '/bookings/$id/pay') as Json;
 }

@@ -370,7 +370,9 @@
     "refund_too_much": "More than can be refunded.",
     "refund_more_than_owed": "More than the customer is owed. Issue the return first.",
     "refund_no_online_payment": "This invoice has no online payment.",
-    "deposit_not_pending": "This deposit is not awaiting payment."
+    "deposit_not_pending": "This deposit is not awaiting payment.",
+    "officer_phone_missing": "Set the KlickPay officer’s WhatsApp number in platform settings first.",
+    "contract_not_signed": "The signed contract must be accepted before activating."
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -1191,7 +1193,9 @@
       "myfatoorah": "MyFatoorah",
       "tap": "Tap Payments",
       "applepay": "Apple Pay / Google Pay"
-    }
+    },
+    "officerWa": "KlickPay accounts officer WhatsApp",
+    "officerHelp": "Receives the salons’ document links from the Online payments screen."
   },
   "site": {
     "tag": "Salon system",
@@ -1699,7 +1703,8 @@
       "under_review": "Under review",
       "needs_changes": "Needs changes",
       "active": "Active",
-      "suspended": "Suspended"
+      "suspended": "Suspended",
+      "contract": "Waiting for signed contract"
     },
     "doc": {
       "uploaded": "Uploaded",
@@ -1735,7 +1740,10 @@
     "refundHours": "Free cancellation up to (hours before)",
     "refundHoursHelp": "Cancelled {{n}} hours or more before: refunded automatically. Later, or a no-show: the salon keeps it.",
     "holdMinutes": "Time to pay (minutes)",
-    "holdHelp": "Unpaid after {{n}} minutes: the booking is released."
+    "holdHelp": "Unpaid after {{n}} minutes: the booking is released.",
+    "contractTitle": "KlickPay contract",
+    "contractHelp": "Download the contract, print, sign and stamp it, then upload it under “Signed KlickPay contract” below.",
+    "contractDownload": "Download contract"
   },
   "payp": {
     "ok": "Payment received ✓",
@@ -1784,6 +1792,14 @@
     "makeSecret": "Create webhook secret",
     "rotate": "Rotate secret",
     "secretOnce": "Copy this secret now: it will not be shown again.",
-    "refunded": "Refunded"
+    "refunded": "Refunded",
+    "sendOfficer": "Send documents to KlickPay officer",
+    "officerSent": "Documents sent to the KlickPay officer on WhatsApp",
+    "officerManual": "The platform WhatsApp number isn’t connected — send the message from your phone:",
+    "officerOpen": "Open WhatsApp",
+    "officerLast": "Last sent to the officer: {{d}}",
+    "contractUpload": "Upload KlickPay contract for the salon",
+    "contractReplace": "Replace contract",
+    "contractSent": "Contract uploaded; the salon can download it"
   }
 }

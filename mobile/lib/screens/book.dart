@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../api.dart';
 import '../l10n.dart';
@@ -53,6 +54,8 @@ class _BookFlowState extends State<BookFlow> {
       final r = await c.api.book({'branch_id': branch!.id, 'service_id': service!.id, 'starts_at': slot, 'beneficiary_id': who,
         'staff_id': staffId, 'notes': notes.text}, key);
       setState(() => done = r);
+      final url = (r['pay_url'] ?? '') as String;
+      if (url.isNotEmpty) await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);   // deposit (D-017)
     } on ApiError catch (e) {
       setState(() { error = errKey(e.code); if (e.code.startsWith('slot')) { step = 2; loadSlots(); } });
     } finally {
@@ -78,6 +81,13 @@ class _BookFlowState extends State<BookFlow> {
           Text(t('booked_body', {'who': done!['beneficiary_name'] as String, 'service': service!.name(c.lang),
             'when': whenLabel(c, done!['starts_at'] as String), 'branch': branch!.name(c.lang)}),
               textAlign: TextAlign.center, style: const TextStyle(color: Tokens.muted, height: 1.8)),
+          if (done!['deposit'] != null && (done!['pay_url'] ?? '') != '') ...[
+            const SizedBox(height: 14),
+            Notice(t('deposit_due', {'amount': (done!['deposit'] as Json)['amount'] as String,
+              'min': '${(done!['deposit'] as Json)['hold_minutes']}', 'hours': '${(done!['deposit'] as Json)['refund_hours']}'})),
+            FilledButton.icon(onPressed: () => launchUrl(Uri.parse(done!['pay_url'] as String), mode: LaunchMode.externalApplication),
+                icon: const Icon(Icons.credit_card), label: Text(t('pay_deposit'))),
+          ],
           const SizedBox(height: 20),
           FilledButton(onPressed: () { reset(); widget.onDone(); }, child: Text(t('my_bookings'))),
         ])),

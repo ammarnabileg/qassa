@@ -19,6 +19,7 @@ class GatewayAccount(TenantScopedModel):
     class Status(models.TextChoices):
         NOT_STARTED = "not_started"      # nothing uploaded yet
         COLLECTING = "collecting"        # uploading documents
+        CONTRACT = "contract"            # KlickPay's contract sent to the salon: download, sign, upload it back
         UNDER_REVIEW = "under_review"    # submitted; platform is reviewing / KlickPay is opening the account
         NEEDS_CHANGES = "needs_changes"  # one or more documents missing or wrong
         ACTIVE = "active"                # credentials entered, payments allowed
@@ -44,6 +45,10 @@ class GatewayAccount(TenantScopedModel):
     deposit_value = models.DecimalField(**MONEY, default=0)          # KWD, or % of the booking price
     deposit_refund_hours = models.PositiveSmallIntegerField(default=24)  # cancel at least this long before: refunded; later or no-show: kept
     deposit_hold_minutes = models.PositiveSmallIntegerField(default=15)  # unpaid this long after booking: the booking is released
+    contract_file = models.FileField(upload_to=kyc_path, max_length=200, blank=True)   # from KlickPay, uploaded by the platform
+    contract_name = models.CharField(max_length=200, blank=True)
+    contract_sent_at = models.DateTimeField(null=True, blank=True)
+    sent_to_officer_at = models.DateTimeField(null=True, blank=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
     activated_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -56,7 +61,12 @@ class GatewayAccount(TenantScopedModel):
 
 class KycDocumentType(models.Model):
     """Platform-wide list of documents KlickPay asks for. Edited by the platform team (not per salon)."""
+    class Stage(models.TextChoices):
+        KYC = "kyc"            # uploaded by the salon to open the account
+        CONTRACT = "contract"  # the signed KlickPay contract, after the platform sends the contract to sign
+
     code = models.SlugField(max_length=40, unique=True)
+    stage = models.CharField(max_length=8, choices=Stage.choices, default=Stage.KYC)
     name_ar = models.CharField(max_length=120)
     name_en = models.CharField(max_length=120)
     help_ar = models.CharField(max_length=300, blank=True)
