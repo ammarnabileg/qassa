@@ -116,3 +116,17 @@ def test_month_end_billing_keeps_its_day_and_unique_numbers(company_a):
         ("2026-01-01", "2026-01-31"), ("2026-02-01", "2026-02-28"), ("2026-03-01", "2026-03-31"), ("2026-04-01", "2026-04-30"),
         ("2026-05-01", "2026-05-31")]
     assert len({i.number for i in issued}) == 5
+
+
+def test_renewal_follows_the_period_end_whatever_the_trial_length(company_a):
+    t, _, _ = company_a
+    sub = Subscription.objects.get(tenant=t)
+    Tenant.objects.filter(id=t.id).update(status="active")
+    sub.current_period_end = datetime.date(2026, 11, 15)        # e.g. a 14-day trial started Nov 1
+    sub.save()
+    issued = billing.issue_due(datetime.date(2027, 1, 20))
+    assert [(i.period_start, i.period_end) for i in issued] == [
+        (datetime.date(2026, 11, 16), datetime.date(2026, 12, 15)),
+        (datetime.date(2026, 12, 16), datetime.date(2027, 1, 15)),
+        (datetime.date(2027, 1, 16), datetime.date(2027, 2, 15))]
+    assert billing.period_anchor(datetime.date(2027, 2, 28)) == 31 and billing.add_month(datetime.date(2027, 2, 28), 31) == datetime.date(2027, 3, 31)

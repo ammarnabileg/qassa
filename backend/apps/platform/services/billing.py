@@ -23,6 +23,13 @@ def add_month(d: datetime.date, anchor_day: int | None = None) -> datetime.date:
     return datetime.date(y, m, min(anchor_day or d.day, calendar.monthrange(y, m)[1]))
 
 
+def period_anchor(period_end: datetime.date) -> int:
+    """Renew on the day the current period ends; a period ending on a month's last day renews on each month's last day
+    (Jan 31 → Feb 28 → Mar 31), so short months don't pull the date earlier for good. Independent of the trial length."""
+    last = calendar.monthrange(period_end.year, period_end.month)[1]
+    return 31 if period_end.day == last else period_end.day
+
+
 def issue_due(today: datetime.date | None = None) -> list[PlatformInvoice]:
     """Invoice every company whose covered period has ended. Idempotent (one invoice per period)."""
     today = today or business_date()
@@ -33,8 +40,7 @@ def issue_due(today: datetime.date | None = None) -> list[PlatformInvoice]:
             sub = Subscription.objects.select_for_update().select_related("tenant", "plan").get(id=sub.id)
             while sub.current_period_end <= today:
                 start = sub.current_period_end + datetime.timedelta(days=1)
-                anchor = (sub.started_on + datetime.timedelta(days=30)).day   # day the first period ended (onboarding)
-                end = add_month(sub.current_period_end, anchor_day=anchor)
+                end = add_month(sub.current_period_end, anchor_day=period_anchor(sub.current_period_end))
                 inv, created = PlatformInvoice.objects.get_or_create(
                     tenant=sub.tenant, period_start=start,
                     # number = tenant + period start: unique even when two periods start in the same month
