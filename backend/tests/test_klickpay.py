@@ -62,7 +62,7 @@ def test_documents_review_and_activation(salon, kp):
     s = salon
     owner = client_for(s["owner"], s["t"])
     a = owner.get("/api/v1/payments/account").json()
-    assert a["status"] == "not_started" and len(a["checklist"]) == KycDocumentType.objects.count()
+    assert a["status"] == "not_started" and len(a["checklist"]) == KycDocumentType.objects.count() >= 4
     required = [i["type"]["id"] for i in a["checklist"] if i["type"]["required"]]
     owner.post("/api/v1/payments/kyc", {"doc_type": required[0], "file": pdf()}, format="multipart")
     assert owner.post("/api/v1/payments/kyc/submit").json()["error"]["code"] == "kyc_missing_documents"

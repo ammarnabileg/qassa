@@ -14,7 +14,18 @@ def account() -> GatewayAccount:
     return GatewayAccount.objects.first() or GatewayAccount.objects.create()
 
 
+def ensure_types():
+    """The starting list (migration 0002) if the table is empty, e.g. after a data reset."""
+    if not KycDocumentType.objects.exists():
+        import importlib
+        mig = importlib.import_module("apps.payments.migrations.0002_kyc_types_and_integrity")
+        for i, (code, ar, en, har, hen) in enumerate(mig.DEFAULT_TYPES):
+            KycDocumentType.objects.get_or_create(code=code, defaults=dict(name_ar=ar, name_en=en, help_ar=har, help_en=hen, sort=i,
+                                                                           required=code != "signatory"))
+
+
 def checklist():
+    ensure_types()
     current = {d.doc_type_id: d for d in KycDocument.objects.filter(is_current=True)}
     return [(t, current.get(t.id)) for t in KycDocumentType.objects.filter(is_active=True).order_by("sort", "id")]
 
