@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
-import { api, type Invoice } from '../api/client'
+import { api, ApiError, type Invoice } from '../api/client'
 import { useAuth } from '../auth'
 import { useBranch } from '../branch'
 import { ErrorText } from '../components/ErrorText'
@@ -23,6 +23,19 @@ export function Receipt({ invoice: inv, onClose }: { invoice: Invoice; onClose: 
   const { membership } = useAuth()
   const { branch } = useBranch()
   const [printing, setPrinting] = useState(false)
+  const toast = useToast()
+  const waReady = useQuery({ queryKey: ['wa-ready'], queryFn: () => api<{ ready: boolean }>('/whatsapp/ready'), staleTime: 60000, enabled: !!inv.customer_phone })
+  const [wa, setWa] = useState<'idle' | 'sending' | 'sent' | 'fallback'>('idle')
+  const [waErr, setWaErr] = useState<unknown>(null)
+  const waHref = `https://wa.me/${inv.customer_phone}?text=${encodeURIComponent(t('inv.waText', { n: inv.number, total: formatKWD(inv.total, lang) }))}`
+  const sendWa = async () => {
+    setWa('sending'); setWaErr(null)
+    try { await api(`/pos/invoices/${inv.id}/whatsapp`, { method: 'POST' }); setWa('sent'); toast(t('inv.waSent')) }
+    catch (e) {
+      if (e instanceof ApiError && e.code === 'whatsapp_unavailable') setWa('fallback')   // number disconnected: send from this device instead
+      else { setWa('idle'); setWaErr(e) }
+    }
+  }
   useEffect(() => {
     if (!printing) return
     const done = () => setPrinting(false)
@@ -53,9 +66,12 @@ export function Receipt({ invoice: inv, onClose }: { invoice: Invoice; onClose: 
         {body}
         <div className="row">
           <button type="button" className="btn primary" onClick={() => setPrinting(true)}><Icon name="printer" />{t('inv.print')}</button>
-          {inv.customer_phone && <a className="btn" target="_blank" rel="noreferrer"
-            href={`https://wa.me/${inv.customer_phone}?text=${encodeURIComponent(t('inv.waText', { n: inv.number, total: formatKWD(inv.total, lang) }))}`}><Icon name="whatsapp" />{t('inv.sendWa')}</a>}
+          {inv.customer_phone && (waReady.data?.ready && wa !== 'fallback'
+            ? <button type="button" className="btn" disabled={wa === 'sending' || wa === 'sent'} onClick={sendWa}><Icon name="whatsapp" />{wa === 'sent' ? t('inv.waSentShort') : t('inv.sendWa')}</button>
+            : <a className="btn" target="_blank" rel="noreferrer" href={waHref}><Icon name="whatsapp" />{t('inv.sendWa')}</a>)}
         </div>
+        {wa === 'fallback' && <div className="notice">{t('inv.waFallback')}</div>}
+        <ErrorText error={waErr} />
       </Dialog>
       <div id="printArea" hidden={!printing}>{body}</div>
     </>

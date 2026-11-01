@@ -161,3 +161,21 @@ def test_import_services_xlsx_creates_and_reprices(s):
         assert svc.duration_minutes == 25 and price_on(svc, None, business_date()) == Decimal("4.500")
     assert client_for(s["cashier"], s["t"]).post("/api/v1/import/services", {"file": _file("m.xlsx", buf.getvalue())},
                                                   format="multipart").status_code == 403
+
+
+def test_cashier_sends_the_receipt_from_the_salons_number_or_is_told_to_fall_back(s):
+    inv = pay(s)
+    c = client_for(s["cashier"], s["t"])
+    assert c.get("/api/v1/whatsapp/ready").json() == {"ready": True}
+    r = c.post(f"/api/v1/pos/invoices/{inv['id']}/whatsapp")
+    assert r.status_code == 200 and r.json()["sent"] is True
+    assert s["gw"].sent[-1][1] == "96555551111" and inv["number"] in s["gw"].sent[-1][2]
+    with tenant_context(s["t"].id):
+        WhatsAppChannel.objects.update(state="close")
+    assert c.get("/api/v1/whatsapp/ready").json() == {"ready": False}
+    r = c.post(f"/api/v1/pos/invoices/{inv['id']}/whatsapp")
+    assert r.status_code == 503 and r.json()["error"]["code"] == "whatsapp_unavailable"   # the screen falls back to wa.me
+    with tenant_context(s["t"].id):
+        Customer.objects.update(whatsapp_opt_in=False)
+        WhatsAppChannel.objects.update(state="open")
+    assert c.post(f"/api/v1/pos/invoices/{inv['id']}/whatsapp").json()["error"]["code"] == "whatsapp_opted_out"

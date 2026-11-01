@@ -17,7 +17,8 @@ from apps.inventory.api import views as inv
 from apps.loyalty.api import views as loy
 from apps.core.api_import import ImportView
 from apps.notifications.api.feedback import FeedbackListView, PublicFeedbackView
-from apps.notifications.api.views import WhatsAppActionView, WhatsAppView, MessagingSettingsView
+from apps.notifications.api.views import (InvoiceWhatsAppView, MessagingSettingsView, WhatsAppActionView, WhatsAppReadyView,
+                                          WhatsAppView)
 from apps.pos.api import views as pos
 from apps.customers.api import app as capp
 from apps.platform.api import console as con
@@ -135,6 +136,8 @@ urlpatterns = [
     path(api + "feedback", FeedbackListView.as_view()),
     path(api + "import/<str:kind>", ImportView.as_view()),
     path(api + "public/feedback/<str:token>", PublicFeedbackView.as_view()),
+    path(api + "whatsapp/ready", WhatsAppReadyView.as_view()),
+    path(api + "pos/invoices/<int:pk>/whatsapp", InvoiceWhatsAppView.as_view()),
     path(api + "whatsapp/auto-settings", MessagingSettingsView.as_view()),
     path(api + "whatsapp/<str:action>", WhatsAppActionView.as_view()),
     # phase 4

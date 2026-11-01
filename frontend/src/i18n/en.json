@@ -340,7 +340,9 @@
     "import_no_columns": "No known columns in the first row.",
     "import_too_many": "At most 5000 rows per file.",
     "import_too_big": "The file is over 5 MB.",
-    "subdomain_invalid": "Lower-case English letters, digits and hyphens only, 3–40 characters."
+    "subdomain_invalid": "Lower-case English letters, digits and hyphens only, 3–40 characters.",
+    "whatsapp_opted_out": "This customer has opted out of WhatsApp messages.",
+    "invoice_no_customer": "This invoice has no customer."
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -672,7 +674,10 @@
     "refundAmount": "Amount refunded",
     "returnHelp": "A return issues a credit note; the original invoice never changes. Cash refunds need an open drawer.",
     "restock": "Back to stock",
-    "pointsUsed": "Points redeemed"
+    "pointsUsed": "Points redeemed",
+    "waSent": "Receipt sent to the customer on WhatsApp from the salon’s number",
+    "waSentShort": "Sent ✓",
+    "waFallback": "The salon’s WhatsApp number isn’t connected right now — tap “Send on WhatsApp” again to open WhatsApp on this device."
   },
   "cash": {
     "sub": "Open with a float and count the drawer at close to find shortages or overages",

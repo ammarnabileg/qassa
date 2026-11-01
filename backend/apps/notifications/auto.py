@@ -159,11 +159,25 @@ def handle_receipt(ev):
         inv = Invoice.objects.select_related("customer", "tenant").filter(id=ev.payload["invoice_id"]).first()
         if inv is None or inv.customer is None or not inv.customer.whatsapp_opt_in:
             return
-        lang = inv.customer.preferred_language
-        bal = points.balance(inv.customer)
-        pts = "" if not bal else (f"رصيد نقاطك: {bal}" if lang == "ar" else f"Your points: {bal}")
-        text = TEXT["receipt"][lang].format(salon=inv.tenant.name, number=inv.number, total=inv.total, points=pts).strip()
-        _send(ev.tenant_id, inv.customer, "receipt", text, f"receipt {inv.number}")
+        _send(ev.tenant_id, inv.customer, "receipt", receipt_text(inv), f"receipt {inv.number}")
+
+
+def receipt_text(inv) -> str:
+    from apps.loyalty.services import points
+    lang = inv.customer.preferred_language
+    bal = points.balance(inv.customer)
+    pts = "" if not bal else (f"رصيد نقاطك: {bal}" if lang == "ar" else f"Your points: {bal}")
+    return TEXT["receipt"][lang].format(salon=inv.tenant.name, number=inv.number, total=inv.total, points=pts).strip()
+
+
+def ready(tenant_id) -> bool:
+    """Can this salon send from its own number right now (as last known)?"""
+    from django.conf import settings as dj
+    from apps.notifications.models import WhatsAppChannel
+    name = dj.QASSA.get("WHATSAPP_ADAPTER", "disabled")
+    if name == "console":
+        return dj.ENVIRONMENT != "production"
+    return name == "evolution" and WhatsAppChannel.objects.filter(tenant_id=tenant_id, state=WhatsAppChannel.State.OPEN).exists()
 
 
 def queue_rebook(today=None) -> int:

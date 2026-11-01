@@ -88,3 +88,32 @@ class MessagingSettingsView(TenantAPIView):
         obj.save()
         audit("whatsapp.auto_settings", tenant_id=request.tenant_id, actor=request.user, obj=obj, data=s.validated_data)
         return Response(MessagingSettingsSerializer(obj).data)
+
+
+class WhatsAppReadyView(TenantAPIView):
+    """For the till: send through the salon's number, or fall back to opening WhatsApp on this device."""
+    required_permissions = {}
+
+    @extend_schema(responses=dict)
+    def get(self, request):
+        from apps.notifications.auto import ready
+        return Response({"ready": ready(request.tenant_id)})
+
+
+class InvoiceWhatsAppView(TenantAPIView):
+    """Send the receipt summary to the invoice's customer from the salon's own number, now (the cashier's button)."""
+    required_permissions = {"POST": "pos.invoices.view"}
+
+    @extend_schema(request=None, responses=dict)
+    def post(self, request, pk):
+        from apps.core.errors import DomainError
+        from apps.notifications.auto import receipt_text
+        from apps.pos.api.views import _invoice
+        inv = _invoice(request, pk)   # same branch access as opening the invoice
+        if inv.customer is None:
+            raise DomainError(code="invoice_no_customer")
+        if not inv.customer.whatsapp_opt_in:
+            raise DomainError(code="whatsapp_opted_out")
+        whatsapp.send_text(inv.customer.phone, receipt_text(inv), kind="receipt.manual", preview=f"receipt {inv.number}")
+        from apps.identity.services.second_factor import mask
+        return Response({"sent": True, "to": mask(inv.customer.phone)})
