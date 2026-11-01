@@ -12,3 +12,4 @@ frontend/dist/
 dump.rdb
 deploy/pwa/.last_build_id
 mobile/android/salon.properties
+backend/media/
