@@ -13,6 +13,7 @@ services:
     healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, retries: 20 }
   backend:
     build: { context: ., dockerfile: deploy/backend.Dockerfile }
+    volumes: [media:/data/media]
     command: sh -c "python manage.py migrate --noinput && python manage.py add_subdomains && if [ -n \"$$SEED_PASSWORD\" ]; then python manage.py seed_dev; fi && python manage.py e2e_users && exec gunicorn qassa.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
     environment: &env
       QASSA_ENV: ${QASSA_ENV:-staging}
@@ -28,6 +29,9 @@ services:
       QASSA_TENANT_BASE_DOMAIN: ${QASSA_TENANT_BASE_DOMAIN:?}
       QASSA_RESERVED_SUBDOMAINS: ${QASSA_RESERVED_SUBDOMAINS:-}  # names other services on the base domain already use
       QASSA_PUBLIC_ADMIN_URL: ${QASSA_PUBLIC_ADMIN_URL:?}        # invitation / reset / rating links
+      QASSA_MEDIA_ROOT: /data/media                               # KYC documents (volume "media")
+      KLICKPAY_STAGING_URL: ${KLICKPAY_STAGING_URL:-https://api.staging.klick-pay.com/v3}
+      KLICKPAY_PRODUCTION_URL: ${KLICKPAY_PRODUCTION_URL:-}       # set only once KlickPay confirms it in writing
       COOLIFY_API_URL: ${COOLIFY_API_URL:-}      # D-016 (optional): new company domains are added to this app in Coolify
       COOLIFY_API_TOKEN: ${COOLIFY_API_TOKEN:-}
       COOLIFY_APP_UUID: ${COOLIFY_APP_UUID:-}
@@ -42,6 +46,7 @@ services:
     healthcheck: { test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/api/v1/version')"], interval: 10s, retries: 10, start_period: 90s }
   worker:
     build: { context: ., dockerfile: deploy/backend.Dockerfile }
+    volumes: [media:/data/media]
     command: celery -A qassa worker -B -l info
     environment: *env
     depends_on: { backend: { condition: service_healthy } }
@@ -53,3 +58,4 @@ services:
     depends_on: { backend: { condition: service_healthy } }
 volumes:
   pgdata:
+  media:

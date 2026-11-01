@@ -119,7 +119,8 @@
       "services": "Services",
       "accounts": "Accounts"
     },
-    "feedback": "Ratings"
+    "feedback": "Ratings",
+    "onlinePay": "Online payments"
   },
   "org": {
     "entities": "Legal entities",
@@ -347,7 +348,24 @@
     "permission_not_yours": "You can’t give a permission you don’t have yourself.",
     "owner_has_all": "The owner has every permission and can’t be changed.",
     "role_in_use": "Users still have this role. Move them first.",
-    "role_is_system": "Built-in roles can’t be deleted, only edited."
+    "role_is_system": "Built-in roles can’t be deleted, only edited.",
+    "gateway_not_active": "Online payments are not active for this salon.",
+    "gateway_unavailable": "The payment gateway is not responding. Try again shortly.",
+    "gateway_not_configured": "Payment gateway settings are incomplete.",
+    "gateway_auth_failed": "KlickPay credentials were rejected.",
+    "gateway_status_failed": "Could not confirm the payment status.",
+    "gateway_link_failed": "KlickPay refused to create the link.",
+    "gateway_incomplete": "client-id, client-secret and the webhook secret are needed before activating.",
+    "invoice_settled": "This invoice is fully paid.",
+    "kyc_locked": "Documents are under review or the account is active.",
+    "kyc_type_unknown": "Unknown document type.",
+    "kyc_file_type": "The file must be a PDF or an image.",
+    "kyc_file_too_big": "The file is over 8 MB.",
+    "kyc_cannot_submit": "Can’t send for review in this state.",
+    "kyc_missing_documents": "Some required documents are missing or rejected.",
+    "kyc_note_required": "Write why it is rejected so the salon can fix it.",
+    "payment_not_found": "Payment not found.",
+    "month_invalid": "Invalid month."
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
@@ -682,7 +700,10 @@
     "pointsUsed": "Points redeemed",
     "waSent": "Receipt sent to the customer on WhatsApp from the salon’s number",
     "waSentShort": "Sent ✓",
-    "waFallback": "The salon’s WhatsApp number isn’t connected right now — tap “Send on WhatsApp” again to open WhatsApp on this device."
+    "waFallback": "The salon’s WhatsApp number isn’t connected right now — tap “Send on WhatsApp” again to open WhatsApp on this device.",
+    "payLink": "Online payment link",
+    "linkSent": "The payment link was sent to the customer on WhatsApp from the salon’s number.",
+    "linkManual": "The salon’s number isn’t connected — send the customer this link:"
   },
   "cash": {
     "sub": "Open with a float and count the drawer at close to find shortages or overages",
@@ -1642,5 +1663,90 @@
     "g_money": "Reports and commissions",
     "g_acc": "Accounting",
     "g_admin": "Administration"
+  },
+  "pay": {
+    "sub": "Take KNET, cards and Apple Pay through KlickPay",
+    "openTitle": "Open your online payments account",
+    "openHelp": "We are KlickPay’s agents: upload these documents and we open your account with them. If anything is missing or wrong we tell you exactly what.",
+    "optional": "optional",
+    "upload": "Upload",
+    "replace": "Replace",
+    "uploaded": "File uploaded",
+    "submit": "Send for review",
+    "submitted": "Documents sent for review",
+    "activeHelp": "Online payments are on. On any invoice with a balance, tap “Online payment link”.",
+    "links": "Payment links",
+    "method": "Method",
+    "created": "Created",
+    "none": "No payment links yet.",
+    "acc": {
+      "not_started": "Not started",
+      "collecting": "Uploading documents",
+      "under_review": "Under review",
+      "needs_changes": "Needs changes",
+      "active": "Active",
+      "suspended": "Suspended"
+    },
+    "doc": {
+      "uploaded": "Uploaded",
+      "accepted": "Accepted",
+      "rejected": "Rejected"
+    },
+    "st": {
+      "created": "Awaiting payment",
+      "paid": "Paid",
+      "declined": "Declined",
+      "failed": "Failed",
+      "voided": "Voided",
+      "review": "Needs review"
+    }
+  },
+  "payp": {
+    "ok": "Payment received ✓",
+    "bad": "Payment not completed",
+    "review": "Payment under review",
+    "wait": "Checking your payment…",
+    "okHelp": "Thank you! The invoice is marked paid.",
+    "badHelp": "Nothing was charged. You can try again from the same link or contact the salon.",
+    "reviewHelp": "The salon will review it and contact you.",
+    "waitHelp": "The result will show in a few seconds."
+  },
+  "pp": {
+    "sub": "Salons’ KlickPay accounts, successful and failed payments, and the platform commission",
+    "accounts": "Accounts",
+    "report": "Report & commission",
+    "docs": "Documents",
+    "commission": "Commission",
+    "env": "Environment",
+    "e": {
+      "staging": "Staging",
+      "production": "Production"
+    },
+    "month": "Month",
+    "paid": "Paid successfully",
+    "failed": "Failed payments",
+    "count": "{{n}} payments",
+    "commissionDue": "Commission due",
+    "paidN": "Succeeded",
+    "failedN": "Failed",
+    "failedAmt": "Failed amount",
+    "pending": "Pending",
+    "reviewN": "{{n}} need review",
+    "noPayments": "No payments this month.",
+    "reportNote": "Commission = a percentage of successful payments + a fixed amount per successful payment, set per company. Collecting it from companies is still manual.",
+    "manage": "Company KlickPay account",
+    "notUploaded": "Not uploaded",
+    "accept": "Accept",
+    "reject": "Reject",
+    "rejectNote": "What is wrong?",
+    "account": "Account",
+    "noteToSalon": "Note shown to the salon",
+    "secretHelp": "Stored encrypted and never shown again. Leave empty to keep it.",
+    "percent": "Commission %",
+    "fixed": "Fixed per payment (KWD)",
+    "webhookHelp": "Set this URL and secret as this company’s webhook at KlickPay (POST /webhooks/config or their dashboard).",
+    "makeSecret": "Create webhook secret",
+    "rotate": "Rotate secret",
+    "secretOnce": "Copy this secret now: it will not be shown again."
   }
 }

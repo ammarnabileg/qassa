@@ -16,6 +16,7 @@ from apps.catalog.api import views as cat
 from apps.inventory.api import views as inv
 from apps.loyalty.api import views as loy
 from apps.core.api_import import ImportView
+from apps.payments.api import views as pay
 from apps.notifications.api.feedback import FeedbackListView, PublicFeedbackView
 from apps.notifications.api.views import (InvoiceWhatsAppView, MessagingSettingsView, WhatsAppActionView, WhatsAppReadyView,
                                           WhatsAppView)
@@ -135,6 +136,19 @@ urlpatterns = [
     path(api + "whatsapp", WhatsAppView.as_view()),
     path(api + "feedback", FeedbackListView.as_view()),
     path(api + "import/<str:kind>", ImportView.as_view()),
+    path(api + "payments/account", pay.AccountView.as_view()),
+    path(api + "payments/kyc", pay.KycUploadView.as_view()),
+    path(api + "payments/kyc/submit", pay.KycSubmitView.as_view()),
+    path(api + "payments/kyc/<int:pk>/file", pay.KycFileView.as_view()),
+    path(api + "payments/online", pay.OnlinePaymentsView.as_view()),
+    path(api + "pos/invoices/<int:pk>/pay-link", pay.InvoicePayLinkView.as_view()),
+    path(api + "public/pay/<str:ref>", pay.PublicPayResultView.as_view()),
+    path(api + "payments/klickpay/webhook/<str:token>", pay.klickpay_webhook),
+    path(api + "platform/payments/accounts", pay.PlatformAccountsView.as_view()),
+    path(api + "platform/payments/accounts/<int:tenant_id>", pay.PlatformAccountView.as_view()),
+    path(api + "platform/payments/kyc/<int:pk>/review", pay.PlatformKycReviewView.as_view()),
+    path(api + "platform/payments/kyc/<int:pk>/file", pay.PlatformKycFileView.as_view()),
+    path(api + "platform/payments/report", pay.PlatformPaymentsReportView.as_view()),
     path(api + "public/feedback/<str:token>", PublicFeedbackView.as_view()),
     path(api + "whatsapp/ready", WhatsAppReadyView.as_view()),
     path(api + "pos/invoices/<int:pk>/whatsapp", InvoiceWhatsAppView.as_view()),

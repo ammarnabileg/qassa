@@ -148,6 +148,7 @@ class Payment(TenantScopedModel):
         CASH = "cash"
         KNET = "knet"          # card terminal, not integrated: the cashier types the approval code
         TRANSFER = "transfer"  # bank transfer / link, confirmed manually
+        ONLINE = "online"      # KlickPay payment link, confirmed by the gateway (D-017)
 
     branch = models.ForeignKey("tenancy.Branch", on_delete=models.PROTECT, related_name="+")
     invoice = models.ForeignKey(Invoice, on_delete=models.PROTECT, related_name="payments")

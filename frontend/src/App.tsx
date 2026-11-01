@@ -38,6 +38,9 @@ import Commissions from './pages/Commissions'
 import Users from './pages/Users'
 import SetPassword from './pages/SetPassword'
 import Rate from './pages/Rate'
+import Pay from './pages/Pay'
+import OnlinePayments from './pages/OnlinePayments'
+import PlatformPayments from './pages/PlatformPayments'
 import Feedback from './pages/Feedback'
 import XbrlReport from './pages/XbrlReport'
 import { Assets, Expenses, Periods, Settlements, Statements } from './pages/Finance'
@@ -152,6 +155,7 @@ export default function App() {
   if (loading) return <div className="center muted">{t('common.loading')}</div>
   if (here() === '/set-password') return <SetPassword />
   if (here().startsWith('/rate/')) return <Rate />
+  if (here().startsWith('/pay/')) return <Pay />
   if (!me) return here() === '/login' || BASE ? <Login /> : <Landing />
 
   if (me.is_platform_staff && !membership?.support) {
@@ -160,6 +164,7 @@ export default function App() {
         { path: '/platform/home', label: t('pc.home'), icon: 'home', show: true },
         { path: '/platform/tenants', label: t('platform.tenants'), icon: 'store', show: true },
         { path: '/platform/billing', label: t('pc.billing'), icon: 'receipt', show: true },
+        { path: '/platform/payments', label: t('nav.onlinePay'), icon: 'link', show: true },
         { path: '/platform/support', label: t('pc.support'), icon: 'support', show: true },
         { path: '/platform/leads', label: t('pc.leads'), icon: 'user-plus', show: true },
         { path: '/platform/plans', label: t('platform.plans'), icon: 'layers', show: true },
@@ -169,6 +174,7 @@ export default function App() {
           <Route path="/platform/home" element={<PlatformHome />} />
           <Route path="/platform/tenants" element={<PlatformTenants />} />
           <Route path="/platform/billing" element={<PlatformBilling />} />
+          <Route path="/platform/payments" element={<PlatformPayments />} />
           <Route path="/platform/support" element={<PlatformSupport />} />
           <Route path="/platform/leads" element={<PlatformLeads />} />
           <Route path="/platform/plans" element={<PlatformPlans />} />
@@ -207,6 +213,7 @@ function TenantApp() {
     { path: '/settings', label: t('nav.settingsSub'), icon: 'settings', show: can('org.manage') || can('data.export') },
     { path: '/subscription', label: t('nav.subscription'), icon: 'award', show: can('org.manage') },
     { path: '/whatsapp', label: t('nav.whatsapp'), icon: 'whatsapp', show: can('org.manage') },
+    { path: '/online-payments', label: t('nav.onlinePay'), icon: 'link', show: can('org.manage') || can('pos.invoices.view') },
     { path: '/support', label: t('nav.support'), icon: 'support', show: can('org.manage') && !membership.support },
   ]
   // Same menus as the reference (js/core/auth-nav.js CPAGES / PAGES), plus the accounting screens it doesn't have.
@@ -277,6 +284,7 @@ function TenantApp() {
         <Route path="/marketing" element={<Marketing />} />
         <Route path="/loyalty" element={<Loyalty />} />
         <Route path="/feedback" element={<Feedback />} />
+        <Route path="/online-payments" element={<OnlinePayments />} />
         <Route path="/commissions" element={<Commissions />} />
         <Route path="/users" element={<Users />} />
         <Route path="/support" element={<Support />} />

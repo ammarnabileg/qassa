@@ -28,6 +28,13 @@ export function Receipt({ invoice: inv, onClose }: { invoice: Invoice; onClose: 
   const [wa, setWa] = useState<'idle' | 'sending' | 'sent' | 'fallback'>('idle')
   const [waErr, setWaErr] = useState<unknown>(null)
   const waHref = `https://wa.me/${inv.customer_phone}?text=${encodeURIComponent(t('inv.waText', { n: inv.number, total: formatKWD(inv.total, lang) }))}`
+  const [link, setLink] = useState<{ payment_url: string; sent: boolean; text: string; phone: string } | null>(null)
+  const [linkBusy, setLinkBusy] = useState(false)
+  const payLink = async () => {
+    setLinkBusy(true); setWaErr(null)
+    try { const r = await api<{ payment_url: string; sent: boolean; text: string; phone: string }>(`/pos/invoices/${inv.id}/pay-link`, { method: 'POST', body: { send: true } }); setLink(r); if (r.sent) toast(t('inv.linkSent')) }
+    catch (e) { setWaErr(e) } finally { setLinkBusy(false) }
+  }
   const sendWa = async () => {
     setWa('sending'); setWaErr(null)
     try { await api(`/pos/invoices/${inv.id}/whatsapp`, { method: 'POST' }); setWa('sent'); toast(t('inv.waSent')) }
@@ -70,6 +77,13 @@ export function Receipt({ invoice: inv, onClose }: { invoice: Invoice; onClose: 
             ? <button type="button" className="btn" disabled={wa === 'sending' || wa === 'sent'} onClick={sendWa}><Icon name="whatsapp" />{wa === 'sent' ? t('inv.waSentShort') : t('inv.sendWa')}</button>
             : <a className="btn" target="_blank" rel="noreferrer" href={waHref}><Icon name="whatsapp" />{t('inv.sendWa')}</a>)}
         </div>
+        {inv.customer_phone && inv.state.balance !== '0.000' && !link && <button type="button" className="btn" disabled={linkBusy} onClick={payLink}><Icon name="link" />{t('inv.payLink')}</button>}
+        {link && <div className="notice" style={{ display: 'block' }}>
+          <div className="small">{link.sent ? t('inv.linkSent') : t('inv.linkManual')}</div>
+          <div className="row" style={{ gap: 6, marginTop: 6 }}><input className="input" dir="ltr" readOnly value={link.payment_url} onFocus={(e) => e.target.select()} style={{ flex: 1 }} />
+            {!link.sent && <a className="btn sm" style={{ color: '#25D366' }} target="_blank" rel="noreferrer" href={`https://wa.me/${link.phone}?text=${encodeURIComponent(link.text)}`}><Icon name="whatsapp" /></a>}
+            <button type="button" className="btn sm" onClick={() => navigator.clipboard?.writeText(link.payment_url).then(() => toast(t('usr.copied')))}><Icon name="copy" /></button></div>
+        </div>}
         {wa === 'fallback' && <div className="notice">{t('inv.waFallback')}</div>}
         <ErrorText error={waErr} />
       </Dialog>

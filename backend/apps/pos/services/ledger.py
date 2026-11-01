@@ -7,7 +7,7 @@ from apps.accounting.services.posting import Line, post_entry
 from apps.core.money import money
 from apps.core.dates import business_date
 
-METHOD_ROLE = {"cash": "CASH_DRAWER", "knet": "KNET_CLEARING", "transfer": "BANK"}
+METHOD_ROLE = {"cash": "CASH_DRAWER", "knet": "KNET_CLEARING", "transfer": "BANK", "online": "GATEWAY_CLEARING"}
 
 
 REVENUE_ROLE = {"service": "SERVICE_REVENUE", "product": "PRODUCT_REVENUE", "package": "CONTRACT_LIABILITY_PACKAGES"}

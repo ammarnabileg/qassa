@@ -50,6 +50,17 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
   return data as T
 }
 
+/** Open a private file (e.g. a KYC document) in a new tab; the request carries the session and tenant like api(). */
+export async function openFile(path: string) {
+  const w = window.open('', '_blank')
+  const headers: Record<string, string> = {}
+  if (tenantId) headers['X-Tenant'] = String(tenantId)
+  const res = await fetch('/api/v1' + path, { credentials: 'include', headers })
+  if (!res.ok) { w?.close(); throw new ApiError(res.status, 'unknown') }
+  const url = URL.createObjectURL(await res.blob())
+  if (w) w.location.href = url; else window.open(url, '_blank')
+}
+
 /** Multipart upload (spreadsheet import); same tenant, CSRF and error handling as api(). */
 export async function upload<T>(path: string, form: FormData): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json', 'X-CSRFToken': await ensureCsrf(), 'Idempotency-Key': crypto.randomUUID() }

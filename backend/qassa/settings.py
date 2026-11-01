@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "apps.notifications",
     "apps.pos",
     "apps.platform",
+    "apps.payments",
 ]
 
 MIDDLEWARE = [
@@ -138,6 +139,8 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_ROOT = Path(env("QASSA_MEDIA_ROOT", str(BASE_DIR / "media")))   # private uploads (KYC); never served directly
+MEDIA_URL = "/media-private/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
@@ -227,6 +230,9 @@ QASSA["COOLIFY_API_URL"] = env("COOLIFY_API_URL", "")
 QASSA["COOLIFY_API_TOKEN"] = env("COOLIFY_API_TOKEN", "")
 QASSA["COOLIFY_APP_UUID"] = env("COOLIFY_APP_UUID", "")
 QASSA["COOLIFY_WEB_SERVICE"] = env("COOLIFY_WEB_SERVICE", "web")
+# D-017 KlickPay. Production URL is not published by KlickPay yet: keep staging until they confirm in writing.
+QASSA["KLICKPAY_URLS"] = {"staging": env("KLICKPAY_STAGING_URL", "https://api.staging.klick-pay.com/v3"),
+                          "production": env("KLICKPAY_PRODUCTION_URL", "")}
 QASSA["PUBLIC_ADMIN_URL"] = env("QASSA_PUBLIC_ADMIN_URL", "http://localhost:5173")
 QASSA["SALES_WHATSAPP"] = env("QASSA_SALES_WHATSAPP", "")
 QASSA["SALES_EMAIL"] = env("QASSA_SALES_EMAIL", "")

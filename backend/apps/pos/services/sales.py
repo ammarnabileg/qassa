@@ -162,7 +162,7 @@ def _take_payments(inv, payments: list[PaymentIn], user, session_needed_branch, 
         amount = money(p.amount)
         if amount <= 0:
             continue
-        if p.method not in Payment.Method.values:
+        if p.method not in Payment.Method.values or p.method == Payment.Method.ONLINE:   # online only via the gateway
             raise DomainError(code="payment_method_unknown")
         if p.method != "cash" and not p.reference.strip():
             raise DomainError(code="payment_reference_required", details={"method": p.method})
