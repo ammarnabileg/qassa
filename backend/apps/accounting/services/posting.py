@@ -40,6 +40,13 @@ class DuplicatePosting(ConflictError):
 
 def resolve_role(legal_entity_id, role: str) -> Account:
     m = AccountRoleMapping.objects.select_related("account").filter(legal_entity_id=legal_entity_id, role=role).first()
+    if m is None:   # an account added to the starter chart later: give older companies their copy (idempotent)
+        from apps.accounting.coa_template import SALON_COA
+        if any(r == role for *_, r in SALON_COA):
+            from apps.accounting.services.ledger import install_chart
+            from apps.tenancy.models import LegalEntity
+            install_chart(LegalEntity.objects.get(id=legal_entity_id))
+            m = AccountRoleMapping.objects.select_related("account").filter(legal_entity_id=legal_entity_id, role=role).first()
     if m is None:
         raise DomainError(f"No account mapped for role {role}", code="account_role_unmapped", details={"role": role})
     return m.account

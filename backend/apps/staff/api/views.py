@@ -131,6 +131,40 @@ class CommissionPayoutView(TenantAPIView):
         return Response({"balance": str(commissions.balance(staff))}, status=status.HTTP_201_CREATED)
 
 
+class TipPayoutIn(serializers.Serializer):
+    branch_id = serializers.IntegerField()
+    amount = serializers.DecimalField(max_digits=18, decimal_places=3)
+    method = serializers.ChoiceField(choices=["cash", "bank", "payroll"])
+    reference = serializers.CharField(max_length=80, required=False, allow_blank=True, default="")
+
+
+class TipsView(TenantAPIView):
+    """Tips owed per employee (collected with invoices minus what was paid out)."""
+    required_permissions = {"GET": "commission.view.all"}
+
+    @extend_schema(responses=dict)
+    def get(self, request):
+        from apps.staff.services import tips
+        return Response([{"staff_id": m.id, "name_ar": m.full_name_ar, "name_en": m.full_name_en, "owed": str(tips.owed(m))}
+                         for m in StaffMember.objects.order_by("full_name_ar")])
+
+
+class TipPayoutView(TenantAPIView):
+    required_permissions = {"POST": "commission.pay"}
+
+    @extend_schema(request=TipPayoutIn, responses={201: dict})
+    def post(self, request, pk):
+        from apps.staff.services import tips
+        from apps.tenancy.api.base import branch_for
+        staff = get_object_or_404(StaffMember.objects.all(), pk=pk)
+        s = TipPayoutIn(data=request.data)
+        s.is_valid(raise_exception=True)
+        v = s.validated_data
+        tips.pay_out(staff=staff, branch=branch_for(request, v["branch_id"]), amount=v["amount"], method=v["method"],
+                     reference=v["reference"], user=request.user)
+        return Response({"owed": str(tips.owed(staff))}, status=status.HTTP_201_CREATED)
+
+
 # ---------- working hours & time off ----------
 class HourIn(serializers.Serializer):
     branch_id = serializers.IntegerField()

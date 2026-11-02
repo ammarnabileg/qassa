@@ -91,7 +91,8 @@ def session_at(branch_id, at) -> CashSession | None:
 def expected_cash(session: CashSession) -> Decimal:
     def total(direction):
         return session.payments.filter(method="cash", direction=direction).aggregate(s=Sum("amount"))["s"] or ZERO
-    return money(session.opening_float + total("in") - total("out"))
+    tips_out = session.tip_payouts.filter(method="cash").aggregate(s=Sum("amount"))["s"] or ZERO   # tips handed out of the drawer
+    return money(session.opening_float + total("in") - total("out") - tips_out)
 
 
 # Kuwaiti dinar notes and coins, largest first (value in KWD)
@@ -229,9 +230,15 @@ def _plan_lines(data: CheckoutIn, branch, today, customer, offline=None):
                 raise DomainError(code="package_expired", details={"position": i})
             if pkg.sessions_left < ln.qty:
                 raise DomainError(code="package_used_up", details={"position": i})
-            # the session is valued at what the customer paid for it; the line itself costs nothing now
-            planned.append(dict(kind="service", service=svc, name_ar=svc.name_ar, name_en=svc.name_en, price=pkg.session_value,
-                                ln=ln, disc=money(pkg.session_value * ln.qty), package=pkg))
+            # the session is valued at what the customer paid for it; the line itself costs nothing now.
+            # The last session takes what is left of the package, so 10.000 / 3 releases 3.333 + 3.333 + 3.334
+            value = pkg.session_value
+            if pkg.sessions_left == ln.qty:
+                left = money(pkg.sold_on_line.line_total - pkg.session_value * (pkg.sessions_total - pkg.sessions_left))
+                if money(left / ln.qty) * ln.qty == left:
+                    value = money(left / ln.qty)
+            planned.append(dict(kind="service", service=svc, name_ar=svc.name_ar, name_en=svc.name_en, price=value,
+                                ln=ln, disc=money(value * ln.qty), package=pkg))
             continue
         price = price_on(svc, branch.id, today)
         if price is None and not (offline and ln.unit_price is not None):

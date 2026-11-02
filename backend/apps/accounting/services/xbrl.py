@@ -37,6 +37,11 @@ ROLE_DEFAULTS = {
     "OTHER_EXPENSES": "ifrs-full:GeneralAndAdministrativeExpense",
     "DEPRECIATION_EXPENSE": "ifrs-full:DepreciationPropertyPlantAndEquipment",
     "MARKETING": "moci:SellingDistributionAndMarketingExpense",
+    "STAFF_ADVANCES": "ifrs-full:TradeAndOtherReceivables", "DEPOSITS_PAID": "ifrs-full:TradeAndOtherReceivables",
+    "SALARIES_PAYABLE": "ifrs-full:TradeAndOtherPayables", "PSP_PAYABLE": "ifrs-full:TradeAndOtherPayables",
+    "OWNER_CURRENT": "ifrs-full:RetainedEarnings", "INVENTORY_LOSSES": "ifrs-full:CostOfSales",
+    "MAINTENANCE": "ifrs-full:GeneralAndAdministrativeExpense", "SUBSCRIPTIONS": "ifrs-full:GeneralAndAdministrativeExpense",
+    "PROFESSIONAL_FEES": "ifrs-full:GeneralAndAdministrativeExpense",
 }
 FP_TYPES = {"asset", "liability", "equity"}
 FP_SECTIONS = [("noncurrent_assets", "ifrs-full:NoncurrentAssets"), ("current_assets", "ifrs-full:CurrentAssets"),

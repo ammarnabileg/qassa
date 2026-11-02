@@ -62,12 +62,15 @@ def pay_accrued(expense: Expense, *, paid_on: date, reference: str, user) -> Exp
 
 # ---------- fixed assets (example 12) ----------
 def add_asset(*, entity, branch, name: str, acquired_on: date, cost, residual_value, life_months: int, paid_from: str,
-              reference: str, user) -> FixedAsset:
+              reference: str, user, in_service_on: date | None = None) -> FixedAsset:
     cost, residual = money(cost), money(residual_value or 0)
     if cost <= 0 or residual < 0 or residual >= cost or life_months <= 0:
         raise DomainError(code="asset_values_invalid")
+    in_service_on = in_service_on or acquired_on
+    if in_service_on < acquired_on:
+        raise DomainError(code="asset_in_service_before_purchase")
     with transaction.atomic():
-        a = FixedAsset.objects.create(legal_entity=entity, branch=branch, name=name, acquired_on=acquired_on, cost=cost,
+        a = FixedAsset.objects.create(legal_entity=entity, branch=branch, name=name, acquired_on=acquired_on, in_service_on=in_service_on, cost=cost,
                                       residual_value=residual, life_months=life_months, paid_from=paid_from, reference=reference,
                                       created_by=user)
         post_entry(legal_entity_id=entity.id, entry_date=acquired_on, branch_id=branch.id if branch else None, kind="auto",
@@ -83,8 +86,10 @@ def _months_between(a: date, b: date) -> int:
 
 
 def depreciation_for(asset: FixedAsset, month: date) -> Decimal:
-    """Straight line from the month after acquisition; the last month absorbs rounding."""
-    n = _months_between(asset.acquired_on, month)          # 1 = first month after acquisition
+    """Straight line, monthly, starting with the month the asset is ready for use (in_service_on; older assets without
+    it: the month after acquisition, as before). The last month absorbs rounding."""
+    start = asset.in_service_on
+    n = (_months_between(start, month) + 1) if start else _months_between(asset.acquired_on, month)   # 1 = first month depreciated
     if n < 1 or n > asset.life_months or (asset.disposed_on and asset.disposed_on < month):
         return ZERO
     base = asset.cost - asset.residual_value
@@ -128,10 +133,16 @@ def balance_of(entity_id, account: Account, upto: date | None = None) -> Decimal
     return (s["d"] or ZERO) - (s["c"] or ZERO)
 
 
-def settle_clearing(*, entity, channel: str, settled_on: date, gross, fees, reference: str, user) -> ClearingSettlement:
-    gross, fees = money(gross), money(fees or 0)
-    if gross <= 0 or fees < 0 or fees >= gross:
+def settle_clearing(*, entity, channel: str, settled_on: date, gross, fees, reference: str, user, refunds=0) -> ClearingSettlement:
+    """Provider settlement: gross sales cleared, less fees, less refunds it deducted for refunds made after an earlier
+    settlement (those sit in PSP_PAYABLE). Bank receives gross - fees - refunds."""
+    gross, fees, refunds = money(gross), money(fees or 0), money(refunds or 0)
+    if gross <= 0 or fees < 0 or refunds < 0 or fees + refunds >= gross:
         raise DomainError(code="settlement_values_invalid")
+    if refunds > 0:
+        owed = -balance_of(entity.id, resolve_role(entity.id, "PSP_PAYABLE"), settled_on)
+        if refunds > owed:
+            raise DomainError(code="settlement_refunds_exceed", details={"owed": str(owed)})
     role = "KNET_CLEARING" if channel == "knet" else "GATEWAY_CLEARING"
     acc = resolve_role(entity.id, role)
     with transaction.atomic():
@@ -140,9 +151,11 @@ def settle_clearing(*, entity, channel: str, settled_on: date, gross, fees, refe
             raise DomainError(code="settlement_exceeds_clearing", details={"open": str(open_balance)})
         s = ClearingSettlement.objects.create(legal_entity=entity, channel=channel, settled_on=settled_on, gross=gross,
                                               fees=fees, reference=reference, created_by=user)
-        lines = [Line("BANK", debit=gross - fees, description=reference)]
+        lines = [Line("BANK", debit=gross - fees - refunds, description=reference)]
         if fees:
             lines.append(Line("PAYMENT_FEES", debit=fees))
+        if refunds:
+            lines.append(Line("PSP_PAYABLE", debit=refunds, description="refunds deducted by the provider"))
         lines.append(Line(role, credit=gross))
         post_entry(legal_entity_id=entity.id, entry_date=settled_on, kind="auto", source_type="settlement", source_id=str(s.id),
                    event_type="settled", user=user, memo=f"{channel} settlement {reference}", lines=lines)

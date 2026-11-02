@@ -54,17 +54,25 @@ def test_expense_paid_and_accrued(s):
 
 def test_fixed_asset_and_depreciation_example_12(s):
     c, q = s["c"], s["q"]
-    r = c.post(f"/api/v1/accounting/assets{q}", {"name": "كرسي حلاقة", "acquired_on": f"{Y}-01-15", "cost": "600", "life_months": 60,
-                                                  "paid_from": "bank"}, format="json", HTTP_IDEMPOTENCY_KEY="a1")
+    r = c.post(f"/api/v1/accounting/assets{q}", {"name": "كرسي حلاقة", "acquired_on": f"{Y}-01-15", "in_service_on": f"{Y}-02-03",
+                                                  "cost": "600", "life_months": 60, "paid_from": "bank"}, format="json", HTTP_IDEMPOTENCY_KEY="a1")
     assert r.status_code == 201 and r.json()["monthly"] == "10.000"
     a = r.json()
     assert lines_of(s, "asset", a["id"], "acquired") == {(acc(s, "FIXED_ASSETS").code, "600.000", "0.000"), (acc(s, "BANK").code, "0.000", "600.000")}
-    assert c.post(f"/api/v1/accounting/depreciation{q}", {"month": f"{Y}-01"}, format="json").json()["posted"] == 0   # month of purchase
+    assert c.post(f"/api/v1/accounting/depreciation{q}", {"month": f"{Y}-01"}, format="json").json()["posted"] == 0   # bought, not yet in use
     d = c.post(f"/api/v1/accounting/depreciation{q}", {"month": f"{Y}-02"}, format="json").json()
     assert d == {"month": f"{Y}-02", "posted": 1, "already_posted": 0, "total": "10.000"}
     assert c.post(f"/api/v1/accounting/depreciation{q}", {"month": f"{Y}-02"}, format="json").json()["already_posted"] == 1
     assert lines_of(s, "asset", a["id"], f"dep:{Y}-02") == {(acc(s, "DEPRECIATION_EXPENSE").code, "10.000", "0.000"),
                                                             (acc(s, "ACCUMULATED_DEPRECIATION").code, "0.000", "10.000")}
+
+
+def test_depreciation_starts_when_ready_for_use(db):
+    """Accountant's review: bought in January, installed in April -> depreciation from April."""
+    from apps.accounting.models import FixedAsset
+    from apps.accounting.services.finance import depreciation_for
+    a = FixedAsset(acquired_on=date(2026, 1, 10), in_service_on=date(2026, 4, 20), cost=Decimal("120.000"), residual_value=Decimal("0"), life_months=12)
+    assert [depreciation_for(a, date(2026, m, 1)) for m in (1, 2, 3, 4, 5)] == [0, 0, 0, Decimal("10.000"), Decimal("10.000")]
 
 
 def test_last_depreciation_month_absorbs_rounding(db):

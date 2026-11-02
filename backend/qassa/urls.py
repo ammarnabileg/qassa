@@ -187,6 +187,8 @@ urlpatterns = [
     path(api + "customers/<int:pk>/wallet", loy.CustomerWalletView.as_view()),
     path(api + "commissions", stf.CommissionsView.as_view()),
     path(api + "staff/<int:pk>/payout", stf.CommissionPayoutView.as_view()),
+    path(api + "staff/tips", stf.TipsView.as_view()),
+    path(api + "staff/<int:pk>/tips/payout", stf.TipPayoutView.as_view()),
     path(api + "staff/<int:pk>/schedule", stf.StaffScheduleView.as_view()),
     path(api + "staff/<int:pk>/time-off", stf.StaffTimeOffView.as_view()),
     path(api + "staff/<int:pk>/time-off/<int:off_id>", stf.StaffTimeOffDetailView.as_view()),

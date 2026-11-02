@@ -179,6 +179,7 @@ class FixedAsset(TenantScopedModel):
     branch = models.ForeignKey("tenancy.Branch", null=True, blank=True, on_delete=models.PROTECT)
     name = models.CharField(max_length=150)
     acquired_on = models.DateField()
+    in_service_on = models.DateField(null=True, blank=True)   # ready for use: depreciation starts here (accountant's review)
     cost = models.DecimalField(max_digits=18, decimal_places=3)
     residual_value = models.DecimalField(max_digits=18, decimal_places=3, default=0)
     life_months = models.PositiveSmallIntegerField()

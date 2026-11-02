@@ -65,7 +65,8 @@ def apply_success(r: OnlineRefund):
             post_entry(legal_entity_id=appt.branch.legal_entity_id, entry_date=today, kind="auto", branch_id=appt.branch_id,
                        source_type="payments.refund", source_id=str(r.id), event_type="deposit.refunded", memo=f"Deposit refund {op.reference}",
                        lines=[Line("CUSTOMER_DEPOSITS", debit=r.amount, branch_id=appt.branch_id),
-                              Line("GATEWAY_CLEARING", credit=r.amount, branch_id=appt.branch_id)])
+                              *ledger.refund_lines(appt.branch.legal_entity_id, "GATEWAY_CLEARING", r.amount, today, appt.branch_id,
+                                                   f"deposit {op.reference}")])
             Appointment.objects.filter(id=appt.id, deposit_status__in=["paid", "refunding"]).update(deposit_status="refunded")
         r.status, r.settled_at = OnlineRefund.Status.SUCCESS, timezone.now()
         r.save(update_fields=["status", "settled_at", "payment"])

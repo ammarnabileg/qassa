@@ -55,20 +55,61 @@ def receive_goods(*, branch, supplier_id, lines: list[ReceiptLineIn], user, note
     return grn
 
 
-def record_bill(*, receipt: GoodsReceipt, supplier_ref, amount, bill_date=None, due_date=None, user) -> SupplierBill:
+COST_ROLE = {Product.Kind.RETAIL: "COGS_PRODUCTS", Product.Kind.SUPPLY: "COST_OF_SERVICES_SUPPLIES"}
+
+
+def bill_difference_split(receipt: GoodsReceipt, diff: Decimal) -> list[dict]:
+    """Where a bill/receipt price difference goes (accountant's review): per receipt line in proportion to its value;
+    the part matching what is still on the shelf goes to inventory (and its average cost), the part already sold or used
+    to cost of sales / supplies consumed."""
+    from apps.core.money import allocate
+    from apps.inventory.models import StockLevel
+    lines = list(receipt.lines.select_related("product"))
+    shares = allocate(diff, [ln.line_total for ln in lines]) if diff else [Decimal("0")] * len(lines)
+    out = []
+    for ln, share in zip(lines, shares):
+        lvl = StockLevel.objects.filter(branch_id=receipt.branch_id, product_id=ln.product_id).first()
+        on_hand = min(max(lvl.qty if lvl else Decimal("0"), Decimal("0")), ln.qty)
+        to_stock = money(share * on_hand / ln.qty) if ln.qty else Decimal("0")
+        out.append({"product": ln.product, "level": lvl, "on_hand": on_hand, "to_stock": to_stock, "to_cost": money(share - to_stock)})
+    return out
+
+
+def record_bill(*, receipt: GoodsReceipt, supplier_ref, amount, bill_date=None, due_date=None, user,
+                accept_difference=False, note="") -> SupplierBill:
+    """Supplier bill against a receipt. A different amount is refused unless the accountant accepts the difference
+    (with a note): it is then split between stock still on hand and cost of what was already sold or used."""
     amount = money(amount)
     if hasattr(receipt, "bill"):
         raise DomainError(code="bill_exists")
-    if amount != receipt.total:
+    diff = money(amount - receipt.total)
+    if diff and not accept_difference:
         raise DomainError(code="bill_amount_mismatch", message="Bill differs from the received value — refer to the accountant",
-                          details={"received": str(receipt.total)})
+                          details={"received": str(receipt.total), "difference": str(diff)})
+    if diff and not note.strip():
+        raise DomainError(code="reason_required")
     with transaction.atomic():
         bill = SupplierBill.objects.create(receipt=receipt, supplier_ref=supplier_ref.strip(), amount=amount,
-                                           bill_date=bill_date or business_date(), due_date=due_date, created_by=user)
+                                           bill_date=bill_date or accounting_date(), due_date=due_date, created_by=user)
+        br = receipt.branch_id
+        lines = [Line("GRNI", debit=receipt.total, branch_id=br)]
+        for part in bill_difference_split(receipt, diff) if diff else []:
+            kind = part["product"].kind
+            for role, v in ((INV_ROLE[kind], part["to_stock"]), (COST_ROLE[kind], part["to_cost"])):
+                if v:
+                    lines.append(Line(role, branch_id=br, description=f"price difference {part['product'].sku}",
+                                      **({"debit": v} if v > 0 else {"credit": -v})))
+            if part["to_stock"] and part["level"] is not None and part["level"].qty > 0:   # keep the stock card = ledger
+                lvl = part["level"]
+                lvl.avg_cost = (lvl.qty * lvl.avg_cost + part["to_stock"]) / lvl.qty
+                lvl.save(update_fields=["avg_cost"])
+        lines.append(Line("AP_SUPPLIERS", credit=amount, branch_id=br))
         post_entry(legal_entity_id=receipt.branch.legal_entity_id, entry_date=bill.bill_date, user=user, kind="auto",
-                   branch_id=receipt.branch_id, source_type="inventory.bill", source_id=str(bill.id), event_type="bill.recorded",
-                   memo=f"{receipt.supplier.name} {bill.supplier_ref}",
-                   lines=[Line("GRNI", debit=amount, branch_id=receipt.branch_id), Line("AP_SUPPLIERS", credit=amount, branch_id=receipt.branch_id)])
+                   branch_id=br, source_type="inventory.bill", source_id=str(bill.id), event_type="bill.recorded",
+                   memo=f"{receipt.supplier.name} {bill.supplier_ref}" + (f" — difference {diff}: {note.strip()}" if diff else ""), lines=lines)
+        if diff:
+            audit("inventory.bill_difference", tenant_id=receipt.tenant_id, actor=user, obj=bill, reason=note.strip(),
+                  data={"received": str(receipt.total), "billed": str(amount), "difference": str(diff)})
     return bill
 
 
@@ -94,8 +135,19 @@ def pay_bill(*, bill: SupplierBill, amount, reference, user) -> SupplierPayment:
     return pay
 
 
-def adjust(*, branch, product_id, qty_delta, reason, user) -> StockMove:
-    """Stock count correction. Loss/gain goes to cost of goods (policy default, accountant to confirm)."""
+ADJUST_ROLE = {  # accountant's review: supplies are not cost of products sold; losses get their own account
+    "count": {Product.Kind.RETAIL: "COGS_PRODUCTS", Product.Kind.SUPPLY: "COST_OF_SERVICES_SUPPLIES"},
+    "consumed": {Product.Kind.RETAIL: "COGS_PRODUCTS", Product.Kind.SUPPLY: "COST_OF_SERVICES_SUPPLIES"},
+    "damaged": {Product.Kind.RETAIL: "INVENTORY_LOSSES", Product.Kind.SUPPLY: "INVENTORY_LOSSES"},
+    "shrinkage": {Product.Kind.RETAIL: "INVENTORY_LOSSES", Product.Kind.SUPPLY: "INVENTORY_LOSSES"},
+}
+
+
+def adjust(*, branch, product_id, qty_delta, reason, user, cause="count") -> StockMove:
+    """Stock correction. cause: count (stock-take difference), consumed (supplies used in services), damaged,
+    shrinkage (missing). The other side follows the item's kind and the cause (ADJUST_ROLE)."""
+    if cause not in ADJUST_ROLE:
+        raise DomainError(code="adjust_cause_unknown")
     if not reason.strip():
         raise DomainError(code="reason_required")
     p = Product.objects.filter(id=product_id).first() or _raise("product_unknown")
@@ -115,8 +167,8 @@ def adjust(*, branch, product_id, qty_delta, reason, user) -> StockMove:
             post_entry(legal_entity_id=branch.legal_entity_id, entry_date=accounting_date(), user=user, kind="auto", branch_id=branch.id,
                        source_type="inventory.adjust", source_id=str(move.id), event_type="stock.adjusted", memo=reason,
                        lines=[Line(inv, branch_id=branch.id, **({"debit": value} if gain else {"credit": value})),
-                              Line("COGS_PRODUCTS", branch_id=branch.id, **({"credit": value} if gain else {"debit": value}))])
-        audit("inventory.adjusted", tenant_id=branch.tenant_id, actor=user, obj=move, reason=reason, data={"qty": str(qty)})
+                              Line(ADJUST_ROLE[cause][p.kind], branch_id=branch.id, **({"credit": value} if gain else {"debit": value}))])
+        audit("inventory.adjusted", tenant_id=branch.tenant_id, actor=user, obj=move, reason=reason, data={"qty": str(qty), "cause": cause})
     return move
 
 

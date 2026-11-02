@@ -70,15 +70,38 @@ def post_tip(inv, user):
                       lines=[Line("AR_CUSTOMERS", debit=inv.tip, branch_id=inv.branch_id), Line("TIPS_PAYABLE", credit=inv.tip, branch_id=inv.branch_id)])
 
 
+CLEARING = {"KNET_CLEARING", "GATEWAY_CLEARING"}
+
+
+def refund_lines(legal_entity_id, role, amount, on, branch_id, desc):
+    """Credit side of money going back. For KNET / the gateway only what is still unsettled in the clearing account is
+    taken from it; the rest was already paid to the bank, so the provider will deduct it from a later settlement:
+    a liability (PSP_PAYABLE) until then (accountant's review, refunds after settlement)."""
+    if role not in CLEARING:
+        return [Line(role, credit=amount, branch_id=branch_id, description=desc)]
+    from apps.accounting.services.finance import balance_of
+    from apps.accounting.services.posting import resolve_role
+    open_ = max(balance_of(legal_entity_id, resolve_role(legal_entity_id, role), on), Decimal("0"))
+    from_clearing = min(amount, money(open_))
+    out = [Line(role, credit=from_clearing, branch_id=branch_id, description=desc)] if from_clearing > 0 else []
+    if amount - from_clearing > 0:
+        out.append(Line("PSP_PAYABLE", credit=money(amount - from_clearing), branch_id=branch_id, description=f"{desc} (after settlement)"))
+    return out
+
+
 def post_payment(p, inv, user, on=None):
-    """Receipt: Dr cash/clearing / Cr AR.  Refund: Dr AR / Cr cash/clearing."""
-    money_side, ar_side = ("debit", "credit") if p.direction == "in" else ("credit", "debit")
+    """Receipt: Dr cash/clearing / Cr AR.  Refund: Dr AR / Cr cash/clearing (or due-to-provider after settlement)."""
     desc = f"{inv.number} {p.method}{(' ' + p.reference) if p.reference else ''}"
-    return post_entry(legal_entity_id=inv.legal_entity_id, entry_date=on or accounting_date(), user=user, kind="auto",
+    day = on or accounting_date()
+    if p.direction == "in":
+        lines = [Line(METHOD_ROLE[p.method], debit=p.amount, branch_id=p.branch_id, description=desc),
+                 Line("AR_CUSTOMERS", credit=p.amount, branch_id=p.branch_id, description=desc)]
+    else:
+        lines = [Line("AR_CUSTOMERS", debit=p.amount, branch_id=p.branch_id, description=desc),
+                 *refund_lines(inv.legal_entity_id, METHOD_ROLE[p.method], p.amount, day, p.branch_id, desc)]
+    return post_entry(legal_entity_id=inv.legal_entity_id, entry_date=day, user=user, kind="auto",
                       branch_id=p.branch_id, source_type="pos.payment", source_id=str(p.id),
-                      event_type="payment.received" if p.direction == "in" else "refund.paid", memo=desc,
-                      lines=[Line(METHOD_ROLE[p.method], branch_id=p.branch_id, description=desc, **{money_side: p.amount}),
-                             Line("AR_CUSTOMERS", branch_id=p.branch_id, description=desc, **{ar_side: p.amount})])
+                      event_type="payment.received" if p.direction == "in" else "refund.paid", memo=desc, lines=lines)
 
 
 def post_credit_note(cn, inv, cn_lines, user):

@@ -110,6 +110,7 @@ class AssetIn(serializers.Serializer):
     branch_id = serializers.IntegerField(required=False, allow_null=True)
     name = serializers.CharField(max_length=150)
     acquired_on = serializers.DateField()
+    in_service_on = serializers.DateField(required=False, allow_null=True, default=None)   # ready for use; default = acquired_on
     cost = serializers.DecimalField(max_digits=18, decimal_places=3)
     residual_value = serializers.DecimalField(max_digits=18, decimal_places=3, required=False, default=0)
     life_months = serializers.IntegerField(min_value=1, max_value=600)
@@ -166,6 +167,7 @@ class SettlementIn(serializers.Serializer):
     settled_on = serializers.DateField()
     gross = serializers.DecimalField(max_digits=18, decimal_places=3)
     fees = serializers.DecimalField(max_digits=18, decimal_places=3, required=False, default=0)
+    refunds = serializers.DecimalField(max_digits=18, decimal_places=3, required=False, default=0)   # deducted by the provider
     reference = serializers.CharField(max_length=80)
 
 

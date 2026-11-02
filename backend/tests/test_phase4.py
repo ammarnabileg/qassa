@@ -262,3 +262,91 @@ def test_points_tiers_welcome_birthday_and_expiry(salon):
         assert pts.expire_inactive(business_date()) == 0                     # active customer keeps points
         assert pts.expire_inactive(business_date().replace(year=business_date().year + 2)) == 1
         assert pts.balance(c) == 0 and PointsEntry.objects.filter(customer=c, kind="expire").count() == 1
+
+
+def test_stock_adjustment_goes_to_the_right_account_by_kind_and_cause(salon):
+    """Accountant's review: supplies are not cost of products sold; damage and shrinkage have their own account."""
+    s = salon
+    r = owner(s).post("/api/v1/inventory/products", {"sku": "DYE1", "name_ar": "صبغة", "kind": "supply"}, format="json")
+    assert r.status_code == 201, r.content
+    dye = r.json()
+    receive(s, dye["id"], "10", "2.000", "gd")
+    shampoo = make_product(s)
+    receive(s, shampoo["id"], "10", "1.000", "gs")
+    c = owner(s)
+    adj = lambda pid, q, cause, k: c.post("/api/v1/inventory/adjust", {"branch_id": s["b"]["HAW"].id, "product_id": pid, "qty_delta": q,  # noqa: E731
+                                                                       "reason": "جرد", "cause": cause}, format="json", HTTP_IDEMPOTENCY_KEY=k)
+    assert adj(dye["id"], "-2", "consumed", "a1").status_code in (200, 201)
+    assert adj(dye["id"], "-1", "damaged", "a2").status_code in (200, 201)
+    assert adj(shampoo["id"], "-1", "shrinkage", "a3").status_code in (200, 201)
+    assert balance(s, "COST_OF_SERVICES_SUPPLIES") == D("4.000")
+    assert balance(s, "INVENTORY_LOSSES") == D("3.000")
+    assert balance(s, "COGS_PRODUCTS") == 0
+
+
+def test_last_package_session_releases_the_rounding(salon):
+    """Accountant's review: 10.000 for 3 sessions -> 3.333 + 3.333 + 3.334, nothing left in the liability."""
+    s = salon
+    cust = manager(s).post("/api/v1/customers", {"full_name": "أم علي", "phone": "55552299"}, format="json").json()
+    plan = owner(s).post("/api/v1/loyalty/plans", {"name_ar": "3 قصات", "service": s["cut"].id, "sessions": 3, "price": "10.000"},
+                         format="json").json()
+    open_drawer(s)
+    checkout(s, s["cashier"], [{"package_plan_id": plan["id"]}], [{"method": "cash", "amount": "10.000"}], customer_id=cust["id"])
+    pkg = client_for(s["cashier"], s["t"]).get(f"/api/v1/customers/{cust['id']}/wallet").json()["packages"][0]
+    for i in range(3):
+        r = checkout(s, s["cashier"], [{"service_id": s["cut"].id, "redeem_package_id": pkg["id"], "staff_id": s["staff"][0].id}],
+                     [], customer_id=cust["id"], key=f"use{i}")
+        assert r.status_code == 201, r.content
+    assert balance(s, "CONTRACT_LIABILITY_PACKAGES") == 0 and balance(s, "SERVICE_REVENUE") == D("-10.000")
+
+
+def test_tips_owed_then_paid_out_cash_bank_or_payroll(salon):
+    """Accountant's review: tips are a liability that must be paid out, with the drawer counting cash handed out."""
+    from apps.pos.models import CashSession
+    from apps.pos.services.sales import expected_cash
+    s = salon
+    open_drawer(s)
+    st = s["staff"][0]
+    r = checkout(s, s["cashier"], [{"service_id": s["wash"].id, "staff_id": st.id}], [{"method": "cash", "amount": "18.000"}],
+                 tip="3.000", tip_staff_id=st.id)
+    assert r.status_code == 201, r.content
+    assert balance(s, "TIPS_PAYABLE") == D("-3.000")
+    o = owner(s)
+    assert next(x for x in o.get("/api/v1/staff/tips").json() if x["staff_id"] == st.id)["owed"] == "3.000"
+    pay = lambda amount, method, ref="", k="t": o.post(f"/api/v1/staff/{st.id}/tips/payout",  # noqa: E731
+                                                     {"branch_id": s["b"]["HAW"].id, "amount": amount, "method": method, "reference": ref}, format="json")
+    assert pay("1.000", "cash").status_code == 201
+    assert pay("1.000", "bank").json()["error"]["code"] == "payment_reference_required"
+    assert pay("1.000", "bank", "TR9").status_code == 201
+    assert pay("5.000", "payroll").json()["error"]["code"] == "overpayment"
+    assert pay("1.000", "payroll").json()["owed"] == "0.000"
+    assert balance(s, "TIPS_PAYABLE") == 0 and balance(s, "SALARIES_PAYABLE") == D("-1.000")
+    with tenant_context(s["t"].id):
+        sess = CashSession.objects.get(status="open")
+        assert expected_cash(sess) == D("20.000") + D("18.000") - D("1.000")       # the drawer knows the cash went out
+
+
+def test_bill_difference_split_between_stock_on_hand_and_cost_of_sold(salon):
+    """Accountant's review: received at 100 (10 x 10.000), billed 105; 4 of the 10 already sold -> 3 to stock, 2 to cost."""
+    from apps.inventory.models import StockLevel
+    s = salon
+    p = make_product(s, sku="SH9", price="15.000")
+    grn = receive(s, p["id"], "10", "10.000", "g9")
+    open_drawer(s)
+    for i in range(4):
+        assert checkout(s, s["cashier"], [{"product_id": p["id"]}], [{"method": "cash", "amount": "15.000"}], key=f"sale{i}").status_code == 201
+    bill = lambda body, k: owner(s).post(f"/api/v1/inventory/receipts/{grn['id']}/bill", body, format="json", HTTP_IDEMPOTENCY_KEY=k)  # noqa: E731
+    assert bill({"supplier_ref": "S-9", "amount": "105.000"}, "b1").json()["error"]["code"] == "bill_amount_mismatch"
+    assert bill({"supplier_ref": "S-9", "amount": "105.000", "accept_difference": True}, "b2").json()["error"]["code"] == "reason_required"
+    r = bill({"supplier_ref": "S-9", "amount": "105.000", "accept_difference": True, "note": "زيادة سعر المورد"}, "b3")
+    assert r.status_code == 201, r.content
+    assert balance(s, "GRNI") == 0 and balance(s, "AP_SUPPLIERS") == D("-105.000")
+    assert balance(s, "INVENTORY_RETAIL") == D("60.000") + D("3.000")      # 6 left at 10 + their share of the difference
+    assert balance(s, "COGS_PRODUCTS") == D("40.000") + D("2.000")
+    with tenant_context(s["t"].id):
+        lvl = StockLevel.objects.get(branch=s["b"]["HAW"], product_id=p["id"])
+        assert lvl.qty * lvl.avg_cost == D("63.000")                         # stock card = ledger
+    g2 = receive(s, p["id"], "1", "10.000", "g10")
+    assert client_for(s["cashier"], s["t"]).post(f"/api/v1/inventory/receipts/{g2['id']}/bill",
+                                                 {"supplier_ref": "x", "amount": "11", "accept_difference": True, "note": "n"},
+                                                 format="json", HTTP_IDEMPOTENCY_KEY="b4").status_code == 403

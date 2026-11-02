@@ -72,3 +72,20 @@ class TimeOff(TenantScopedModel):
 
     class Meta(TenantScopedModel.Meta):
         constraints = [models.CheckConstraint(condition=models.Q(ends_at__gt=models.F("starts_at")), name="timeoff_range_valid")]
+
+
+class TipPayout(TenantScopedModel):
+    """Tips handed to an employee (accountant's review): Dr TIPS_PAYABLE / Cr the drawer, the bank, or salaries payable."""
+    class Method(models.TextChoices):
+        CASH = "cash"        # from the open drawer of the branch (counted in its expected cash)
+        BANK = "bank"
+        PAYROLL = "payroll"  # added to the salary: moved to salaries payable, paid with the payroll
+
+    staff = models.ForeignKey(StaffMember, on_delete=models.PROTECT, related_name="tip_payouts")
+    branch = models.ForeignKey("tenancy.Branch", on_delete=models.PROTECT, related_name="+")
+    amount = models.DecimalField(max_digits=18, decimal_places=3)
+    method = models.CharField(max_length=8, choices=Method.choices)
+    cash_session = models.ForeignKey("pos.CashSession", on_delete=models.PROTECT, null=True, blank=True, related_name="tip_payouts")
+    reference = models.CharField(max_length=80, blank=True)
+    created_by = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)

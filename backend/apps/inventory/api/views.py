@@ -4,6 +4,7 @@ from django.db import IntegrityError, transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers, status
 from rest_framework.generics import get_object_or_404
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from apps.core.errors import DomainError
@@ -149,6 +150,8 @@ class BillIn(serializers.Serializer):
     supplier_ref = serializers.CharField(max_length=60)
     amount = serializers.DecimalField(max_digits=18, decimal_places=3, min_value=0)
     due_date = serializers.DateField(required=False, allow_null=True)
+    accept_difference = serializers.BooleanField(default=False)   # accountant only (accounting.journal.post)
+    note = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
 
 
 class ReceiptBillView(TenantAPIView):
@@ -160,6 +163,8 @@ class ReceiptBillView(TenantAPIView):
         grn = get_object_or_404(_grns(), pk=pk)
         s = BillIn(data=request.data)
         s.is_valid(raise_exception=True)
+        if s.validated_data["accept_difference"] and not request.membership.has_perm("accounting.journal.post"):
+            raise PermissionDenied("Only the accountant accepts a bill difference")
         purchasing.record_bill(receipt=grn, user=request.user, **s.validated_data)
         return Response(GrnOut(_grns().get(id=pk)).data, status=status.HTTP_201_CREATED)
 
@@ -187,6 +192,7 @@ class AdjustIn(serializers.Serializer):
     product_id = serializers.IntegerField()
     qty_delta = serializers.DecimalField(max_digits=12, decimal_places=3)
     reason = serializers.CharField(max_length=200)
+    cause = serializers.ChoiceField(choices=["count", "consumed", "damaged", "shrinkage"], default="count")
 
 
 class AdjustView(TenantAPIView):
@@ -199,7 +205,7 @@ class AdjustView(TenantAPIView):
         v = s.validated_data
         if v["qty_delta"] == 0:
             raise DomainError(code="stock_qty_invalid")
-        move = purchasing.adjust(branch=branch_for(request, v["branch_id"]), product_id=v["product_id"], qty_delta=v["qty_delta"],
+        move = purchasing.adjust(branch=branch_for(request, v["branch_id"]), product_id=v["product_id"], qty_delta=v["qty_delta"], cause=v["cause"],
                                  reason=v["reason"], user=request.user)
         lvl = StockLevel.objects.get(branch_id=move.branch_id, product_id=move.product_id)
         return Response({"qty": str(lvl.qty)}, status=status.HTTP_201_CREATED)

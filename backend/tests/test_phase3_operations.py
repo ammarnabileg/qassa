@@ -399,3 +399,32 @@ def test_sale_after_midnight_is_booked_on_its_calendar_date_not_the_shift(salon,
         assert inv.business_date == dt.date(2026, 12, 31)                       # the shift
         dates = set(JournalEntry.objects.filter(source_id=str(inv.id), source_type="pos.invoice").values_list("entry_date", flat=True))
         assert dates == {dt.date(2027, 1, 1)}                                   # the books
+
+
+def test_knet_refund_after_settlement_is_owed_to_the_provider_until_deducted(salon):
+    """Accountant's review: once the provider has paid the bank, a refund can't come out of the old clearing balance."""
+    s = salon
+    open_drawer(s)
+    inv = checkout(s, s["cashier"], [{"service_id": s["wash"].id}], [{"method": "knet", "amount": "15.000", "reference": "K1"}]).json()
+    o = client_for(s["owner"], s["t"])
+    q = f"?legal_entity_id={s['entity'].id}"
+    today = timezone.localdate().isoformat()   # entries are dated by the calendar, not the shift
+    st = o.post(f"/api/v1/accounting/settlements{q}", {"channel": "knet", "settled_on": today, "gross": "15.000", "fees": "0.150",
+                                                       "reference": "ST1"}, format="json", HTTP_IDEMPOTENCY_KEY="st1")
+    assert st.status_code == 201, st.content
+    assert balance(s, "KNET_CLEARING") == 0
+    m = client_for(s["manager"], s["t"])
+    r = m.post(f"/api/v1/pos/invoices/{inv['id']}/credit-notes", {"lines": [{"invoice_line_id": inv["lines"][0]["id"], "amount": "5.000"}],
+                                                                   "reason": "x", "refund": {"method": "knet", "amount": "5.000", "reference": "RF1"}},
+               format="json", HTTP_IDEMPOTENCY_KEY="rk")
+    assert r.status_code == 201, r.content
+    assert balance(s, "KNET_CLEARING") == 0 and balance(s, "PSP_PAYABLE") == D("-5.000")     # owed to the provider
+    # next settlement: 20 of new sales, provider deducts the 5 refund and 0.200 fees -> bank gets 14.800
+    checkout(s, s["cashier"], [{"service_id": s["wash"].id}, {"service_id": s["cut"].id}],
+             [{"method": "knet", "amount": "20.000", "reference": "K2"}], key="k2")
+    assert o.post(f"/api/v1/accounting/settlements{q}", {"channel": "knet", "settled_on": today, "gross": "20.000", "fees": "0.200",
+                                                         "refunds": "6.000", "reference": "ST2"}, format="json", HTTP_IDEMPOTENCY_KEY="st2x").json()["error"]["code"] == "settlement_refunds_exceed"
+    assert o.post(f"/api/v1/accounting/settlements{q}", {"channel": "knet", "settled_on": today, "gross": "20.000", "fees": "0.200",
+                                                         "refunds": "5.000", "reference": "ST2"}, format="json", HTTP_IDEMPOTENCY_KEY="st2").status_code == 201
+    assert balance(s, "PSP_PAYABLE") == 0 and balance(s, "KNET_CLEARING") == 0
+    assert balance(s, "BANK") == D("14.850") + D("14.800")

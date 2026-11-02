@@ -377,7 +377,11 @@
     "image_invalid": "This file is not an image.",
     "image_too_big": "The image is over 8 MB.",
     "year_closed": "This year is closed. Reopen the year first (its closing entry is reversed), then the period.",
-    "year_not_closed": "This year is not closed."
+    "year_not_closed": "This year is not closed.",
+    "adjust_cause_unknown": "Unknown adjustment cause.",
+    "settlement_refunds_exceed": "Deducted refunds exceed what is due to the provider.",
+    "asset_in_service_before_purchase": "The ready-for-use date can’t be before the purchase date.",
+    "tip_method_unknown": "Unknown tip payout method."
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",
