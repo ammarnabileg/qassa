@@ -8,7 +8,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.db import transaction
 from django.db.models import Sum
 
-from apps.accounting.models import (Account, ClearingSettlement, Expense, FiscalYear, FixedAsset, JournalEntry, JournalLine,
+from apps.accounting.models import (Account, ClearingSettlement, Expense, FiscalPeriod, FiscalYear, FixedAsset, JournalEntry, JournalLine,
                                     ReportVersion)
 from apps.accounting.services.posting import DuplicatePosting, Line, post_entry, resolve_role
 from apps.audit.services.log import record as audit
@@ -164,8 +164,8 @@ def clearing_status(entity) -> list[dict]:
 def _activity(entity_id, d_from, d_to, branch_id=None, exclude_closing=True):
     q = JournalLine.objects.filter(entry__legal_entity_id=entity_id, entry__status=JournalEntry.Status.POSTED,
                                    entry__entry_date__gte=d_from, entry__entry_date__lte=d_to)
-    if exclude_closing:
-        q = q.exclude(entry__source_type=CLOSING)
+    if exclude_closing:   # closing entries and their reversals (a reopened year) are not the year's activity
+        q = q.exclude(entry__source_type=CLOSING).exclude(entry__reversal_of__source_type=CLOSING)
     if branch_id:
         q = q.filter(branch_id=branch_id)
     return {r["account_id"]: (r["d"] or ZERO) - (r["c"] or ZERO) for r in q.values("account_id").annotate(d=Sum("debit"), c=Sum("credit"))}
@@ -220,32 +220,79 @@ def _stringify(v):
 
 
 # ---------- year-end closing ----------
-def close_year(fy: FiscalYear, user) -> JournalEntry:
-    """Move the year's revenue and expense balances to retained earnings, dated on the last day of the year.
-    The last period must still be open; a second call is refused (unique source)."""
+def active_closing(fy: FiscalYear):
+    """The year's closing entry that is in force (not reversed), if any."""
+    return (JournalEntry.objects.filter(legal_entity_id=fy.legal_entity_id, source_type=CLOSING, status=JournalEntry.Status.POSTED,
+                                        entry_date=fy.end_date, reversal_of__isnull=True)
+            .exclude(reversed_by__isnull=False).filter(source_id__startswith=str(fy.id)).order_by("-id").first())
+
+
+def _closing_lines(fy):
     act = _activity(fy.legal_entity_id, fy.start_date, fy.end_date)
-    accs = Account.objects.filter(legal_entity_id=fy.legal_entity_id, is_postable=True, type__in=["revenue", "expense"])
-    lines, net = [], ZERO
+    accs = Account.objects.filter(legal_entity_id=fy.legal_entity_id, is_postable=True, type__in=["revenue", "expense"]).order_by("code")
+    lines, net, preview = [], ZERO, []
     for a in accs:
         v = act.get(a.id, ZERO)
         if v > 0:
             lines.append(Line(a, credit=v))
         elif v < 0:
             lines.append(Line(a, debit=-v))
+        if v:
+            preview.append({"code": a.code, "name_ar": a.name_ar, "name_en": a.name_en, "debit": str(-v if v < 0 else ZERO), "credit": str(v if v > 0 else ZERO)})
         net += v
-    if not lines:
-        raise DomainError(code="nothing_to_close")
     if net > 0:      # debit balance overall = loss
         lines.append(Line("RETAINED_EARNINGS", debit=net, description="loss for the year"))
     elif net < 0:
         lines.append(Line("RETAINED_EARNINGS", credit=-net, description="profit for the year"))
-    try:
+    return lines, net, preview
+
+
+def closing_preview(fy: FiscalYear) -> dict:
+    """What closing would post, without posting: each P&L account, and the profit (or loss) going to retained earnings."""
+    lines, net, preview = _closing_lines(fy)
+    return {"year": fy.name, "date": fy.end_date.isoformat(), "lines": preview, "result": str(-net),
+            "outcome": "profit" if net < 0 else "loss" if net > 0 else "nil", "closed": active_closing(fy) is not None,
+            "open_periods": fy.periods.filter(status="open").count()}
+
+
+def close_year(fy: FiscalYear, user, *, period_checks=()) -> JournalEntry:
+    """Move the year's revenue and expense balances to retained earnings on the last day, then close every period of
+    the year in the same transaction — so nothing can be posted into a closed year afterwards. Reopening the year
+    reverses the closing entry (reopen_year)."""
+    from apps.accounting.services.ledger import close_period
+    with transaction.atomic():
+        FiscalYear.objects.select_for_update().get(id=fy.id)
+        if active_closing(fy) is not None:
+            raise DomainError(code="year_already_closed")
+        lines, net, _ = _closing_lines(fy)
+        if not lines:
+            raise DomainError(code="nothing_to_close")
+        attempt = JournalEntry.objects.filter(legal_entity_id=fy.legal_entity_id, source_type=CLOSING, source_id__startswith=str(fy.id)).count()
         je = post_entry(legal_entity_id=fy.legal_entity_id, entry_date=fy.end_date, kind="auto", source_type=CLOSING,
-                        source_id=str(fy.id), event_type="closing", user=user, memo=f"Year-end closing {fy.name}", lines=lines)
-    except DuplicatePosting:
-        raise DomainError(code="year_already_closed")
+                        source_id=str(fy.id) if attempt == 0 else f"{fy.id}:{attempt + 1}", event_type="closing", user=user,
+                        memo=f"Year-end closing {fy.name}", lines=lines)
+        for p in fy.periods.filter(status="open").order_by("number"):
+            close_period(p, user, pending_checks=list(period_checks))   # a blocked period undoes the whole close
     audit("fiscal_year.closed", tenant_id=fy.tenant_id, actor=user, obj=fy, data={"entry": je.number, "result": str(-net)})
     return je
+
+
+def reopen_year(fy: FiscalYear, user, reason: str) -> JournalEntry:
+    """Undo a year-end close: reopen the last period and reverse the closing entry (kept, with its reversal). Late
+    entries can then be posted and the year closed again from fresh balances."""
+    from apps.accounting.services.posting import reverse_entry
+    if not reason.strip():
+        raise DomainError(code="reason_required")
+    with transaction.atomic():
+        FiscalYear.objects.select_for_update().get(id=fy.id)
+        je = active_closing(fy)
+        if je is None:
+            raise DomainError(code="year_not_closed")
+        last = fy.periods.order_by("-number").first()
+        FiscalPeriod.objects.filter(id=last.id).update(status=FiscalPeriod.Status.OPEN, closed_at=None, closed_by=None)
+        rev = reverse_entry(je, on=fy.end_date, user=user, reason=reason)
+    audit("fiscal_year.reopened", tenant_id=fy.tenant_id, actor=user, obj=fy, reason=reason, data={"reversed": je.number})
+    return rev
 
 
 # ---------- frozen versions ----------

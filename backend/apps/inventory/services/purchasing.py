@@ -7,7 +7,7 @@ from django.db.models import Sum
 
 from apps.accounting.services.posting import Line, post_entry
 from apps.audit.services.log import record as audit
-from apps.core.dates import business_date
+from apps.core.dates import accounting_date, business_date
 from apps.core.errors import DomainError
 from apps.core.money import money
 from apps.core.services.infra import next_number
@@ -29,7 +29,7 @@ def receive_goods(*, branch, supplier_id, lines: list[ReceiptLineIn], user, note
         raise DomainError(code="receipt_empty")
     supplier = Supplier.objects.filter(id=supplier_id, is_active=True).first() or _raise("supplier_unknown")
     products = {p.id: p for p in Product.objects.filter(id__in=[ln.product_id for ln in lines], is_active=True)}
-    today = business_date()
+    today = accounting_date()   # goods arrive on a calendar date, not a shift
     planned, by_role, total = [], {}, Decimal("0")
     for ln in lines:
         p = products.get(ln.product_id) or _raise("product_unknown")
@@ -112,7 +112,7 @@ def adjust(*, branch, product_id, qty_delta, reason, user) -> StockMove:
         value = abs(move.value)
         if value > 0:
             inv, gain = INV_ROLE[p.kind], qty > 0
-            post_entry(legal_entity_id=branch.legal_entity_id, entry_date=business_date(), user=user, kind="auto", branch_id=branch.id,
+            post_entry(legal_entity_id=branch.legal_entity_id, entry_date=accounting_date(), user=user, kind="auto", branch_id=branch.id,
                        source_type="inventory.adjust", source_id=str(move.id), event_type="stock.adjusted", memo=reason,
                        lines=[Line(inv, branch_id=branch.id, **({"debit": value} if gain else {"credit": value})),
                               Line("COGS_PRODUCTS", branch_id=branch.id, **({"credit": value} if gain else {"debit": value}))])

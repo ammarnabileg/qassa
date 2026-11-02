@@ -137,3 +137,33 @@ def test_period_close_blocked_by_open_drawer_and_permissions(s):
     assert client_for(cashier, t).get(f"/api/v1/accounting/income-statement{s['q']}&from={Y}-01-01&to={Y}-12-31").status_code == 403
     periods = c.get(f"/api/v1/accounting/periods{s['q']}").json()
     assert len(periods[0]["periods"]) == 12
+
+
+def test_closed_year_refuses_late_entries_until_reopened_and_closed_again(s):
+    """Accountant's review: after the year-end close nothing may slip into the year; reopening reverses the closing."""
+    from apps.accounting.models import FiscalPeriod
+    c, q, e = s["c"], s["q"], s["e"]
+    with tenant_context(s["t"].id):
+        post_entry(legal_entity_id=e.id, entry_date=date(Y, 3, 2), kind="auto", source_type="t", source_id="9", event_type="sale",
+                   lines=[Line("CASH_DRAWER", debit="100"), Line("SERVICE_REVENUE", credit="100")])
+        post_entry(legal_entity_id=e.id, entry_date=date(Y, 3, 3), lines=[Line(acc(s, "RENT"), debit="140"), Line(acc(s, "BANK"), credit="140")], memo="r")
+        fy = FiscalYear.objects.get(legal_entity=e, start_date__lte=date(Y, 3, 1), end_date__gte=date(Y, 3, 1))
+    pv = c.get(f"/api/v1/accounting/years/{fy.id}/close").json()
+    assert pv["outcome"] == "loss" and pv["result"] == "-40.000" and not pv["closed"]
+    assert c.post(f"/api/v1/accounting/years/{fy.id}/close").status_code == 201
+    with tenant_context(s["t"].id):
+        assert not FiscalPeriod.objects.filter(fiscal_year=fy, status="open").exists()          # every period closed with it
+        with pytest.raises(Exception) as late:
+            post_entry(legal_entity_id=e.id, entry_date=date(Y, 12, 31), lines=[Line(acc(s, "RENT"), debit="5"), Line(acc(s, "BANK"), credit="5")], memo="late")
+        assert "period_closed" in str(late.value.code)
+        last = FiscalPeriod.objects.filter(fiscal_year=fy).order_by("-number").first()
+    r = c.post(f"/api/v1/accounting/periods/{last.id}/reopen", {"reason": "قيد متأخر"}, format="json")
+    assert r.json()["error"]["code"] == "year_closed"                                              # not by the back door
+    assert c.post(f"/api/v1/accounting/years/{fy.id}/reopen", {"reason": "قيد متأخر"}, format="json").status_code == 200
+    with tenant_context(s["t"].id):
+        post_entry(legal_entity_id=e.id, entry_date=date(Y, 12, 31), lines=[Line(acc(s, "RENT"), debit="5"), Line(acc(s, "BANK"), credit="5")], memo="late")
+    assert c.get(f"/api/v1/accounting/years/{fy.id}/close").json()["result"] == "-45.000"            # fresh balances
+    assert c.post(f"/api/v1/accounting/years/{fy.id}/close").status_code == 201
+    bs = c.get(f"/api/v1/accounting/balance-sheet{q}&as_of={fy.end_date}").json()
+    assert bs["unclosed_profit"] == "0.000" and bs["balanced"]
+    assert {r["code"]: r["amount"] for r in bs["equity"]}[acc(s, "RETAINED_EARNINGS").code] == "-45.000"

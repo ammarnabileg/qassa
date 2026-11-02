@@ -253,7 +253,7 @@
     "invoice_not_open": "This invoice is not open (paid or void)",
     "reply_empty": "Write a reply or change the status",
     "already_active": "Already active",
-    "appointment_not_billable": "This booking cannot be invoiced in its current state",
+    "appointment_not_billable": "This booking has not started. Start or finish the service first; money taken before the service is a deposit.",
     "appointment_unknown": "Booking not found",
     "beneficiary_unknown": "This person is not one of the customer's family",
     "bill_amount_mismatch": "The supplier bill must equal the receipt value",
@@ -375,7 +375,9 @@
     "contract_not_signed": "The signed contract must be accepted before activating.",
     "mfa_mandatory": "Two-step verification is mandatory for platform staff.",
     "image_invalid": "This file is not an image.",
-    "image_too_big": "The image is over 8 MB."
+    "image_too_big": "The image is over 8 MB.",
+    "year_closed": "This year is closed. Reopen the year first (its closing entry is reversed), then the period.",
+    "year_not_closed": "This year is not closed."
   },
   "svc": {
     "sub": "Services and prices shown at checkout and booking",

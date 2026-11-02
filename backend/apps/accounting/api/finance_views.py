@@ -235,12 +235,34 @@ class PeriodsView(TenantAPIView):
 
 
 class YearCloseView(TenantAPIView):
-    required_permissions = {"POST": "accounting.period.close"}
+    """GET: preview of the closing entry (profit or loss). POST: close the year (entry + every period closed together)."""
+    required_permissions = {"GET": "accounting.view", "POST": "accounting.period.close"}
+
+    @extend_schema(responses=dict)
+    def get(self, request, pk):
+        return Response(finance.closing_preview(get_object_or_404(FiscalYear.objects.all(), pk=pk)))
 
     @extend_schema(request=None, responses=dict)
     def post(self, request, pk):
-        je = finance.close_year(get_object_or_404(FiscalYear.objects.all(), pk=pk), request.user)
+        from apps.accounting.api.views import _open_drawers
+        je = finance.close_year(get_object_or_404(FiscalYear.objects.all(), pk=pk), request.user, period_checks=[_open_drawers])
         return Response({"entry": je.number}, status=status.HTTP_201_CREATED)
+
+
+class YearReopenIn(serializers.Serializer):
+    reason = serializers.CharField(max_length=300)
+
+
+class YearReopenView(TenantAPIView):
+    """Reverse the closing entry and reopen the last period, to post late entries and close again."""
+    required_permissions = {"POST": "accounting.period.close"}
+
+    @extend_schema(request=YearReopenIn, responses=dict)
+    def post(self, request, pk):
+        s = YearReopenIn(data=request.data)
+        s.is_valid(raise_exception=True)
+        rev = finance.reopen_year(get_object_or_404(FiscalYear.objects.all(), pk=pk), request.user, s.validated_data["reason"])
+        return Response({"reversal": rev.number})
 
 
 # ---------- frozen report versions ----------

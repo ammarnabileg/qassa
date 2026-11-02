@@ -70,6 +70,7 @@ urlpatterns = [
     path(api + "accounting/balance-sheet", fin.BalanceSheetView.as_view()),
     path(api + "accounting/periods", fin.PeriodsView.as_view()),
     path(api + "accounting/years/<int:pk>/close", fin.YearCloseView.as_view()),
+    path(api + "accounting/years/<int:pk>/reopen", fin.YearReopenView.as_view()),
     path(api + "accounting/report-versions", fin.ReportVersionsView.as_view()),
     path(api + "accounting/report-versions/<int:pk>", fin.ReportVersionDetailView.as_view()),
     path(api + "accounting/xbrl/mapping", acc.XbrlMappingView.as_view()),

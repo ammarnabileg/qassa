@@ -67,6 +67,9 @@ def close_period(period: FiscalPeriod, user, *, pending_checks=None) -> FiscalPe
 def reopen_period(period: FiscalPeriod, user, reason: str) -> FiscalPeriod:
     if not reason:
         raise DomainError("A reason is required to reopen a period", code="reason_required")
+    from apps.accounting.services.finance import active_closing
+    if active_closing(period.fiscal_year) is not None:
+        raise DomainError("The year is closed; reopen the year first", code="year_closed")
     with transaction.atomic():
         p = FiscalPeriod.objects.select_for_update().get(pk=period.pk)
         p.status, p.closed_at, p.closed_by = FiscalPeriod.Status.OPEN, None, None

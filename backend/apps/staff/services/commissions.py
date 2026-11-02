@@ -6,10 +6,15 @@ from django.db import transaction
 from django.db.models import Sum
 
 from apps.accounting.services.posting import Line, post_entry
-from apps.core.dates import business_date
+from apps.core.dates import accounting_date, business_date
 from apps.core.errors import DomainError
 from apps.core.money import money
 from apps.staff.models import CommissionEntry, StaffMember
+
+
+def _inv_date(inv):
+    from apps.pos.services.ledger import inv_date
+    return inv_date(inv)
 
 
 def _base(line):
@@ -31,7 +36,7 @@ def accrue(inv, lines, user):
                                            amount=amount, reference=inv.number)
             total += amount
     if total > 0:
-        post_entry(legal_entity_id=inv.legal_entity_id, entry_date=inv.business_date, user=user, kind="auto", branch_id=inv.branch_id,
+        post_entry(legal_entity_id=inv.legal_entity_id, entry_date=_inv_date(inv), user=user, kind="auto", branch_id=inv.branch_id,
                    source_type="pos.invoice", source_id=str(inv.id), event_type="commission.accrued", memo=f"Commissions {inv.number}",
                    lines=[Line("COMMISSION_EXPENSE", debit=money(total), branch_id=inv.branch_id),
                           Line("COMMISSIONS_PAYABLE", credit=money(total), branch_id=inv.branch_id)])
@@ -51,7 +56,7 @@ def reverse(cn, cn_lines, user):
                                            amount=-amount, reference=cn.number)
             total += amount
     if total > 0:
-        post_entry(legal_entity_id=inv.legal_entity_id, entry_date=cn.business_date, user=user, kind="auto", branch_id=inv.branch_id,
+        post_entry(legal_entity_id=inv.legal_entity_id, entry_date=accounting_date(cn.issued_at), user=user, kind="auto", branch_id=inv.branch_id,
                    source_type="pos.credit_note", source_id=str(cn.id), event_type="commission.reversed", memo=f"Commissions {cn.number}",
                    lines=[Line("COMMISSIONS_PAYABLE", debit=money(total), branch_id=inv.branch_id),
                           Line("COMMISSION_EXPENSE", credit=money(total), branch_id=inv.branch_id)])
@@ -70,7 +75,7 @@ def pay_out(*, staff, amount, reference, legal_entity_id, branch_id, user) -> Co
         if amount <= 0 or amount > balance(staff):
             raise DomainError(code="overpayment", details={"balance": str(balance(staff))})
         entry = CommissionEntry.objects.create(staff=staff, kind="payout", amount=-amount, reference=reference.strip())
-        post_entry(legal_entity_id=legal_entity_id, entry_date=business_date(), user=user, kind="auto", branch_id=branch_id,
+        post_entry(legal_entity_id=legal_entity_id, entry_date=accounting_date(), user=user, kind="auto", branch_id=branch_id,
                    source_type="staff.commission_payout", source_id=str(entry.id), event_type="commission.paid",
                    memo=f"Commission payout {staff.full_name_ar} {reference}",
                    lines=[Line("COMMISSIONS_PAYABLE", debit=amount, branch_id=branch_id), Line("BANK", credit=amount, branch_id=branch_id)])

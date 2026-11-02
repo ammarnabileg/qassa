@@ -15,3 +15,10 @@ def day_bounds(day: date) -> tuple[datetime, datetime]:
     start = timezone.make_aware(datetime.combine(day, datetime.min.time())) + timedelta(
         hours=settings.QASSA["BUSINESS_DAY_START_HOUR"])
     return start, start + timedelta(days=1)
+
+
+def accounting_date(at: datetime | None = None) -> date:
+    """The calendar date (Kuwait) on which the transaction really happened — the date of its journal entry.
+    The business day above is for shift and drawer reports only: a sale at 02:00 on 1 January belongs to the
+    31 December shift but to January (and the new year) in the books (accountant's review, 2026-11)."""
+    return timezone.localtime(at or timezone.now()).date()

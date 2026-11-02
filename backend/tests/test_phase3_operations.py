@@ -308,6 +308,13 @@ def test_appointment_to_invoice_once(salon):
     s = salon
     open_drawer(s)
     a = book(s, soon()).json()
+    # not yet served: no invoice (revenue would be recognised before the service — accountant's review)
+    r = checkout(s, s["cashier"], [{"service_id": s["cut"].id, "staff_id": s["staff"][0].id}],
+                 [{"method": "cash", "amount": "5.000"}], appointment_id=a["id"], key="k0")
+    assert r.json()["error"]["code"] == "appointment_not_billable"
+    m = client_for(s["manager"], s["t"])
+    for st in ("in_service", "completed"):
+        m.post(f"/api/v1/booking/appointments/{a['id']}/status", {"status": st}, format="json")
     r = checkout(s, s["cashier"], [{"service_id": s["cut"].id, "staff_id": s["staff"][0].id}],
                  [{"method": "cash", "amount": "5.000"}], appointment_id=a["id"])
     assert r.status_code == 201
@@ -367,3 +374,28 @@ def test_count_rejects_unknown_denomination(salon):
     sess = open_drawer(s)
     r = client_for(s["cashier"], s["t"]).post(f"/api/v1/pos/sessions/{sess['id']}/close", {"denominations": {"3.000": 1}}, format="json")
     assert r.status_code == 422 and r.json()["error"]["code"] == "denomination_unknown"
+
+
+def test_sale_after_midnight_is_booked_on_its_calendar_date_not_the_shift(salon, monkeypatch):
+    """Accountant's review: 02:00 on 1 January belongs to the 31 December shift but to January in the books."""
+    import datetime as dt
+    from django.utils import timezone as tz
+    from apps.accounting.models import JournalEntry
+    from apps.accounting.services.ledger import create_fiscal_year
+    from apps.pos.models import Invoice
+    s = salon
+    with tenant_context(s["t"].id):
+        from apps.accounting.models import FiscalYear
+        for y in (2026, 2027):
+            if not FiscalYear.objects.filter(legal_entity=s["entity"], start_date__year=y).exists():
+                create_fiscal_year(s["entity"], y)
+    moment = tz.make_aware(dt.datetime(2027, 1, 1, 2, 0))
+    monkeypatch.setattr(tz, "now", lambda: moment)
+    open_drawer(s)
+    r = checkout(s, s["cashier"], [{"service_id": s["wash"].id}], [{"method": "cash", "amount": "15.000"}], key="nye")
+    assert r.status_code == 201, r.content
+    with tenant_context(s["t"].id):
+        inv = Invoice.objects.get(id=r.json()["id"])
+        assert inv.business_date == dt.date(2026, 12, 31)                       # the shift
+        dates = set(JournalEntry.objects.filter(source_id=str(inv.id), source_type="pos.invoice").values_list("entry_date", flat=True))
+        assert dates == {dt.date(2027, 1, 1)}                                   # the books

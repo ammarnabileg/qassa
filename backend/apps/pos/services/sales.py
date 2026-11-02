@@ -156,7 +156,7 @@ def invoice_state(inv: Invoice) -> dict:
             "refundable": paid}
 
 
-def _take_payments(inv, payments: list[PaymentIn], user, session_needed_branch, offline=None):
+def _take_payments(inv, payments: list[PaymentIn], user, session_needed_branch, offline=None, at_checkout=False):
     created = []
     for p in payments:
         amount = money(p.amount)
@@ -176,7 +176,8 @@ def _take_payments(inv, payments: list[PaymentIn], user, session_needed_branch, 
         pay = Payment.objects.create(branch_id=inv.branch_id, invoice=inv, direction="in", method=p.method, amount=amount,
                                      reference=p.reference.strip(), cash_session=session,
                                      business_date=inv.business_date, received_by=user)
-        ledger.post_payment(pay, inv, user)
+        # checkout: the sale's own date (offline: when it happened); a later collection: today
+        ledger.post_payment(pay, inv, user, on=ledger.inv_date(inv) if at_checkout else None)
         created.append(pay)
     return created
 
@@ -304,8 +305,9 @@ def checkout(data: CheckoutIn, *, user, membership, offline: OfflineCtx | None =
                            or _raise("appointment_unknown"))
             if appointment.status == Appointment.Status.INVOICED:
                 raise ConflictError(code="appointment_already_invoiced")
-            if appointment.status not in {Appointment.Status.COMPLETED, Appointment.Status.IN_SERVICE,
-                                          Appointment.Status.ARRIVED, Appointment.Status.BOOKED}:
+            # revenue is recognised at the invoice, so a booking is billed only once the service is under way or done
+            # (accountant's review); money taken before the visit is a deposit (CUSTOMER_DEPOSITS), not revenue
+            if appointment.status not in {Appointment.Status.COMPLETED, Appointment.Status.IN_SERVICE}:
                 raise DomainError(code="appointment_not_billable", details={"status": appointment.status})
             customer = customer or appointment.customer
             beneficiary = beneficiary or appointment.beneficiary
@@ -392,11 +394,11 @@ def checkout(data: CheckoutIn, *, user, membership, offline: OfflineCtx | None =
             Coupon.objects.filter(id=coupon.id).update(used_count=coupon.used_count + 1)
         if points:
             pts.record(customer, -points, "redeem", invoice=inv)
-        _take_payments(inv, data.payments, user, branch.id, offline)
+        _take_payments(inv, data.payments, user, branch.id, offline, at_checkout=True)
         if deposit > 0:
             dep_pay = Payment.objects.create(branch_id=inv.branch_id, invoice=inv, direction="in", method=Payment.Method.DEPOSIT,
                                              amount=deposit, reference=deposit_op.reference, business_date=inv.business_date, received_by=user)
-            ledger.post_payment(dep_pay, inv, user)   # Dr CUSTOMER_DEPOSITS / Cr AR
+            ledger.post_payment(dep_pay, inv, user, on=ledger.inv_date(inv))   # Dr CUSTOMER_DEPOSITS / Cr AR
             Appointment.objects.filter(id=appointment.id).update(deposit_status="applied")
             if deposit < deposit_op.amount:            # bill came to less than the deposit: the rest goes back
                 rest = money(deposit_op.amount - deposit)
