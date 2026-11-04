@@ -17,6 +17,8 @@ type Asset = { id: number; name: string; acquired_on: string; cost: string; resi
 type Row = { account_id: number; code: string; name_ar: string; name_en: string; amount: string }
 type Income = { from: string; to: string; revenue: Row[]; total_revenue: string; expenses: Row[]; total_expenses: string; gross_profit: string; net_profit: string }
 type Balance = { as_of: string; assets: Row[]; total_assets: string; liabilities: Row[]; total_liabilities: string; equity: Row[]; unclosed_profit: string; total_equity: string; balanced: boolean }
+type Closing = { year: string; date: string; result: string; outcome: 'profit' | 'loss' | 'nil'; closed: boolean; open_periods: number
+  lines: { code: string; name_ar: string; name_en: string; debit: string; credit: string }[] }
 type Year = { id: number; name: string; start_date: string; end_date: string; closing_entry: string | null; periods: { id: number; number: number; start_date: string; end_date: string; status: 'open' | 'closed' }[] }
 type Version = { id: number; kind: string; params: Record<string, string>; note: string; sha256: string; created_at: string; created_by: string }
 
@@ -115,7 +117,7 @@ export function Assets() {
   const toast = useToast()
   const { e, q } = useEntity()
   const list = useQuery({ enabled: !!e, queryKey: ['assets', e?.id], queryFn: () => api<Asset[]>(`/accounting/assets${q}`) })
-  const [form, setForm] = useState<{ name: string; acquired_on: string; cost: string; residual_value: string; life_months: number; paid_from: string; reference: string } | null>(null)
+  const [form, setForm] = useState<{ name: string; acquired_on: string; in_service_on: string; cost: string; residual_value: string; life_months: number; paid_from: string; reference: string } | null>(null)
   const [month, setMonth] = useState(today().slice(0, 7))
   const [key, setKey] = useState(() => crypto.randomUUID())
   const s = useSave<Asset>([['assets']], () => { setForm(null); setKey(crypto.randomUUID()); toast(t('common.saved')) })
@@ -125,7 +127,7 @@ export function Assets() {
   return (
     <>
       <Head title={t('nav.assets')} sub={t('fin.assetSub')}>
-        {post && <button className="btn primary" onClick={() => { s.reset(); setForm({ name: '', acquired_on: today(), cost: '', residual_value: '0', life_months: 60, paid_from: 'bank', reference: '' }) }}><Icon name="plus" />{t('fin.addAsset')}</button>}
+        {post && <button className="btn primary" onClick={() => { s.reset(); setForm({ name: '', acquired_on: today(), in_service_on: '', cost: '', residual_value: '0', life_months: 60, paid_from: 'bank', reference: '' }) }}><Icon name="plus" />{t('fin.addAsset')}</button>}
       </Head>
       <div className="grid stats" style={{ marginBottom: 14 }}>
         <Stat label={t('fin.totalCost')} value={formatKWD(rows.reduce((a, x) => a + Number(x.cost), 0).toFixed(3), lang)} />
@@ -142,12 +144,16 @@ export function Assets() {
         <tbody>{rows.map((a) => <tr key={a.id}><td><b>{a.name}</b></td><td className="num">{a.acquired_on}</td><td className="n money">{formatKWD(a.cost, lang)}</td>
           <td>{t('fin.months', { n: a.life_months })}</td><td className="n money">{formatKWD(a.monthly, lang)}</td><td className="n money">{formatKWD(a.accumulated, lang)}</td><td className="n money">{formatKWD(a.book_value, lang)}</td></tr>)}
           {rows.length === 0 && <tr><td colSpan={7} className="empty">{t('common.empty')}</td></tr>}</tbody></table></div>
-      <Dialog open={!!form} title={t('fin.addAsset')} onClose={() => setForm(null)} busy={s.busy} onSubmit={() => s.save({ path: `/accounting/assets${q}`, idempotencyKey: key, body: form })}>
+      <Dialog open={!!form} title={t('fin.addAsset')} onClose={() => setForm(null)} busy={s.busy} onSubmit={() => s.save({ path: `/accounting/assets${q}`, idempotencyKey: key, body: { ...form, in_service_on: form!.in_service_on || null } })}>
         {form && <>
           <label className="field">{t('fin.asset')}<input className="input" value={form.name} onChange={(ev) => setForm({ ...form, name: ev.target.value })} required /></label>
           <div className="two">
             <label className="field">{t('fin.acquired')}<input className="input" type="date" value={form.acquired_on} onChange={(ev) => setForm({ ...form, acquired_on: ev.target.value })} required /></label>
             <label className="field">{t('fin.cost')} (KWD)<input className="input" dir="ltr" inputMode="decimal" value={form.cost} onChange={(ev) => setForm({ ...form, cost: ev.target.value })} required /></label>
+          </div>
+          <div className="two">
+            <label className="field">{t('fin.inService')}<input className="input" type="date" min={form.acquired_on} value={form.in_service_on} onChange={(ev) => setForm({ ...form, in_service_on: ev.target.value })} /></label>
+            <div className="cap muted" style={{ alignSelf: 'end' }}>{t('fin.inServiceHelp')}</div>
           </div>
           <div className="two">
             <label className="field">{t('fin.lifeMonths')}<input className="input" type="number" min={1} value={form.life_months} onChange={(ev) => setForm({ ...form, life_months: Number(ev.target.value) })} /></label>
@@ -175,13 +181,13 @@ export function Settlements() {
   const { e, q } = useEntity()
   const data = useQuery({ enabled: !!e, queryKey: ['settlements', e?.id], queryFn: () => api<{ status: { channel: string; account: string; open_balance: string; last_settlement: string | null }[]
     settlements: { id: number; channel: string; settled_on: string; gross: string; fees: string; net: string; reference: string }[] }>(`/accounting/settlements${q}`) })
-  const [form, setForm] = useState<{ channel: string; settled_on: string; gross: string; fees: string; reference: string } | null>(null)
+  const [form, setForm] = useState<{ channel: string; settled_on: string; gross: string; fees: string; refunds: string; reference: string } | null>(null)
   const [key, setKey] = useState(() => crypto.randomUUID())
   const s = useSave<unknown>([['settlements']], () => { setForm(null); setKey(crypto.randomUUID()); toast(t('common.saved')) })
   return (
     <>
       <Head title={t('nav.settlements')} sub={t('fin.setSub')}>
-        {can('accounting.journal.post') && <button className="btn primary" onClick={() => { s.reset(); setForm({ channel: 'knet', settled_on: today(), gross: '', fees: '', reference: '' }) }}><Icon name="plus" />{t('fin.addSettlement')}</button>}
+        {can('accounting.journal.post') && <button className="btn primary" onClick={() => { s.reset(); setForm({ channel: 'knet', settled_on: today(), gross: '', fees: '', refunds: '', reference: '' }) }}><Icon name="plus" />{t('fin.addSettlement')}</button>}
       </Head>
       <ErrorText error={data.error} />
       <div className="grid stats" style={{ marginBottom: 14 }}>{data.data?.status.map((x) => <Stat key={x.channel} label={t('fin.openIn', { c: t(`fin.ch.${x.channel}`) })}
@@ -191,7 +197,7 @@ export function Settlements() {
         <tbody>{data.data?.settlements.map((x) => <tr key={x.id}><td className="num">{x.settled_on}</td><td>{t(`fin.ch.${x.channel}`)}</td><td className="code">{x.reference}</td>
           <td className="n money">{formatKWD(x.gross, lang)}</td><td className="n money">{formatKWD(x.fees, lang)}</td><td className="n money">{formatKWD(x.net, lang)}</td></tr>)}
           {data.data?.settlements.length === 0 && <tr><td colSpan={6} className="empty">{t('common.empty')}</td></tr>}</tbody></table></div>
-      <Dialog open={!!form} title={t('fin.addSettlement')} onClose={() => setForm(null)} busy={s.busy} onSubmit={() => s.save({ path: `/accounting/settlements${q}`, idempotencyKey: key, body: form })}>
+      <Dialog open={!!form} title={t('fin.addSettlement')} onClose={() => setForm(null)} busy={s.busy} onSubmit={() => s.save({ path: `/accounting/settlements${q}`, idempotencyKey: key, body: { ...form, refunds: form!.refunds || '0' } })}>
         {form && <>
           <div className="two">
             <label className="field">{t('fin.channel')}<select className="input" value={form.channel} onChange={(ev) => setForm({ ...form, channel: ev.target.value })}>
@@ -202,8 +208,10 @@ export function Settlements() {
             <label className="field">{t('fin.gross')}<input className="input" dir="ltr" inputMode="decimal" value={form.gross} onChange={(ev) => setForm({ ...form, gross: ev.target.value })} required /></label>
             <label className="field">{t('fin.fees')}<input className="input" dir="ltr" inputMode="decimal" value={form.fees} onChange={(ev) => setForm({ ...form, fees: ev.target.value })} /></label>
           </div>
+          <label className="field">{t('fin.refundsDeducted')}<input className="input" dir="ltr" inputMode="decimal" value={form.refunds} onChange={(ev) => setForm({ ...form, refunds: ev.target.value })} /></label>
+          <div className="cap muted">{t('fin.refundsHelp')}</div>
           <label className="field">{t('fin.providerRef')}<input className="input" dir="ltr" value={form.reference} onChange={(ev) => setForm({ ...form, reference: ev.target.value })} required /></label>
-          {form.gross && <div className="small muted">{t('fin.bankGets', { v: formatKWD((Number(form.gross) - Number(form.fees || 0)).toFixed(3), lang) })}</div>}
+          {form.gross && <div className="small muted">{t('fin.bankGets', { v: formatKWD((Number(form.gross) - Number(form.fees || 0) - Number(form.refunds || 0)).toFixed(3), lang) })}</div>}
           <ErrorText error={s.error} />
         </>}
       </Dialog>
@@ -292,7 +300,9 @@ export function Periods() {
   const years = useQuery({ enabled: !!e, queryKey: ['periods', e?.id], queryFn: () => api<Year[]>(`/accounting/periods${q}`) })
   const [reopen, setReopen] = useState<{ id: number; reason: string } | null>(null)
   const [closeYear, setCloseYear] = useState<Year | null>(null)
-  const s = useSave<unknown>([['periods']], () => { setReopen(null); setCloseYear(null); toast(t('common.saved')) })
+  const [reopenYear, setReopenYear] = useState<{ y: Year; reason: string } | null>(null)
+  const preview = useQuery({ enabled: !!closeYear, queryKey: ['closing', closeYear?.id], queryFn: () => api<Closing>(`/accounting/years/${closeYear!.id}/close${q}`) })
+  const s = useSave<unknown>([['periods'], ['closing']], () => { setReopen(null); setCloseYear(null); setReopenYear(null); toast(t('common.saved')) })
   const allowed = can('accounting.period.close')
   const month = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString(lang === 'ar' ? 'ar-KW' : 'en-GB', { month: 'long', year: 'numeric' })
   return (
@@ -301,7 +311,8 @@ export function Periods() {
       <ErrorText error={years.error || s.error} />
       {years.data?.map((y) => <div className="card" key={y.id} style={{ marginBottom: 14 }}>
         <div className="row sb"><h2>{t('fin.fy', { n: y.name })} <span className="small muted"><bdi>{y.start_date}</bdi> → <bdi>{y.end_date}</bdi></span></h2>
-          {y.closing_entry ? <span className="pill good">{t('fin.yearClosed', { n: y.closing_entry })}</span>
+          {y.closing_entry ? <span className="row"><span className="pill good">{t('fin.yearClosed', { n: y.closing_entry })}</span>
+            {allowed && <button className="btn sm ghost" onClick={() => { s.reset(); setReopenYear({ y, reason: '' }) }}>{t('fin.reopenYear')}</button>}</span>
             : allowed && <button className="btn sm" onClick={() => { s.reset(); setCloseYear(y) }}>{t('fin.closeYear')}</button>}</div>
         <div className="cards" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(170px,1fr))' }}>{y.periods.map((p) => <div className="li" key={p.id} style={{ border: '1px solid var(--line)', borderRadius: 12 }}>
           <div className="grow"><b className="small">{month(p.start_date)}</b><div><span className={`pill ${p.status === 'closed' ? 'mute' : 'good'}`}>{t(`fin.ps.${p.status}`)}</span></div></div>
@@ -318,7 +329,22 @@ export function Periods() {
       <Dialog open={!!closeYear} title={closeYear ? t('fin.closeYearQ', { n: closeYear.name }) : ''} onClose={() => setCloseYear(null)} busy={s.busy}
         submitLabel={t('fin.closeYear')} onSubmit={() => s.save({ path: `/accounting/years/${closeYear!.id}/close` })}>
         <div className="small">{t('fin.closeYearHelp')}</div>
+        <ErrorText error={preview.error} />
+        {preview.data && <>
+          {preview.data.open_periods > 0 && <div className="notice">{t('fin.openPeriodsWillClose', { n: preview.data.open_periods })}</div>}
+          <div className="tw"><table><thead><tr><th>{t('acc.account')}</th><th className="n">{t('acc.debit')}</th><th className="n">{t('acc.credit')}</th></tr></thead>
+            <tbody>{preview.data.lines.map((l) => <tr key={l.code}><td><span className="num muted">{l.code}</span> {lang === 'en' ? l.name_en : l.name_ar}</td>
+              <td className="n money">{Number(l.debit) ? formatKWD(l.debit, lang) : ''}</td><td className="n money">{Number(l.credit) ? formatKWD(l.credit, lang) : ''}</td></tr>)}
+              {preview.data.lines.length === 0 && <tr><td colSpan={3} className="empty">{t('common.empty')}</td></tr>}</tbody></table></div>
+          <div className="row sb"><b>{t(`fin.outcome.${preview.data.outcome}`)}</b><b className="money">{formatKWD(preview.data.result, lang)}</b></div>
+        </>}
         <ErrorText error={s.error} />
+      </Dialog>
+      <Dialog open={!!reopenYear} title={reopenYear ? t('fin.reopenYearQ', { n: reopenYear.y.name }) : ''} onClose={() => setReopenYear(null)} busy={s.busy}
+        submitLabel={t('fin.reopenYear')} onSubmit={() => s.save({ path: `/accounting/years/${reopenYear!.y.id}/reopen${q}`, body: { reason: reopenYear!.reason } })}>
+        {reopenYear && <><div className="small muted">{t('fin.reopenYearHelp')}</div>
+          <label className="field">{t('book.reason')}<input className="input" value={reopenYear.reason} onChange={(ev) => setReopenYear({ ...reopenYear, reason: ev.target.value })} required /></label>
+          <ErrorText error={s.error} /></>}
       </Dialog>
     </>
   )

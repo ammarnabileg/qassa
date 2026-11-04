@@ -877,7 +877,18 @@
     "billHelp": "The bill amount must equal the receipt value {{total}}.",
     "supplierRef": "Supplier invoice no.",
     "due": "Due date",
-    "payHelp": "Bank transfer only; enter the reference."
+    "payHelp": "Bank transfer only; enter the reference.",
+    "cause": "Cause",
+    "causes": {
+      "count": "Count difference",
+      "consumed": "Supplies used",
+      "damaged": "Damaged",
+      "shrinkage": "Shrinkage / lost"
+    },
+    "billDiff": "The bill differs from the receipt by {{v}}.",
+    "acceptDiff": "Accept the difference (accountant)",
+    "diffNote": "Reason for the difference",
+    "diffNeedsAccountant": "The difference needs the accountant's approval. Fix the amount or ask them to record it."
   },
   "mkt": {
     "sub": "Session packages, coupons and loyalty points",
@@ -1395,7 +1406,20 @@
     "closeYearQ": "Close fiscal year {{n}}?",
     "closeYearHelp": "A closing entry on the last day moves revenue and expense balances to retained earnings. The last month must be open; it cannot run twice. Do it after the accountant's review.",
     "monthTotal": "Month total: {{v}}",
-    "byAccount": "By account"
+    "byAccount": "By account",
+    "inService": "Ready for use on",
+    "inServiceHelp": "Depreciation starts this month. Empty = purchase date.",
+    "refundsDeducted": "Refunds deducted by the provider",
+    "refundsHelp": "If KNET or KlickPay took customer refunds out of this payout, enter them here.",
+    "reopenYear": "Reopen year",
+    "reopenYearQ": "Reopen {{n}}?",
+    "reopenYearHelp": "The closing entry is reversed and the last month reopened so late entries can be posted; then close again. The reason is recorded.",
+    "openPeriodsWillClose": "{{n}} months are still open and will be closed with the year.",
+    "outcome": {
+      "profit": "Net profit → retained earnings",
+      "loss": "Net loss → retained earnings",
+      "nil": "No profit or loss"
+    }
   },
   "off": {
     "notReady": "No internet, and offline selling is not enabled on this device. Enable it from the till once you are online.",
@@ -1820,5 +1844,23 @@
     "contractUpload": "Upload KlickPay contract for the salon",
     "contractReplace": "Replace contract",
     "contractSent": "Contract uploaded; the salon can download it"
+  },
+  "tips": {
+    "title": "Tips owed",
+    "sub": "Collected with invoices minus what was paid to the employee.",
+    "owed": "Owed",
+    "pay": "Pay out",
+    "none": "No tips owed",
+    "method": "Method",
+    "m": {
+      "cash": "Cash from the drawer",
+      "bank": "Bank transfer",
+      "payroll": "With payroll"
+    },
+    "h": {
+      "cash": "Taken from the expected cash of the branch's open drawer.",
+      "bank": "A transfer reference is required.",
+      "payroll": "Recorded as salaries payable, paid with payroll."
+    }
   }
 }

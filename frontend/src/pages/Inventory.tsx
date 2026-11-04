@@ -25,10 +25,10 @@ export default function Inventory() {
   const receipts = useQuery({ queryKey: ['receipts'], enabled: tab === 'receipts', queryFn: () => api<Receipt[]>('/inventory/receipts') })
   const moves = useQuery({ queryKey: ['moves', branch?.id], enabled: tab === 'moves' && !!branch, queryFn: () => api<Move[]>(`/inventory/moves?branch_id=${branch!.id}`) })
   const [pForm, setPForm] = useState<PForm | null>(null)
-  const [adj, setAdj] = useState<{ product: Product; qty: string; reason: string } | null>(null)
+  const [adj, setAdj] = useState<{ product: Product; qty: string; reason: string; cause: string } | null>(null)
   const [grn, setGrn] = useState<{ supplier_id: string; notes: string; lines: { product_id: string; qty: string; unit_cost: string }[] } | null>(null)
   const [grnKey, setGrnKey] = useState(() => crypto.randomUUID())
-  const [bill, setBill] = useState<{ receipt: Receipt; supplier_ref: string; amount: string; due_date: string } | null>(null)
+  const [bill, setBill] = useState<{ receipt: Receipt; supplier_ref: string; amount: string; due_date: string; accept_difference: boolean; note: string } | null>(null)
   const [pay, setPay] = useState<{ receipt: Receipt; amount: string; reference: string } | null>(null)
   const [sup, setSup] = useState<{ name: string; phone: string } | null>(null)
   const done = () => { toast(t('common.saved')); setPForm(null); setAdj(null); setGrn(null); setBill(null); setPay(null); setSup(null); setGrnKey(crypto.randomUUID()) }
@@ -57,7 +57,7 @@ export default function Inventory() {
           {showCost && <td className="n money">{p.stock.avg_cost ? formatKWD(Number(p.stock.avg_cost).toFixed(3), lang) : '—'}</td>}
           <td className="n money">{p.sale_price ? formatKWD(p.sale_price, lang) : '—'}</td>
           <td className="row" style={{ flexWrap: 'nowrap' }}>
-            {can('inventory.adjust') && <button className="btn sm" onClick={() => { aSave.reset(); setAdj({ product: p, qty: '', reason: '' }) }}>{t('inv2.adjust')}</button>}
+            {can('inventory.adjust') && <button className="btn sm" onClick={() => { aSave.reset(); setAdj({ product: p, qty: '', reason: '', cause: 'count' }) }}>{t('inv2.adjust')}</button>}
             {purchase && <button className="btn sm" onClick={() => { pSave.reset(); setPForm({ ...p, sale_price: p.sale_price ?? '' }) }}>{t('common.edit')}</button>}</td></tr> })}
           {products.data?.length === 0 && <tr><td colSpan={7} className="empty">{t('common.empty')}</td></tr>}</tbody></table></div>}
 
@@ -67,7 +67,7 @@ export default function Inventory() {
           <td className="small">{r.lines.map((l) => `${l.name_ar} ×${Number(l.qty)}`).join('، ')}</td>
           <td className="n money">{formatKWD(r.total, lang)}</td>
           <td>{r.bill ? <><span className="code">{r.bill.supplier_ref}</span> {r.bill.balance === '0.000' ? <span className="pill good">{t('inv.paid')}</span> : <span className="pill warn">{formatKWD(r.bill.balance, lang)}</span>}</> : <span className="pill mute">{t('inv2.noBill')}</span>}</td>
-          <td>{purchase && !r.bill && <button className="btn sm" onClick={() => { gSave.reset(); setBill({ receipt: r, supplier_ref: '', amount: r.total, due_date: '' }) }}>{t('inv2.recordBill')}</button>}
+          <td>{purchase && !r.bill && <button className="btn sm" onClick={() => { gSave.reset(); setBill({ receipt: r, supplier_ref: '', amount: r.total, due_date: '', accept_difference: false, note: '' }) }}>{t('inv2.recordBill')}</button>}
             {purchase && r.bill && r.bill.balance !== '0.000' && <button className="btn sm" onClick={() => { gSave.reset(); setPay({ receipt: r, amount: r.bill!.balance, reference: '' }) }}>{t('inv2.pay')}</button>}</td></tr>)}
           {receipts.data?.length === 0 && <tr><td colSpan={7} className="empty">{t('common.empty')}</td></tr>}</tbody></table></div>}
 
@@ -103,9 +103,11 @@ export default function Inventory() {
       </Dialog>
 
       <Dialog open={!!adj} title={adj ? `${t('inv2.adjust')}: ${nameOf(adj.product, lang)}` : ''} onClose={() => setAdj(null)} busy={aSave.busy}
-        onSubmit={() => aSave.save({ path: '/inventory/adjust', body: { branch_id: branch.id, product_id: adj!.product.id, qty_delta: adj!.qty, reason: adj!.reason } })}>
+        onSubmit={() => aSave.save({ path: '/inventory/adjust', body: { branch_id: branch.id, product_id: adj!.product.id, qty_delta: adj!.qty, reason: adj!.reason, cause: adj!.cause } })}>
         {adj && <>
           <div className="small muted">{t('inv2.adjustHelp', { qty: Number(adj.product.stock.qty) })}</div>
+          <label className="field">{t('inv2.cause')}<select className="input" value={adj.cause} onChange={(e) => setAdj({ ...adj, cause: e.target.value })}>
+            {['count', 'consumed', 'damaged', 'shrinkage'].map((c) => <option key={c} value={c}>{t(`inv2.causes.${c}`)}</option>)}</select></label>
           <label className="field">{t('inv2.qtyDelta')}<input className="input" dir="ltr" inputMode="decimal" placeholder="-2 / +3" value={adj.qty} onChange={(e) => setAdj({ ...adj, qty: e.target.value })} required /></label>
           <label className="field">{t('book.reason')}<input className="input" value={adj.reason} onChange={(e) => setAdj({ ...adj, reason: e.target.value })} required /></label>
           <ErrorText error={aSave.error} />
@@ -133,7 +135,7 @@ export default function Inventory() {
       </Dialog>
 
       <Dialog open={!!bill} title={t('inv2.recordBill')} onClose={() => setBill(null)} busy={gSave.busy}
-        onSubmit={() => gSave.save({ path: `/inventory/receipts/${bill!.receipt.id}/bill`, idempotencyKey: grnKey, body: { supplier_ref: bill!.supplier_ref, amount: bill!.amount, due_date: bill!.due_date || null } })}>
+        onSubmit={() => gSave.save({ path: `/inventory/receipts/${bill!.receipt.id}/bill`, idempotencyKey: grnKey, body: { supplier_ref: bill!.supplier_ref, amount: bill!.amount, due_date: bill!.due_date || null, accept_difference: bill!.accept_difference, note: bill!.note } })}>
         {bill && <>
           <div className="small muted">{t('inv2.billHelp', { total: formatKWD(bill.receipt.total, lang) })}</div>
           <label className="field">{t('inv2.supplierRef')}<input className="input" dir="ltr" value={bill.supplier_ref} onChange={(e) => setBill({ ...bill, supplier_ref: e.target.value })} required /></label>
@@ -141,6 +143,13 @@ export default function Inventory() {
             <label className="field">{t('inv.amount')}<input className="input" dir="ltr" inputMode="decimal" value={bill.amount} onChange={(e) => setBill({ ...bill, amount: e.target.value })} required /></label>
             <label className="field">{t('inv2.due')}<input className="input" type="date" value={bill.due_date} onChange={(e) => setBill({ ...bill, due_date: e.target.value })} /></label>
           </div>
+          {bill.amount && Number(bill.amount).toFixed(3) !== Number(bill.receipt.total).toFixed(3) && <>
+            <div className="notice">{t('inv2.billDiff', { v: formatKWD((Number(bill.amount) - Number(bill.receipt.total)).toFixed(3), lang) })}</div>
+            {can('accounting.journal.post') ? <>
+              <label className="chk">{t('inv2.acceptDiff')}<input type="checkbox" className="sw" checked={bill.accept_difference} onChange={(e) => setBill({ ...bill, accept_difference: e.target.checked })} /></label>
+              {bill.accept_difference && <label className="field">{t('inv2.diffNote')}<input className="input" value={bill.note} onChange={(e) => setBill({ ...bill, note: e.target.value })} required /></label>}
+            </> : <div className="cap muted">{t('inv2.diffNeedsAccountant')}</div>}
+          </>}
           <ErrorText error={gSave.error} />
         </>}
       </Dialog>
